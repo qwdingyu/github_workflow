@@ -8,6 +8,7 @@
  * - 默认只预览计划；只有 CF_APPLY=true 时才会写入 Cloudflare。
  * - 脚本只增量维护 ref 以 cf_baseline_ 开头的规则，不删除、不覆盖其他人工规则。
  * - 免费层 WAF Custom Rules 数量有限，因此规则必须少而准，避免把配额耗尽。
+ * - Zone Settings 权限不足时默认跳过并继续执行 WAF；需要严格失败时设置 CF_ZONE_SETTINGS_REQUIRED=true。
  *
  * 典型场景：
  * - static：纯静态站，阻断危险路径，可选阻断非 GET/HEAD。
@@ -30,6 +31,7 @@ const config = {
   enableHeaderTransform: env.CF_ENABLE_HEADER_TRANSFORM === "true",
   blockStaticUnsafeMethods: env.CF_BLOCK_STATIC_UNSAFE_METHODS === "true",
   applySslMode: env.CF_APPLY_SSL_MODE === "true",
+  zoneSettingsRequired: env.CF_ZONE_SETTINGS_REQUIRED === "true",
   sslMode: env.CF_SSL_MODE || "full",
   minTlsVersion: env.CF_MIN_TLS_VERSION || "1.2",
   securityLevel: env.CF_SECURITY_LEVEL || "medium",
@@ -37,7 +39,8 @@ const config = {
   adminPaths: splitCsv(env.CF_ADMIN_PATHS || "/admin,/internal"),
   dangerousPaths: splitCsv(env.CF_DANGEROUS_PATHS || "/.env,/.git,/wp-admin,/wp-login.php,/phpmyadmin,/vendor,/node_modules"),
   requestRetries: Number.parseInt(env.CF_REQUEST_RETRIES || "3", 10),
-  requestRetryDelayMs: Number.parseInt(env.CF_REQUEST_RETRY_DELAY_MS || "1000", 10)
+  requestRetryDelayMs: Number.parseInt(env.CF_REQUEST_RETRY_DELAY_MS || "1000", 10),
+  requestTimeoutMs: Number.parseInt(env.CF_REQUEST_TIMEOUT_MS || "15000", 10)
 };
 
 const required = [];
@@ -133,6 +136,9 @@ function singleRequest(method, path, body) {
       }
     );
 
+    req.setTimeout(config.requestTimeoutMs, () => {
+      req.destroy(new Error(`Cloudflare API request timeout after ${config.requestTimeoutMs}ms`));
+    });
     req.on("error", reject);
     if (payload) req.write(payload);
     req.end();
@@ -163,6 +169,11 @@ async function request(method, path, body) {
 function assertSuccess(response, label) {
   if (response.json?.success) return response.json;
   throw new Error(`${label} failed: HTTP ${response.statusCode} ${JSON.stringify(response.json?.errors || response.json)}`);
+}
+
+function isPermissionError(response) {
+  const errors = response.json?.errors || [];
+  return response.statusCode === 403 || errors.some((error) => String(error.code) === "10000");
 }
 
 async function resolveZoneId() {
@@ -211,10 +222,14 @@ async function applyZoneSettings() {
       continue;
     }
 
-    const result = assertSuccess(
-      await request("PATCH", `/client/v4/zones/${config.zoneId}/settings/${setting}`, { value }),
-      `Update zone setting ${setting}`
-    ).result;
+    const response = await request("PATCH", `/client/v4/zones/${config.zoneId}/settings/${setting}`, { value });
+
+    if (!response.json?.success && isPermissionError(response) && !config.zoneSettingsRequired) {
+      console.log(`跳过 Zone setting ${setting}: 当前凭据没有 Zone Settings 写权限。设置 CF_ZONE_SETTINGS_REQUIRED=true 可改为严格失败。`);
+      continue;
+    }
+
+    const result = assertSuccess(response, `Update zone setting ${setting}`).result;
     console.log(`已更新 Zone setting: ${result.id}=${result.value}`);
   }
 }
