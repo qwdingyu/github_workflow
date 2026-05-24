@@ -1,5 +1,30 @@
 #!/usr/bin/env node
 
+/*
+ * Cloudflare 权限探针脚本。
+ *
+ * 用途：
+ * - 快速确认当前凭据能访问哪些 Cloudflare API。
+ * - 检查 Pages、Pages deployments、Workers Custom Domains、Zone DNS records 四类常用权限。
+ * - 只读检查，不创建、不修改、不删除任何 Cloudflare 资源。
+ *
+ * 必填环境变量：
+ * - CF_ACCOUNT_ID：Cloudflare account id。
+ * - CF_ZONE_ID：Cloudflare zone id。
+ * - 鉴权二选一：
+ *   1. CF_API_TOKEN：Cloudflare API Token。
+ *   2. CF_AUTH_EMAIL + CF_GLOBAL_API_KEY：Cloudflare 登录邮箱和 Global API Key。
+ *
+ * 可选环境变量：
+ * - CF_PAGES_PROJECT：用于检查 deployments 的 Pages 项目名，默认 vibox-shop。
+ *
+ * 常用命令：
+ * - 探测当前 token 权限：
+ *   CF_API_TOKEN="<token>" CF_ACCOUNT_ID="<account_id>" CF_ZONE_ID="<zone_id>" CF_PAGES_PROJECT="acctbox" rtk node scripts/cloudflare/capability_probe.mjs
+ * - 使用 Global API Key 兜底探测：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_ACCOUNT_ID="<account_id>" CF_ZONE_ID="<zone_id>" rtk node scripts/cloudflare/capability_probe.mjs
+ */
+
 import https from "node:https";
 
 const env = process.env;

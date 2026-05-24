@@ -171,7 +171,7 @@ CNAME record not set
 关键注意：
 
 ```text
-Cloudflare Pages 自定义域名初始验证时，CNAME 必须使用 DNS only。
+Cloudflare Pages 自定义域名初始验证时，CNAME 优先使用 DNS only。
 ```
 
 本次实测 `shop.eforge.xyz` 使用 `proxied=true` 时出现两个问题：
@@ -185,6 +185,25 @@ Cloudflare Pages 自定义域名初始验证时，CNAME 必须使用 DNS only。
 - `https://shop.eforge.xyz` 返回 HTTP/2 200。
 
 因此，Pages 项目自动化脚本默认使用 DNS only，不要默认开启 proxy。
+
+2026-05-24 后续安全加固复测补充：
+
+```text
+Pages custom domain active 后，如果希望 Cloudflare WAF 对该 Pages 域名生效，需要把 CNAME 切回 proxied=true。
+DNS-only 可以让 Pages 访问成功，但不会经过 Cloudflare 代理层，因此 WAF 不会拦截 /.env、/.git、/admin 等路径。
+```
+
+当前最终实践：
+
+```text
+1. 首次绑定 Pages custom domain：先用 proxied=false，确保 Pages active 和 HTTPS 200。
+2. 安全加固阶段：切换 proxied=true。
+3. 切换后立即验证：
+   - 首页仍 HTTP/2 200。
+   - /.env 返回 HTTP/2 403。
+   - /admin 返回 HTTP/2 403 且 cf-mitigated: challenge。
+4. 如果 proxied=true 复现 522，再临时回滚 proxied=false，并记录排查。
+```
 
 ## 权限模型
 

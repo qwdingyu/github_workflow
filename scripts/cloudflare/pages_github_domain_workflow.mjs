@@ -10,10 +10,56 @@
  * 核心不变量：
  * - 绝对不要猜测 "<project>.pages.dev"，必须使用 Cloudflare Pages 返回的 project.subdomain。
  * - Pages 自定义域名仍然需要一条指向 project.subdomain 的 DNS CNAME。
- * - DNS CNAME 默认 proxied=false，因为 Pages 域名校验依赖这个形态。
+ * - DNS CNAME 默认 proxied=false，因为 Pages 初始域名校验更稳。
+ * - Pages custom domain active 后，如果要让 WAF 生效，应再次运行并设置 CF_DNS_PROXIED=true。
  * - 如果 CF_CUSTOM_DOMAIN 已存在非 CNAME 记录，视为冲突并停止执行。
  * - 本脚本只创建或更新 Pages project、Pages custom domain、DNS CNAME。
  * - 本脚本绝不删除 Pages project、custom domain 或 DNS record。
+ *
+ * 运行位置：
+ * - 推荐在目标 Pages 项目仓库根目录执行。
+ * - 如果没有显式提供 CF_GITHUB_OWNER / CF_GITHUB_REPO，脚本会从 git remote.origin.url 推导 GitHub 仓库。
+ *
+ * 必填环境变量：
+ * - CF_CUSTOM_DOMAIN：正式访问域名，例如 tool.eforge.xyz。
+ * - 鉴权二选一：
+ *   1. CF_API_TOKEN：同时具备 Pages 和 DNS 权限时可单独使用。
+ *   2. CF_AUTH_EMAIL + CF_GLOBAL_API_KEY：Global API Key 兜底模式。
+ *
+ * DNS 单独鉴权变量：
+ * - CF_DNS_API_TOKEN：只给 DNS 使用的 API Token。
+ * - 或 CF_DNS_AUTH_EMAIL + CF_DNS_GLOBAL_API_KEY：只给 DNS 使用的邮箱和 Global API Key。
+ * - 如果不提供 DNS 单独鉴权，脚本会复用 CF_API_TOKEN 或 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY。
+ *
+ * 可选定位变量：
+ * - CF_ACCOUNT_ID：Cloudflare account id；未提供且账号唯一时自动推导。
+ * - CF_ZONE_ID：Cloudflare zone id；未提供时从 CF_CUSTOM_DOMAIN 推导 zone name 再查询。
+ * - CF_ZONE_NAME：Cloudflare zone name，例如 eforge.xyz。
+ *
+ * 可选 Pages/GitHub 变量：
+ * - CF_PAGES_PROJECT：Pages 项目名，默认使用 GitHub repo 名。
+ * - CF_GITHUB_OWNER：GitHub owner，未提供时从 git remote 推导。
+ * - CF_GITHUB_REPO：GitHub repo，未提供时从 git remote 推导。
+ * - CF_PRODUCTION_BRANCH：生产分支，默认 main。
+ * - CF_BUILD_COMMAND：构建命令，默认空字符串。
+ * - CF_DESTINATION_DIR：构建输出目录，默认 src。
+ * - CF_ROOT_DIR：项目根目录，默认空字符串。
+ *
+ * 可选 DNS/等待变量：
+ * - CF_CNAME_TARGET：强制指定 CNAME 目标；默认读取 Pages project.subdomain。
+ * - CF_DNS_PROXIED=true|false：DNS 是否代理，默认 false；安全加固阶段建议 active 后切 true。
+ * - CF_WAIT_ACTIVE=false：不等待 HTTPS 可访问。
+ * - CF_WAIT_ATTEMPTS=24：等待次数。
+ * - CF_WAIT_INTERVAL_MS=5000：等待间隔。
+ * - CF_REQUEST_RETRIES=3：Cloudflare API 重试次数。
+ *
+ * 常用命令：
+ * - 在目标项目根目录创建/修复 Pages + 域名：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_CUSTOM_DOMAIN="tool.eforge.xyz" rtk node ../scripts/cloudflare/pages_github_domain_workflow.mjs
+ * - Pages active 后切换为橙云代理，让 WAF 生效：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_CUSTOM_DOMAIN="tool.eforge.xyz" CF_DNS_PROXIED=true rtk node ../scripts/cloudflare/pages_github_domain_workflow.mjs
+ * - 显式指定项目和仓库：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_PAGES_PROJECT="xtools" CF_GITHUB_OWNER="qwdingyu" CF_GITHUB_REPO="xtools" CF_CUSTOM_DOMAIN="tool.eforge.xyz" rtk node scripts/cloudflare/pages_github_domain_workflow.mjs
  */
 
 import https from "node:https";

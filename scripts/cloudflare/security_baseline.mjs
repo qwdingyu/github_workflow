@@ -14,6 +14,38 @@
  * - static：纯静态站，阻断危险路径，可选阻断非 GET/HEAD。
  * - app：静态站 + API，阻断危险路径，管理路径 Managed Challenge。
  * - form：表单/发卡类，边缘层只做基础拦截，公开写接口仍必须在代码层接 Turnstile 和限流。
+ *
+ * 必填环境变量：
+ * - CF_CUSTOM_DOMAIN：单个目标域名，例如 acctbox.eforge.xyz。
+ * - 或 CF_TARGET_HOSTNAMES：多个目标域名，英文逗号分隔，例如 a.example.com,b.example.com。
+ * - 鉴权二选一：
+ *   1. CF_API_TOKEN：Cloudflare API Token，推荐 scoped token。
+ *   2. CF_AUTH_EMAIL + CF_GLOBAL_API_KEY：Cloudflare 登录邮箱和 Global API Key，仅建议临时兜底。
+ *
+ * 可选定位变量：
+ * - CF_ZONE_ID：直接指定 zone id，最稳。
+ * - CF_ZONE_NAME：指定 zone 名，例如 eforge.xyz；未提供时从目标域名推导。
+ *
+ * 可选行为变量：
+ * - CF_APPLY=true：真正写入 Cloudflare；不设置时只预览。
+ * - CF_SECURITY_SCENARIO=static|app|form：选择防护场景，默认 app。
+ * - CF_ENABLE_ZONE_SETTINGS=false：跳过 HTTPS/TLS/Brotli/Browser Check 等 zone 设置。
+ * - CF_ENABLE_WAF_RULES=false：跳过 WAF Custom Rules。
+ * - CF_ENABLE_HEADER_TRANSFORM=true：启用响应头 Transform Rule，默认关闭。
+ * - CF_BLOCK_STATIC_UNSAFE_METHODS=true：纯静态站阻断非 GET/HEAD。
+ * - CF_ZONE_SETTINGS_REQUIRED=true：Zone Settings 写入失败时直接失败，默认权限不足就跳过并继续 WAF。
+ * - CF_APPLY_SSL_MODE=true + CF_SSL_MODE=full：显式修改 SSL mode，默认不改。
+ * - CF_ADMIN_PATHS="/admin,/internal"：管理路径列表，默认 /admin,/internal。
+ * - CF_DANGEROUS_PATHS="/.env,/.git,/wp-admin"：危险扫描路径列表。
+ * - CF_REQUEST_TIMEOUT_MS=15000：单次 Cloudflare API 请求超时。
+ *
+ * 常用命令：
+ * - 预览：
+ *   CF_API_TOKEN="<token>" CF_CUSTOM_DOMAIN="acctbox.eforge.xyz" rtk node scripts/cloudflare/security_baseline.mjs
+ * - 实际写入：
+ *   CF_API_TOKEN="<token>" CF_CUSTOM_DOMAIN="acctbox.eforge.xyz" CF_APPLY=true rtk node scripts/cloudflare/security_baseline.mjs
+ * - 只写 WAF，不碰 Zone Settings：
+ *   CF_API_TOKEN="<token>" CF_CUSTOM_DOMAIN="acctbox.eforge.xyz" CF_ENABLE_ZONE_SETTINGS=false CF_APPLY=true rtk node scripts/cloudflare/security_baseline.mjs
  */
 
 import https from "node:https";

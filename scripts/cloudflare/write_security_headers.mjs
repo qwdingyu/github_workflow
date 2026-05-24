@@ -8,6 +8,28 @@
  * - 只负责写入 _headers 文件，不替代 Worker API 里的鉴权、Turnstile、限流。
  * - 默认写到当前目录的 public/_headers；可用 CF_HEADERS_FILE 指定 src/_headers 或 dist/_headers。
  * - 默认不覆盖已有文件；只有 CF_OVERWRITE_HEADERS=true 才会覆盖。
+ *
+ * 必填环境变量：
+ * - 无。脚本不调用 Cloudflare API，也不需要 token。
+ *
+ * 可选环境变量：
+ * - CF_HEADERS_FILE：要写入的 _headers 路径，默认 public/_headers。
+ * - CF_HEADERS_SCENARIO=static|app：安全头场景，默认 app。
+ * - CF_OVERWRITE_HEADERS=true：允许覆盖已有文件，默认拒绝覆盖。
+ * - CF_CONNECT_SRC：CSP connect-src，英文逗号分隔，默认 'self'。
+ * - CF_IMG_SRC：CSP img-src，英文逗号分隔，默认 'self',data:。
+ * - CF_FRAME_SRC：CSP frame-src，英文逗号分隔，默认空。
+ * - CF_SCRIPT_SRC：CSP script-src，英文逗号分隔，默认 'self'。
+ * - CF_STYLE_SRC：CSP style-src，英文逗号分隔，默认 'self'。
+ * - CF_FONT_SRC：CSP font-src，英文逗号分隔，默认 'self'。
+ *
+ * 常用命令：
+ * - Pages 静态站输出目录是 src：
+ *   CF_HEADERS_FILE="src/_headers" CF_HEADERS_SCENARIO="static" rtk node ../scripts/cloudflare/write_security_headers.mjs
+ * - Workers Static Assets 输出目录是 public：
+ *   CF_HEADERS_FILE="public/_headers" CF_HEADERS_SCENARIO="app" rtk node ../scripts/cloudflare/write_security_headers.mjs
+ * - 覆盖已有文件：
+ *   CF_HEADERS_FILE="src/_headers" CF_OVERWRITE_HEADERS=true rtk node ../scripts/cloudflare/write_security_headers.mjs
  */
 
 import fs from "node:fs";

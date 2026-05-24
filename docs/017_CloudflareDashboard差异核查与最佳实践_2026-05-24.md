@@ -40,7 +40,8 @@ Meta: read_only=true, origin_worker_id=<worker-domain-id>
 默认域名：vibox-shop.pages.dev
 正式域名：shop.eforge.xyz
 GitHub source：qwdingyu/vibox-shop
-DNS 记录：shop.eforge.xyz CNAME vibox-shop.pages.dev, proxied=false
+初始验证阶段 DNS 记录：shop.eforge.xyz CNAME vibox-shop.pages.dev, proxied=false
+安全加固后 DNS 记录：shop.eforge.xyz CNAME vibox-shop.pages.dev, proxied=true
 Pages custom domain：active
 线上状态：https://shop.eforge.xyz -> HTTP/2 200
 ```
@@ -84,7 +85,8 @@ Pages custom domain shop.eforge.xyz -> active
 默认域名：xtools-7nq.pages.dev
 正式域名：tool.eforge.xyz
 GitHub source：qwdingyu/xtools
-DNS 记录：tool.eforge.xyz CNAME xtools-7nq.pages.dev, proxied=false
+初始验证阶段 DNS 记录：tool.eforge.xyz CNAME xtools-7nq.pages.dev, proxied=false
+安全加固后 DNS 记录：tool.eforge.xyz CNAME xtools-7nq.pages.dev, proxied=true
 Pages custom domain：active
 线上状态：https://tool.eforge.xyz -> HTTP/2 200
 ```
@@ -117,12 +119,19 @@ Workers routes:
 
 DNS:
 - ai.eforge.xyz AAAA 100::, proxied=true, read_only=true
-- shop.eforge.xyz CNAME vibox-shop.pages.dev, proxied=false
-- tool.eforge.xyz CNAME xtools-7nq.pages.dev, proxied=false
+- shop.eforge.xyz CNAME vibox-shop.pages.dev, 初始 proxied=false，安全加固后 proxied=true
+- tool.eforge.xyz CNAME xtools-7nq.pages.dev, 初始 proxied=false，安全加固后 proxied=true
 
 Pages custom domains:
 - shop.eforge.xyz status=active, verification=active, validation=active
 - tool.eforge.xyz status=active, verification=active, validation=active
+```
+
+2026-05-24 后续安全加固修正：
+
+```text
+为了让 Cloudflare WAF 对 Pages 域名生效，shop.eforge.xyz 和 tool.eforge.xyz 已在 Pages active 后切换为 proxied=true。
+此前 proxied=false 是“初始验证阶段”的正确状态，不是最终安全加固状态。
 ```
 
 ## 差异点解释
@@ -145,7 +154,8 @@ Pages 的正式子域名绑定则是：
 
 ```text
 CNAME <actual-pages-subdomain>
-proxied=false
+初始验证：proxied=false
+安全加固：Pages active 后切 proxied=true，让 WAF 生效
 ```
 
 所以截图中 `gptsession2cpaandsub2api` 和其他 Pages 项目的域名显示不同，是正常现象。

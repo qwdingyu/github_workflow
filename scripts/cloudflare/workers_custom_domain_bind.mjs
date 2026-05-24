@@ -14,6 +14,36 @@
  * - 默认行为是增量绑定：绑定新域名，保留源域名。
  * - 删除源域名必须同时设置 CF_DELETE_SOURCE_CUSTOM_DOMAIN=true
  *   和 CF_REPLACE_CONFIRM="<源域名>-><目标域名>"。
+ *
+ * 必填环境变量：
+ * - CF_CUSTOM_DOMAIN：要绑定到 Worker 的目标域名，例如 auth.eforge.xyz。
+ * - Worker service 二选一：
+ *   1. CF_WORKER_SERVICE：Worker 服务名，例如 acctbox。
+ *   2. CF_SOURCE_CUSTOM_DOMAIN：已有 Workers Custom Domain，脚本从它推导 Worker service。
+ * - 鉴权二选一：
+ *   1. CF_API_TOKEN：Cloudflare API Token。
+ *   2. CF_AUTH_EMAIL + CF_GLOBAL_API_KEY：Cloudflare 登录邮箱和 Global API Key。
+ *
+ * 可选定位变量：
+ * - CF_ACCOUNT_ID：Cloudflare account id；未提供且账号唯一时自动推导。
+ * - CF_ZONE_ID：Cloudflare zone id；未提供时从 CF_CUSTOM_DOMAIN 推导 zone name 再查询。
+ * - CF_ZONE_NAME：Cloudflare zone name，例如 eforge.xyz。
+ * - CF_WORKER_ENVIRONMENT：Worker 环境，默认 production。
+ *
+ * 可选等待和替换变量：
+ * - CF_WAIT_ACTIVE=false：绑定后不等待 HTTPS 可访问。
+ * - CF_WAIT_ATTEMPTS=24：等待次数。
+ * - CF_WAIT_INTERVAL_MS=5000：等待间隔。
+ * - CF_DELETE_SOURCE_CUSTOM_DOMAIN=true：删除源域名绑定，默认不删除。
+ * - CF_REPLACE_CONFIRM="<源域名>-><目标域名>"：删除源域名时必须提供的防误删确认。
+ *
+ * 常用命令：
+ * - 直接绑定 Worker 到新域名：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_WORKER_SERVICE="acctbox" CF_CUSTOM_DOMAIN="acctbox.eforge.xyz" rtk node scripts/cloudflare/workers_custom_domain_bind.mjs
+ * - 从旧域名推导 Worker 并新增新域名：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_SOURCE_CUSTOM_DOMAIN="ai.eforge.xyz" CF_CUSTOM_DOMAIN="auth.eforge.xyz" rtk node scripts/cloudflare/workers_custom_domain_bind.mjs
+ * - 新增新域名并删除旧域名：
+ *   CF_AUTH_EMAIL="<email>" CF_GLOBAL_API_KEY="<key>" CF_SOURCE_CUSTOM_DOMAIN="ai.eforge.xyz" CF_CUSTOM_DOMAIN="auth.eforge.xyz" CF_DELETE_SOURCE_CUSTOM_DOMAIN=true CF_REPLACE_CONFIRM="ai.eforge.xyz->auth.eforge.xyz" rtk node scripts/cloudflare/workers_custom_domain_bind.mjs
  */
 
 import https from "node:https";
