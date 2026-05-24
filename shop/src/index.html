@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vibox | 视频会员与虚拟资料</title>
+    <meta name="description" content="Vibox 提供视频会员、虚拟资料包和 Telegram 社群入口，适合快速购买、加入群组和获取更新。">
+    <link rel="canonical" href="https://shop.eforge.xyz/">
+    <meta property="og:title" content="Vibox | 视频会员与虚拟资料">
+    <meta property="og:description" content="短小、清晰、可传播的虚拟资料与会员购买落地页。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://shop.eforge.xyz/">
+    <meta name="theme-color" content="#101820">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header" aria-label="主导航">
+      <a class="brand" href="#top" aria-label="Vibox 首页">
+        <span class="brand-mark" aria-hidden="true">V</span>
+        <span>Vibox</span>
+      </a>
+      <nav class="nav-links" aria-label="页面导航">
+        <a href="#products">商品</a>
+        <a href="#group">社群</a>
+        <a href="#faq">说明</a>
+      </nav>
+      <a class="nav-action" href="#products">立即查看</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <p class="eyebrow">shop.eforge.xyz</p>
+          <h1 id="hero-title">视频会员与虚拟资料，一页完成宣传和跳转</h1>
+          <p class="hero-copy">Vibox 用来承接短视频、社群、私域和内容分发流量。用户看到商品，点击购买，进入 Telegram 群获取更新。</p>
+          <div class="hero-actions" aria-label="主要操作">
+            <a class="button primary" href="#products">选择商品</a>
+            <a class="button secondary" id="heroTelegramLink" href="#group">加入 Telegram</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="trust-strip" aria-label="服务特点">
+        <div>
+          <strong>纯静态</strong>
+          <span>部署快，维护成本低</span>
+        </div>
+        <div>
+          <strong>可替换</strong>
+          <span>购买链接和群链接集中配置</span>
+        </div>
+        <div>
+          <strong>适合投放</strong>
+          <span>移动端优先，页面轻</span>
+        </div>
+      </section>
+
+      <section class="section products-section" id="products" aria-labelledby="products-title">
+        <div class="section-heading">
+          <p class="eyebrow">Products</p>
+          <h2 id="products-title">主推商品</h2>
+          <p>先用少量清晰商品验证转化，不在第一版加入复杂订单系统。</p>
+        </div>
+        <div class="product-grid" id="productGrid" aria-live="polite"></div>
+      </section>
+
+      <section class="section group-section" id="group" aria-labelledby="group-title">
+        <div class="group-panel">
+          <div>
+            <p class="eyebrow">Telegram</p>
+            <h2 id="group-title">加入群组，获取资料更新和会员通知</h2>
+            <p id="telegramDescription">群内用于资料更新、活动提醒、售后公告和新用户引导。</p>
+          </div>
+          <div class="group-card">
+            <span class="group-label">Telegram 群</span>
+            <strong id="telegramHandle">@eforge_shop</strong>
+            <a class="button primary full" id="telegramLink" href="https://t.me/eforge_shop" target="_blank" rel="noopener noreferrer">打开 Telegram</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section flow-section" aria-labelledby="flow-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">Flow</p>
+          <h2 id="flow-title">最小闭环</h2>
+        </div>
+        <div class="flow-list">
+          <article>
+            <span>01</span>
+            <h3>流量进入</h3>
+            <p>短视频、朋友圈、公众号、社群或投放链接进入 shop.eforge.xyz。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>点击购买</h3>
+            <p>按钮跳转到真实收款页、表单、客服或平台商品页。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>进入社群</h3>
+            <p>Telegram 承接更新、售后和促活，减少重复沟通成本。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section faq-section" id="faq" aria-labelledby="faq-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">Notes</p>
+          <h2 id="faq-title">上线说明</h2>
+        </div>
+        <div class="faq-grid">
+          <details open>
+            <summary>当前购买链接是什么？</summary>
+            <p>购买入口会跳转到外部页面，方便接入真实收款页、表单或客服链接。</p>
+          </details>
+          <details>
+            <summary>是否包含支付和订单？</summary>
+            <p>不包含。第一版只做宣传、跳转和社群承接，避免过早做复杂系统。</p>
+          </details>
+          <details>
+            <summary>适合部署在哪里？</summary>
+            <p>这是纯静态项目，优先部署到 Cloudflare Pages，并绑定 shop.eforge.xyz。</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Vibox</span>
+      <span>shop.eforge.xyz</span>
+    </footer>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
