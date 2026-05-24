@@ -149,3 +149,31 @@ rtk npx wrangler secret put RATE_LIMIT_SALT
 说明：模板默认不安装 `drizzle-kit`。当前迁移主线是 Wrangler migrations，`drizzle-orm` 用于 schema 和查询类型。表结构复杂后，再按需引入 `drizzle-kit`，避免默认模板带来不必要的开发依赖审计噪音。
 
 注意：`wrangler.jsonc` 的 `compatibility_date` 不能写未来日期。模板默认使用已验证可被 Wrangler 4.94.0 接受的 `2026-05-24`。
+
+## 关于 drizzle-kit 和 SQL
+
+模板默认不安装 `drizzle-kit`，但保留 `drizzle-orm`。
+
+区别：
+
+```text
+drizzle-orm：运行时 ORM / query builder，用于类型化查询。
+drizzle-kit：开发期迁移工具，用于生成 migration。
+Wrangler migrations：当前模板默认 D1 迁移执行方式。
+```
+
+SQL 安全规则：
+
+```text
+1. 用户输入先过 Zod。
+2. 业务字段再过 src/config/forms.ts 校验。
+3. Raw SQL 必须 prepare().bind()。
+4. 常规 CRUD 优先使用 drizzle-orm。
+5. 禁止拼接用户输入到 SQL 字符串。
+```
+
+引入 `drizzle-kit` 的时机：
+
+```text
+表超过 5 张，schema 变化频繁，或多人协作需要从 schema 自动生成 migration。
+```
