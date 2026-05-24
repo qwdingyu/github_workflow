@@ -69,7 +69,9 @@ const config = {
   proxied: boolEnv("CF_DNS_PROXIED", false),
   waitActive: boolEnv("CF_WAIT_ACTIVE", true),
   waitAttempts: Number.parseInt(env.CF_WAIT_ATTEMPTS || "24", 10),
-  waitIntervalMs: Number.parseInt(env.CF_WAIT_INTERVAL_MS || "5000", 10)
+  waitIntervalMs: Number.parseInt(env.CF_WAIT_INTERVAL_MS || "5000", 10),
+  requestRetries: Number.parseInt(env.CF_REQUEST_RETRIES || "3", 10),
+  requestRetryDelayMs: Number.parseInt(env.CF_REQUEST_RETRY_DELAY_MS || "1000", 10)
 };
 
 function authHeaders(scope) {
@@ -101,7 +103,11 @@ function authHeaders(scope) {
   );
 }
 
-function request(method, path, body, scope = "account") {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function singleRequest(method, path, body, scope = "account") {
   const payload = body ? JSON.stringify(body) : undefined;
 
   return new Promise((resolve, reject) => {
@@ -139,6 +145,34 @@ function request(method, path, body, scope = "account") {
     if (payload) req.write(payload);
     req.end();
   });
+}
+
+function shouldRetryRequest(error, response) {
+  if (error) return true;
+  return response.statusCode >= 500 || response.statusCode === 429;
+}
+
+async function request(method, path, body, scope = "account") {
+  let lastError;
+
+  for (let attempt = 1; attempt <= config.requestRetries + 1; attempt += 1) {
+    try {
+      const response = await singleRequest(method, path, body, scope);
+      if (!shouldRetryRequest(undefined, response) || attempt > config.requestRetries) {
+        return response;
+      }
+
+      console.log(`Retrying Cloudflare API ${method} ${path}: HTTP ${response.statusCode} (${attempt}/${config.requestRetries})`);
+    } catch (error) {
+      lastError = error;
+      if (attempt > config.requestRetries) break;
+      console.log(`Retrying Cloudflare API ${method} ${path}: ${error.message} (${attempt}/${config.requestRetries})`);
+    }
+
+    await sleep(config.requestRetryDelayMs);
+  }
+
+  throw lastError;
 }
 
 function assertSuccess(response, label) {
@@ -285,10 +319,6 @@ async function ensureDnsCname() {
   );
   console.log(`Updated DNS CNAME: ${config.domain} -> ${config.cnameTarget}`);
   return updated.result;
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function getPagesDomain() {

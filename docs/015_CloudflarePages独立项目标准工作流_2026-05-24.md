@@ -254,6 +254,15 @@ Cloudflare zone: 从 custom domain 推导 eforge.xyz 并查询 zone id
 CNAME target: 从 Cloudflare Pages project.subdomain 读取
 ```
 
+脚本默认会对 Cloudflare API 的瞬时网络错误、`429` 和 `5xx` 做有限重试：
+
+```text
+CF_REQUEST_RETRIES=3
+CF_REQUEST_RETRY_DELAY_MS=1000
+```
+
+原因：实际复跑 `xtools` 时出现过 `socket hang up`。当 Pages project、custom domain、DNS CNAME 已经正确时，单次 API 连接中断不应让整个自动化流程误判失败。
+
 完整覆盖配置，适合多账号、多 zone 或特殊项目：
 
 ```bash
@@ -278,6 +287,8 @@ CF_DESTINATION_DIR=src
 CF_ROOT_DIR=""
 CF_CNAME_TARGET=<Cloudflare Pages API result.subdomain>
 CF_DNS_PROXIED=false
+CF_REQUEST_RETRIES=3
+CF_REQUEST_RETRY_DELAY_MS=1000
 ```
 
 如果 Pages token 缺少 DNS 权限，脚本支持单独传入 DNS 凭据：
@@ -459,6 +470,22 @@ tool.eforge.xyz -> HTTP/2 200
 Pages deployment -> success
 Pages custom domain -> active
 ```
+
+二次幂等复跑时还暴露了瞬时网络问题：
+
+```text
+socket hang up
+```
+
+当时脚本已经确认：
+
+```text
+Pages project exists: xtools
+Pages custom domain exists: tool.eforge.xyz (active)
+DNS CNAME already correct: tool.eforge.xyz -> xtools-7nq.pages.dev
+```
+
+因此这不是配置错误，而是 Cloudflare API 连接瞬断。脚本已补充请求重试，避免后续大规模复制时因为单次网络抖动误报失败。
 
 ### 结论
 
