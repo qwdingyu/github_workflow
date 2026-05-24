@@ -30,6 +30,20 @@
 -> docs 记录
 ```
 
+更稳的执行顺序：
+
+```text
+1. 本地项目先初始化并提交。
+2. 创建 GitHub repo 并 push main。
+3. 运行 pages_github_domain_workflow.mjs 创建 Pages project、custom domain 和 DNS CNAME。
+4. 如果 Cloudflare Pages deployments 为空，再 push 一次真实提交或空提交触发首次构建。
+5. 等 Pages deployment success。
+6. 等 custom domain active。
+7. curl 验证 pages.dev 和正式域名。
+```
+
+原因：Cloudflare Pages 项目如果在 GitHub 首次 push 之后才创建，可能不会自动部署已经存在的旧提交，需要后续一次 push 触发首次 production deployment。
+
 ## 项目结构建议
 
 纯静态落地页推荐：
@@ -130,7 +144,7 @@ Pages 绑定 custom domain 只完成“项目和域名的关系”。DNS 仍然�
 ```text
 Type: CNAME
 Name: <subdomain>
-Target: <project-name>.pages.dev
+Target: Cloudflare Pages API 返回的 project.subdomain
 Proxy status: DNS only
 TTL: Auto
 ```
@@ -139,7 +153,12 @@ TTL: Auto
 
 ```text
 shop.eforge.xyz -> vibox-shop.pages.dev
+tool.eforge.xyz -> xtools-7nq.pages.dev
 ```
+
+不要自己拼 `<project-name>.pages.dev`。
+
+`vibox-shop` 的默认域名正好是 `vibox-shop.pages.dev`，但 `xtools` 的默认域名是 `xtools-7nq.pages.dev`。这说明 Cloudflare Pages 默认子域名不总是项目名直连，必须以 API 返回的 `subdomain` 为准。
 
 如果 Pages custom domain 显示：
 
@@ -216,6 +235,27 @@ scripts/cloudflare/pages_github_domain_workflow.mjs
 
 使用方式：
 
+最小配置，适合当前已验证的 Global API Key 路径：
+
+```bash
+CF_AUTH_EMAIL="<cloudflare-login-email>" \
+CF_GLOBAL_API_KEY="<global-api-key>" \
+CF_CUSTOM_DOMAIN="tool.eforge.xyz" \
+node ../scripts/cloudflare/pages_github_domain_workflow.mjs
+```
+
+脚本会自动推导：
+
+```text
+GitHub owner/repo: 从当前目录 git remote.origin.url 读取
+Pages project: 默认使用 GitHub repo name
+Cloudflare account: 如果账号列表只有一个，自动选择
+Cloudflare zone: 从 custom domain 推导 eforge.xyz 并查询 zone id
+CNAME target: 从 Cloudflare Pages project.subdomain 读取
+```
+
+完整覆盖配置，适合多账号、多 zone 或特殊项目：
+
 ```bash
 CF_API_TOKEN="<token>" \
 CF_DNS_AUTH_EMAIL="<cloudflare-login-email>" \
@@ -236,7 +276,7 @@ CF_PRODUCTION_BRANCH=main
 CF_BUILD_COMMAND=""
 CF_DESTINATION_DIR=src
 CF_ROOT_DIR=""
-CF_CNAME_TARGET=<CF_PAGES_PROJECT>.pages.dev
+CF_CNAME_TARGET=<Cloudflare Pages API result.subdomain>
 CF_DNS_PROXIED=false
 ```
 
@@ -363,3 +403,72 @@ HTTPS certificate pending
 ```
 
 不要把 DNS 问题误判为部署失败，也不要把 Workers 命令用于 Pages 项目。
+
+## XTools 二次验证
+
+### 背景
+
+为了验证脚本不是只对 `shop` 特例有效，新增独立项目：
+
+```text
+Project: xtools
+GitHub: qwdingyu/xtools
+Domain: tool.eforge.xyz
+```
+
+### 发现的问题
+
+第一次脚本把 CNAME 写成：
+
+```text
+tool.eforge.xyz -> xtools.pages.dev
+```
+
+但 Cloudflare Pages API 返回的真实默认域名是：
+
+```text
+xtools-7nq.pages.dev
+```
+
+因此 Pages custom domain 一直显示：
+
+```text
+CNAME record not set
+```
+
+### 修正
+
+脚本不再拼接 `<project>.pages.dev`，而是读取：
+
+```text
+GET /accounts/<account_id>/pages/projects/<project>
+result.subdomain
+```
+
+最终写入：
+
+```text
+tool.eforge.xyz CNAME xtools-7nq.pages.dev
+proxied=false
+```
+
+验证结果：
+
+```text
+tool.eforge.xyz -> HTTP/2 200
+Pages deployment -> success
+Pages custom domain -> active
+```
+
+### 结论
+
+二次验证证明脚本现在具备跨项目复用能力：
+
+- 可以从 Git remote 推导 GitHub owner/repo。
+- 可以从 custom domain 推导 zone。
+- 可以从 Cloudflare account list 推导 account id。
+- 可以从 Pages project API 推导真实 CNAME target。
+- 可以创建 DNS only CNAME。
+- 可以等待 custom domain active。
+
+后续新增 Pages 项目，不再手动填写 9 个变量。
