@@ -1,0 +1,313 @@
+# Cloudflare Pages 独立项目标准工作流
+
+日期：2026-05-24
+
+## 结论
+
+以后所有轻量落地页、工具页、资料页、表单页，都按这一套执行：
+
+```text
+一个可部署应用
+= 一个独立 Git 仓库
+= 一个独立 GitHub repo
+= 一个独立 Cloudflare Pages project
+= 一个独立自定义域名
+```
+
+不要把具体业务项目长期放进 `github_workflow` 主仓库。主仓库只沉淀流程、脚本、规范和踩坑记录。
+
+## 标准路径
+
+```text
+本地项目目录
+-> git init
+-> gh repo create
+-> git push
+-> Cloudflare Pages GitHub 集成项目
+-> 绑定 custom domain
+-> DNS CNAME
+-> curl 验证
+-> docs 记录
+```
+
+## 项目结构建议
+
+纯静态落地页推荐：
+
+```text
+project/
+  README.md
+  package.json
+  src/
+    index.html
+    styles.css
+    app.js
+    _headers
+  scripts/
+    check.mjs
+  docs/
+    001_部署纠偏记录_YYYY-MM-DD.md
+```
+
+不需要：
+
+- `wrangler.toml`
+- Worker `main`
+- Vite/Next.js/React
+- 构建命令
+
+除非项目确实需要组件化、路由、SSR、API 或构建产物。
+
+## GitHub
+
+每个项目独立仓库：
+
+```bash
+git init -b main
+git add .
+git commit -m "初始化项目"
+gh repo create <repo-name> --private --source=. --remote=origin --push
+```
+
+建议默认 private。确认没有内部账号、zone id、部署记录后，再考虑 public。
+
+## Cloudflare Pages 配置
+
+标准配置：
+
+```text
+Project name: <project-name>
+Source: GitHub
+Repo: <owner>/<repo>
+Production branch: main
+Build command: 留空
+Build output directory: src
+Preview deployments: 关闭或按需开启
+```
+
+如果项目有构建步骤：
+
+```text
+Build command: npm run build
+Build output directory: dist 或 build
+```
+
+但纯静态项目不要为了“看起来专业”引入构建链路。
+
+## 绝对不要混用 Workers 命令
+
+不要对 Pages 项目执行：
+
+```bash
+wrangler deploy
+npx wrangler deploy
+```
+
+这是 Workers 命令，会触发：
+
+```text
+Missing entry-point to Worker script or to assets directory
+```
+
+Pages 静态项目只使用：
+
+```bash
+npx wrangler pages deploy src --project-name <project-name>
+```
+
+更推荐：
+
+```text
+git push -> Cloudflare Pages 自动构建
+```
+
+## 自定义域名
+
+Pages 绑定 custom domain 只完成“项目和域名的关系”。DNS 仍然要有 CNAME。
+
+标准 DNS：
+
+```text
+Type: CNAME
+Name: <subdomain>
+Target: <project-name>.pages.dev
+Proxy status: Proxied
+TTL: Auto
+```
+
+例如：
+
+```text
+shop.eforge.xyz -> vibox-shop.pages.dev
+```
+
+如果 Pages custom domain 显示：
+
+```text
+CNAME record not set
+```
+
+说明 Pages 绑定已创建，但 DNS CNAME 没有创建或没有生效。
+
+## 权限模型
+
+Cloudflare 自动化最少需要两类权限：
+
+### Pages Deploy Token
+
+```text
+Account -> Cloudflare Pages -> Edit
+Account resource -> 对应 account
+```
+
+用于：
+
+- 创建 Pages project。
+- 查询 deployments。
+- 创建 Pages custom domain。
+
+### Domain DNS Token
+
+```text
+Zone -> DNS -> Edit
+Zone resource -> 指定 zone，例如 eforge.xyz
+```
+
+用于：
+
+- 查询 DNS records。
+- 创建 CNAME。
+- 更新 CNAME。
+
+不要把“能创建 Pages custom domain”误认为“能管理 DNS”。这两个权限面不同。
+
+## 可执行脚本
+
+主仓库提供脚本：
+
+```text
+scripts/cloudflare/pages_github_domain_workflow.mjs
+```
+
+用途：
+
+- 确认或创建 GitHub 集成型 Pages project。
+- 确认或创建 Pages custom domain。
+- 确认或创建 DNS CNAME。
+- 输出后续 curl 验证命令。
+
+使用方式：
+
+```bash
+CF_API_TOKEN="<token>" \
+CF_ACCOUNT_ID="<account_id>" \
+CF_ZONE_ID="<zone_id>" \
+CF_PAGES_PROJECT="vibox-shop" \
+CF_GITHUB_OWNER="qwdingyu" \
+CF_GITHUB_REPO="vibox-shop" \
+CF_CUSTOM_DOMAIN="shop.eforge.xyz" \
+node scripts/cloudflare/pages_github_domain_workflow.mjs
+```
+
+默认值：
+
+```text
+CF_PRODUCTION_BRANCH=main
+CF_BUILD_COMMAND=""
+CF_DESTINATION_DIR=src
+CF_ROOT_DIR=""
+CF_CNAME_TARGET=<CF_PAGES_PROJECT>.pages.dev
+CF_DNS_PROXIED=true
+```
+
+如果 token 缺少 DNS 权限，脚本会在 `List DNS records` 阶段失败。这是正确行为，不要绕过。
+
+## 验证清单
+
+每个项目上线后都必须验证：
+
+```bash
+curl -I https://<project-name>.pages.dev
+curl -I https://<custom-domain>
+```
+
+Cloudflare API 验证：
+
+```text
+Pages deployment latest_stage.status = success
+Pages custom domain status = active
+DNS CNAME exists
+```
+
+页面功能验证：
+
+- 首页返回 200。
+- CSS/JS 正常加载。
+- 购买按钮可跳转。
+- Telegram/社群入口可跳转。
+- 移动端首屏可读。
+
+## Vibox 本次踩坑
+
+### 背景
+
+`shop` 是独立落地页项目，目标域名 `shop.eforge.xyz`。
+
+### 原因
+
+第一次执行路径混用了 Workers：
+
+```text
+wrangler deploy
+```
+
+导致 Wrangler 按 Worker 项目解析，报缺少 entry-point。
+
+### 排查过程
+
+1. 确认项目是纯静态 Pages，而不是 Worker。
+2. 查询 Cloudflare Pages project，确认 `build_command` 为空、`destination_dir=src`。
+3. 删除 `wrangler.toml`，避免诱导 Worker 部署。
+4. GitHub push 后查询 Pages deployments，确认 production success。
+5. `curl -I https://vibox-shop.pages.dev` 返回 200。
+6. 查询 custom domain，发现 `CNAME record not set`。
+7. 尝试 DNS records API，当前 token 返回 Authentication error。
+
+### 解决方案
+
+项目部署已经完成；域名需要补 DNS CNAME：
+
+```text
+shop -> vibox-shop.pages.dev
+```
+
+并确保 AI 使用的 token 具备：
+
+```text
+Zone -> DNS -> Edit -> eforge.xyz
+```
+
+### 建议
+
+后续不要重新探索。新项目直接按本文和脚本执行：
+
+```text
+独立仓库
+GitHub push
+Pages Git 集成
+DNS CNAME
+curl 验证
+docs 记录
+```
+
+遇到失败时先判断它属于哪一层：
+
+```text
+GitHub push 失败
+Cloudflare Pages build 失败
+Pages custom domain pending
+DNS CNAME missing
+HTTPS certificate pending
+```
+
+不要把 DNS 问题误判为部署失败，也不要把 Workers 命令用于 Pages 项目。
