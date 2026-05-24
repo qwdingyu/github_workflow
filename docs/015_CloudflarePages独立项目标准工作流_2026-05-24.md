@@ -131,7 +131,7 @@ Pages 绑定 custom domain 只完成“项目和域名的关系”。DNS 仍然�
 Type: CNAME
 Name: <subdomain>
 Target: <project-name>.pages.dev
-Proxy status: Proxied
+Proxy status: DNS only
 TTL: Auto
 ```
 
@@ -148,6 +148,24 @@ CNAME record not set
 ```
 
 说明 Pages 绑定已创建，但 DNS CNAME 没有创建或没有生效。
+
+关键注意：
+
+```text
+Cloudflare Pages 自定义域名初始验证时，CNAME 必须使用 DNS only。
+```
+
+本次实测 `shop.eforge.xyz` 使用 `proxied=true` 时出现两个问题：
+
+- Pages domain 仍显示 `CNAME record not set`。
+- `https://shop.eforge.xyz` 返回 522。
+
+将同一条 CNAME 改为 `proxied=false` 后：
+
+- Pages domain 进入 `active`。
+- `https://shop.eforge.xyz` 返回 HTTP/2 200。
+
+因此，Pages 项目自动化脚本默认使用 DNS only，不要默认开启 proxy。
 
 ## 权限模型
 
@@ -200,6 +218,8 @@ scripts/cloudflare/pages_github_domain_workflow.mjs
 
 ```bash
 CF_API_TOKEN="<token>" \
+CF_DNS_AUTH_EMAIL="<cloudflare-login-email>" \
+CF_DNS_GLOBAL_API_KEY="<global-api-key>" \
 CF_ACCOUNT_ID="<account_id>" \
 CF_ZONE_ID="<zone_id>" \
 CF_PAGES_PROJECT="vibox-shop" \
@@ -217,10 +237,28 @@ CF_BUILD_COMMAND=""
 CF_DESTINATION_DIR=src
 CF_ROOT_DIR=""
 CF_CNAME_TARGET=<CF_PAGES_PROJECT>.pages.dev
-CF_DNS_PROXIED=true
+CF_DNS_PROXIED=false
 ```
 
-如果 token 缺少 DNS 权限，脚本会在 `List DNS records` 阶段失败。这是正确行为，不要绕过。
+如果 Pages token 缺少 DNS 权限，脚本支持单独传入 DNS 凭据：
+
+```text
+CF_DNS_API_TOKEN
+```
+
+或 Global API Key 模式：
+
+```text
+CF_DNS_AUTH_EMAIL
+CF_DNS_GLOBAL_API_KEY
+```
+
+本次实际成功路径使用的是：
+
+```text
+CF_API_TOKEN 管 Pages
+CF_DNS_AUTH_EMAIL + CF_DNS_GLOBAL_API_KEY 管 DNS
+```
 
 ## 验证清单
 
@@ -271,21 +309,35 @@ wrangler deploy
 4. GitHub push 后查询 Pages deployments，确认 production success。
 5. `curl -I https://vibox-shop.pages.dev` 返回 200。
 6. 查询 custom domain，发现 `CNAME record not set`。
-7. 尝试 DNS records API，当前 token 返回 Authentication error。
+7. 尝试 DNS records API，Bearer token 返回 Authentication error。
+8. 回查 Wrangler 日志，确认 Cloudflare 登录邮箱为 `mailforwdy@gmail.com`。
+9. 将 `cfk_...` 按 Global API Key 模式测试，使用 `X-Auth-Email` + `X-Auth-Key` 后 DNS records API 成功。
+10. 创建 `shop -> vibox-shop.pages.dev` CNAME，初始 `proxied=true` 导致 522 和 Pages 仍报 CNAME 未设置。
+11. 将 CNAME 改为 `proxied=false`，Pages custom domain 变为 active，HTTPS 返回 200。
 
 ### 解决方案
 
-项目部署已经完成；域名需要补 DNS CNAME：
+项目部署和域名均已完成；最终 DNS CNAME：
 
 ```text
 shop -> vibox-shop.pages.dev
+proxied=false
 ```
 
-并确保 AI 使用的 token 具备：
+并确保 AI 使用的 DNS 凭据具备：
 
 ```text
-Zone -> DNS -> Edit -> eforge.xyz
+Zone -> DNS -> Read/Edit -> eforge.xyz
 ```
+
+如果使用 Global API Key，必须使用：
+
+```text
+X-Auth-Email: <Cloudflare 登录邮箱>
+X-Auth-Key: <Global API Key>
+```
+
+不能把 Global API Key 当 Bearer token 使用。
 
 ### 建议
 

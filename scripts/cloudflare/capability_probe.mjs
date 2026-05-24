@@ -3,7 +3,7 @@
 import https from "node:https";
 
 const env = process.env;
-const required = ["CF_API_TOKEN", "CF_ACCOUNT_ID", "CF_ZONE_ID"];
+const required = ["CF_ACCOUNT_ID", "CF_ZONE_ID"];
 const missing = required.filter((key) => !env[key]);
 
 if (missing.length > 0) {
@@ -11,18 +11,31 @@ if (missing.length > 0) {
   process.exit(2);
 }
 
-const token = env.CF_API_TOKEN;
 const accountId = env.CF_ACCOUNT_ID;
 const zoneId = env.CF_ZONE_ID;
 const pagesProject = env.CF_PAGES_PROJECT || "vibox-shop";
 
 const checks = [
-  ["Account token verify", "GET", `/client/v4/accounts/${accountId}/tokens/verify`],
   ["Pages projects list", "GET", `/client/v4/accounts/${accountId}/pages/projects`],
   ["Pages deployments list", "GET", `/client/v4/accounts/${accountId}/pages/projects/${pagesProject}/deployments`],
   ["Workers custom domains list", "GET", `/client/v4/accounts/${accountId}/workers/domains`],
   ["Zone DNS records list", "GET", `/client/v4/zones/${zoneId}/dns_records?per_page=1`]
 ];
+
+function authHeaders() {
+  if (env.CF_API_TOKEN) {
+    return { Authorization: `Bearer ${env.CF_API_TOKEN}` };
+  }
+
+  if (env.CF_AUTH_EMAIL && env.CF_GLOBAL_API_KEY) {
+    return {
+      "X-Auth-Email": env.CF_AUTH_EMAIL,
+      "X-Auth-Key": env.CF_GLOBAL_API_KEY
+    };
+  }
+
+  throw new Error("Missing auth: set CF_API_TOKEN or CF_AUTH_EMAIL + CF_GLOBAL_API_KEY");
+}
 
 function request(method, path) {
   return new Promise((resolve) => {
@@ -32,7 +45,7 @@ function request(method, path) {
         path,
         method,
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...authHeaders(),
           "Content-Type": "application/json"
         }
       },

@@ -5,7 +5,6 @@ import https from "node:https";
 const env = process.env;
 
 const required = [
-  "CF_API_TOKEN",
   "CF_ACCOUNT_ID",
   "CF_ZONE_ID",
   "CF_PAGES_PROJECT",
@@ -21,7 +20,6 @@ if (missing.length > 0) {
 }
 
 const config = {
-  token: env.CF_API_TOKEN,
   accountId: env.CF_ACCOUNT_ID,
   zoneId: env.CF_ZONE_ID,
   project: env.CF_PAGES_PROJECT,
@@ -33,10 +31,39 @@ const config = {
   rootDir: env.CF_ROOT_DIR || "",
   domain: env.CF_CUSTOM_DOMAIN,
   cnameTarget: env.CF_CNAME_TARGET || `${env.CF_PAGES_PROJECT}.pages.dev`,
-  proxied: env.CF_DNS_PROXIED !== "false"
+  proxied: env.CF_DNS_PROXIED === "true"
 };
 
-function request(method, path, body) {
+function authHeaders(scope) {
+  const token = scope === "dns" ? env.CF_DNS_API_TOKEN : env.CF_API_TOKEN;
+  const authEmail = scope === "dns" ? env.CF_DNS_AUTH_EMAIL || env.CF_AUTH_EMAIL : env.CF_AUTH_EMAIL;
+  const globalKey = scope === "dns"
+    ? env.CF_DNS_GLOBAL_API_KEY || env.CF_GLOBAL_API_KEY
+    : env.CF_GLOBAL_API_KEY;
+
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  if (authEmail && globalKey) {
+    return {
+      "X-Auth-Email": authEmail,
+      "X-Auth-Key": globalKey
+    };
+  }
+
+  if (scope === "dns" && env.CF_API_TOKEN) {
+    return { Authorization: `Bearer ${env.CF_API_TOKEN}` };
+  }
+
+  throw new Error(
+    scope === "dns"
+      ? "Missing DNS auth: set CF_DNS_API_TOKEN or CF_DNS_AUTH_EMAIL + CF_DNS_GLOBAL_API_KEY"
+      : "Missing account auth: set CF_API_TOKEN or CF_AUTH_EMAIL + CF_GLOBAL_API_KEY"
+  );
+}
+
+function request(method, path, body, scope = "account") {
   const payload = body ? JSON.stringify(body) : undefined;
 
   return new Promise((resolve, reject) => {
@@ -46,7 +73,7 @@ function request(method, path, body) {
         path,
         method,
         headers: {
-          Authorization: `Bearer ${config.token}`,
+          ...authHeaders(scope),
           "Content-Type": "application/json",
           ...(payload ? { "Content-Length": Buffer.byteLength(payload) } : {})
         }
@@ -138,7 +165,7 @@ async function ensurePagesDomain() {
 async function ensureDnsCname() {
   const encodedName = encodeURIComponent(config.domain);
   const listPath = `/client/v4/zones/${config.zoneId}/dns_records?name=${encodedName}`;
-  const records = assertSuccess(await request("GET", listPath), "List DNS records").result || [];
+  const records = assertSuccess(await request("GET", listPath, undefined, "dns"), "List DNS records").result || [];
 
   const conflicting = records.find((record) => record.type !== "CNAME");
   if (conflicting) {
@@ -158,7 +185,7 @@ async function ensureDnsCname() {
 
   if (!cname) {
     const created = assertSuccess(
-      await request("POST", `/client/v4/zones/${config.zoneId}/dns_records`, body),
+      await request("POST", `/client/v4/zones/${config.zoneId}/dns_records`, body, "dns"),
       "Create DNS CNAME"
     );
     console.log(`Created DNS CNAME: ${config.domain} -> ${config.cnameTarget}`);
@@ -171,7 +198,7 @@ async function ensureDnsCname() {
   }
 
   const updated = assertSuccess(
-    await request("PUT", `/client/v4/zones/${config.zoneId}/dns_records/${cname.id}`, body),
+    await request("PUT", `/client/v4/zones/${config.zoneId}/dns_records/${cname.id}`, body, "dns"),
     "Update DNS CNAME"
   );
   console.log(`Updated DNS CNAME: ${config.domain} -> ${config.cnameTarget}`);
@@ -179,11 +206,6 @@ async function ensureDnsCname() {
 }
 
 async function main() {
-  assertSuccess(
-    await request("GET", `/client/v4/accounts/${config.accountId}/tokens/verify`),
-    "Verify token"
-  );
-
   await ensureProject();
   await ensurePagesDomain();
   await ensureDnsCname();
