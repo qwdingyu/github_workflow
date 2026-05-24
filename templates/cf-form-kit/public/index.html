@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Cloudflare Workers + D1 form kit template.">
+    <title>CF Form Kit</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <p class="eyebrow">Cloudflare Workers + D1</p>
+        <h1 id="form-title">资料领取登记</h1>
+        <p id="form-description">正在加载表单配置...</p>
+        <form id="lead-form" class="form" novalidate>
+          <div id="fields" class="fields"></div>
+          <input type="hidden" name="source" value="landing">
+          <button id="submit-button" type="submit">提交登记</button>
+          <p id="message" class="message" role="status"></p>
+        </form>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

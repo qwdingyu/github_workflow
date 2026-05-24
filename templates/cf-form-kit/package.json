@@ -1,0 +1,32 @@
+{
+  "name": "cf-form-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Workers + D1 micro framework template for forms and lightweight data collection.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787",
+    "deploy": "wrangler deploy",
+    "type-check": "tsc --noEmit",
+    "check": "node scripts/check.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply cf-form-kit-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply cf-form-kit-db --remote",
+    "db:seed:local": "wrangler d1 execute cf-form-kit-db --local --file=./seed.sql",
+    "db:seed:remote": "wrangler d1 execute cf-form-kit-db --remote --file=./seed.sql",
+    "verify": "node scripts/smoke-readonly.mjs",
+    "smoke:readonly": "node scripts/smoke-readonly.mjs",
+    "smoke:write": "node scripts/smoke-write.mjs",
+    "deploy:full": "node scripts/deploy-full.mjs"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.8.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.22",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260524.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.94.0"
+  }
+}

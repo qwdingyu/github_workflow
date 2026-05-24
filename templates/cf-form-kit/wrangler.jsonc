@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cf-form-kit",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-24",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cf-form-kit-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "APP_NAME": "CF Form Kit",
+    "DEFAULT_FORM_SLUG": "lead",
+    "RATE_LIMIT_SALT": "replace-with-wrangler-secret-in-production"
+  }
+}
