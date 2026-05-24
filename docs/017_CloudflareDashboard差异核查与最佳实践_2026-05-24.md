@@ -60,6 +60,23 @@ It seems that you have run `wrangler deploy` on a Pages project,
 
 这说明问题根因不是 Cloudflare 异常，而是部署命令和项目类型不匹配。
 
+另外，如果 Dashboard 第二张图指的是 Pages 的部署记录而不是项目列表，`vibox-shop` 也确实能看到不止一条 deployment。Cloudflare Pages 会区分：
+
+```text
+production deployment：绑定 production branch，用于正式域名
+preview deployment：预览部署，不等于正式入口
+```
+
+本次 API 查询看到 `vibox-shop` 有 production deployment，也看到 preview deployment 记录。判断是否影响线上，只看正式域名和 production deployment：
+
+```text
+shop.eforge.xyz -> HTTP/2 200
+vibox-shop.pages.dev -> HTTP/2 200
+Pages custom domain shop.eforge.xyz -> active
+```
+
+所以 Pages 部署记录不止一条不等于“线上部署错了两份”。真正需要纠偏的是同名 Worker script 与 Pages project 并存。
+
 ### xtools
 
 ```text
