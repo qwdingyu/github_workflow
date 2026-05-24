@@ -1,5 +1,21 @@
 #!/usr/bin/env node
 
+/*
+ * Cloudflare Workers 自定义域名脚本契约。
+ *
+ * 必填意图：
+ * - CF_CUSTOM_DOMAIN 是要绑定的目标域名，例如 auth.eforge.xyz。
+ * - 必须直接提供 CF_WORKER_SERVICE，或通过 CF_SOURCE_CUSTOM_DOMAIN 从已有绑定推导。
+ * - 鉴权必须二选一：CF_API_TOKEN，或 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY。
+ *
+ * 核心不变量：
+ * - Workers Custom Domains 不是 Pages CNAME 记录，不能混用 Pages 域名流程。
+ * - Cloudflare 会为 Worker hostname 自动创建 DNS 记录和证书。
+ * - 默认行为是增量绑定：绑定新域名，保留源域名。
+ * - 删除源域名必须同时设置 CF_DELETE_SOURCE_CUSTOM_DOMAIN=true
+ *   和 CF_REPLACE_CONFIRM="<源域名>-><目标域名>"。
+ */
+
 import https from "node:https";
 
 const env = process.env;

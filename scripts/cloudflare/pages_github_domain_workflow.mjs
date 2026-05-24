@@ -1,5 +1,21 @@
 #!/usr/bin/env node
 
+/*
+ * Cloudflare Pages + GitHub + 自定义域名脚本契约。
+ *
+ * 必填意图：
+ * - CF_CUSTOM_DOMAIN 是要绑定的正式访问域名，例如 tool.eforge.xyz。
+ * - 鉴权必须二选一：CF_API_TOKEN，或 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY。
+ *
+ * 核心不变量：
+ * - 绝对不要猜测 "<project>.pages.dev"，必须使用 Cloudflare Pages 返回的 project.subdomain。
+ * - Pages 自定义域名仍然需要一条指向 project.subdomain 的 DNS CNAME。
+ * - DNS CNAME 默认 proxied=false，因为 Pages 域名校验依赖这个形态。
+ * - 如果 CF_CUSTOM_DOMAIN 已存在非 CNAME 记录，视为冲突并停止执行。
+ * - 本脚本只创建或更新 Pages project、Pages custom domain、DNS CNAME。
+ * - 本脚本绝不删除 Pages project、custom domain 或 DNS record。
+ */
+
 import https from "node:https";
 import { execFileSync } from "node:child_process";
 
