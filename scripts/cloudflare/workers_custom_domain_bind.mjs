@@ -38,7 +38,10 @@ const config = {
   environment: env.CF_WORKER_ENVIRONMENT || "production",
   sourceDomain: env.CF_SOURCE_CUSTOM_DOMAIN,
   deleteSourceDomain: env.CF_DELETE_SOURCE_CUSTOM_DOMAIN === "true",
-  replaceConfirm: env.CF_REPLACE_CONFIRM
+  replaceConfirm: env.CF_REPLACE_CONFIRM,
+  waitActive: env.CF_WAIT_ACTIVE !== "false",
+  waitAttempts: Number.parseInt(env.CF_WAIT_ATTEMPTS || "24", 10),
+  waitIntervalMs: Number.parseInt(env.CF_WAIT_INTERVAL_MS || "5000", 10)
 };
 
 function request(method, path, body) {
@@ -99,6 +102,10 @@ function authHeaders() {
 function assertSuccess(response, label) {
   if (response.json?.success) return response.json;
   throw new Error(`${label} failed: HTTP ${response.statusCode} ${JSON.stringify(response.json?.errors || response.json)}`);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function inferZoneName(domain) {
@@ -228,11 +235,48 @@ async function maybeDeleteSourceDomain(domains) {
   console.log(`Deleted source Workers custom domain: ${config.sourceDomain}`);
 }
 
+async function probeHttps() {
+  return new Promise((resolve) => {
+    const req = https.request(
+      {
+        hostname: config.domain,
+        path: "/",
+        method: "HEAD"
+      },
+      (res) => {
+        res.resume();
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 500, statusCode: res.statusCode });
+      }
+    );
+
+    req.on("error", (error) => {
+      resolve({ ok: false, error: error.message });
+    });
+    req.end();
+  });
+}
+
+async function waitForHttps() {
+  if (!config.waitActive) return;
+
+  for (let attempt = 1; attempt <= config.waitAttempts; attempt += 1) {
+    const result = await probeHttps();
+    const detail = result.ok ? `HTTP ${result.statusCode}` : result.error;
+    console.log(`HTTPS poll ${attempt}/${config.waitAttempts}: https://${config.domain}/ -> ${detail}`);
+
+    if (result.ok) return;
+    await sleep(config.waitIntervalMs);
+  }
+
+  throw new Error(`Timed out waiting for https://${config.domain}/ to become reachable`);
+}
+
 async function main() {
   const domains = await listDomains();
   await resolveServiceFromSourceDomain(domains);
   await bindDomain(domains);
   await maybeDeleteSourceDomain(domains);
+  await waitForHttps();
 
   console.log(`Verify with: curl -I https://${config.domain}/`);
 }
