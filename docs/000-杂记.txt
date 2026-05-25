@@ -1,4 +1,13 @@
+-------------------------
+CF_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6'
 
+Resend账号 google mailforwdy@gmail.com
+apikey= re_eBwrNBG6_6LHXPA3ZyxVEm47dbP4cy4BH
+
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put RESEND_API_KEY --overwrite
+这个命令在scripts目录下构建一个shell脚本
+----------------------------
 
 之前说的域名绑定了吗？现在是可以访问吗?  我们的脚本和我们的文档是否健全，下面的这些临时的脚本，临时的检测手段是不是在脚本里面都有体现，我希望是一个完整的链路，后面就不再为这个事情而折腾了，或者说踩坑了，
 CLOUDFLARE_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' rtk proxy npx wrangler d1 create acctbox-db
@@ -6,6 +15,9 @@ CLOUDFLARE_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' rtk
 CLOUDFLARE_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' rtk npm run db:seed:remote
 等等
 
+无论怎样，都需要使用
+
+针对 支付stripe 有沙盒，我们是否可以把业务和程序先跑通呢？？？
 
 我们目前做的不管是静态页还是需要存储的，是否可以做成一个MCP或者说其他的内容更方便使用呢？有没有必要，如果没有必要就坚决不做，如果现有的脚本能够很好的调用，就不做了。我们的最终目标是为了形成一条可用的、没有幻觉的、没有故障的流水线，后期可以批量的做。认真仔细的审查，结合行业的最佳实践，给出完美的解决方案。
 
@@ -41,3 +53,5 @@ D1 官方支持 Wrangler migrations，本身是 Cloudflare Workers 的原生 SQL
 
 CF_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' CF_CUSTOM_DOMAIN='acctbox.eforge.xyz' CF_SECURITY_SCENARIO='app' CF_APPLY=true rtk node scripts/cloudflare/
   security_baseline.mjs
+
+Resend apikey= re_eBwrNBG6_6LHXPA3ZyxVEm47dbP4cy4BH
