@@ -37,3 +37,7 @@ D1 官方支持 Wrangler migrations，本身是 Cloudflare Workers 的原生 SQL
   意味着带存储项目可以逐步从“手写小项目”升级成“轻量模板栈”，但不需要一开始上重型框架。结论非常非常的重要，我希望你按照一个小型的框架的模式和最佳实践，针对填表、信息收集、交互的，做一套微型的框架，能够用到相关的最佳实践来快速的实现,因为后续类似的项目还有很多，我希望每次只改业务部分。
 
 流程非常非常重要，我们的踩坑过程也是非常宝贵的。我不希望遗失了，我希望把这个宝贵的经验补充在文档中，针对每一次的检查，每一个标准的最佳实践，画一个流程图，在我们的文档中进行体现出来，是说把我们的托管的Cloudflare上面的内容删除掉，然后再重新部署，你认为是否有必要？
+
+
+CF_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' CF_CUSTOM_DOMAIN='acctbox.eforge.xyz' CF_SECURITY_SCENARIO='app' CF_APPLY=true rtk node scripts/cloudflare/
+  security_baseline.mjs
