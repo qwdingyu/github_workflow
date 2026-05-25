@@ -532,6 +532,34 @@ curl: (6) Could not resolve host
 4. 仍失败再考虑本地 Wrangler 兜底部署。
 5. 兜底部署后必须写 docs，说明为什么绕过主路径。
 
+### 管理端 503：ADMIN_TOKEN 未通过 wrangler secret 设置
+
+现象：`/api/admin/*` 返回 `{"ok":false,"error":"生产环境必须通过 wrangler secret 配置 ADMIN_TOKEN"}`。
+
+原因链路：
+
+```text
+wrangler.jsonc vars.ADMIN_TOKEN = "dev-only-change-me"
+→ 未通过 wrangler secret put ADMIN_TOKEN 设置生产值
+→ Cloudflare 使用 vars 默认值
+→ requireAdmin() 检测到默认值 + 非 localhost → 503
+→ rotate-admin-token.sh 因本地未登录（wrangler whoami 失败）exit 1
+→ token 从未推送，问题持续
+```
+
+解决：
+
+1. 先确认本地认证：`npx wrangler whoami`
+2. 未登录则：`npx wrangler login` 或 `export CLOUDFLARE_API_TOKEN=xxx`
+3. 设置 secret：`npx wrangler secret put ADMIN_TOKEN` 或 `bash scripts/rotate-admin-token.sh`
+4. 验证：用新 token 调用管理接口应返回 200
+
+铁律：
+
+- 首次部署后**必须立即** `wrangler secret put ADMIN_TOKEN`，这是上线前置条件
+- CI 部署只推送代码和 D1 migration，**不设置 secret**
+- rotate 脚本在 whoami 失败时会静默退出，**不会推送 token**
+
 ## 禁止事项
 
 除非明确新需求，否则不要做：
