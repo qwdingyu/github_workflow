@@ -1,13 +1,27 @@
 -------------------------
+Cloudflare
 CF_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6'
 
 Resend账号 google mailforwdy@gmail.com
 apikey= re_eBwrNBG6_6LHXPA3ZyxVEm47dbP4cy4BH
 
-npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put RESEND_API_KEY --overwrite
-这个命令在scripts目录下构建一个shell脚本
+
+turso libsql 账号 google mailforwdy@gmail.com
+apikey
+eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwZlVTaDFqVUVmRzdIQWEyeGhNenZRIiwib3JnX2lkIjoxMDAwMTcxNDI1fQ.mr6G19K-8XUEUk5bGv1w5inePg9ZwUVlSxpf2QWisDIz1XwVgCrGkfCFAFPrWt4_7vMJi5bSxzK948UyPnEfCA
+
+
 ----------------------------
+注意！报错显示的 CSP 是 没有 https://static.cloudflareinsights.com 的。这说明部署版本还是旧的 CSP。本地代码已改但还没部署。不过还要考虑另一个可能性——Cloudflare 的 Web Analytics beacon
+  是在 Workers 响应之后由 Cloudflare 边缘注入的，它可能绕过 Worker 设置的 CSP，或者需要特殊处理。
+
+  关键发现！Cloudflare 的 beacon 脚本还需要 connect-src 允许 /cdn-cgi/rum 路径（同域，已被 'self' 覆盖）。同时关键是要把 static.cloudflareinsights.com 加入 script-src。但如果用户不想用 W
+  eb Analytics，可以直接在 Cloudflare Dashboard 关掉。
+
+
+  ------------------------
+系统参数 页面增加了参数，如果有误，需要删除如何处理？
+这个页面是之前初始的demo，现在要上线了，需要重新设计，不要沿用之前的简单的模式，无法满足参数维护的要求，请务必认真仔细。
 
 之前说的域名绑定了吗？现在是可以访问吗?  我们的脚本和我们的文档是否健全，下面的这些临时的脚本，临时的检测手段是不是在脚本里面都有体现，我希望是一个完整的链路，后面就不再为这个事情而折腾了，或者说踩坑了，
 CLOUDFLARE_API_TOKEN='cfat_ue16s4yVUHOfR8iwkrSfY7oJNU2QPggwyQVMO6DE6e5258c6' rtk proxy npx wrangler d1 create acctbox-db
