@@ -3,4 +3,7 @@
 /shop/
 /xtools/
 /acctbox/
-acctbox.zip.DS_Store
+acctbox.zip
+.DS_Store
+/vmail/
+/vcode/
