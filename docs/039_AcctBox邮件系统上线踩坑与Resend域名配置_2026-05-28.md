@@ -139,10 +139,12 @@ await markPaidAndIssue(db, order.id, { RESEND_API_KEY: c.env.RESEND_API_KEY, EMA
 |------|------|----------|----------|
 | direct 发卡成功 | `order_issued` | `createOrder` direct 分支 | `RESEND_API_KEY` + `buyerEmail` 含 `@` |
 | manual 下单 | `order_pending` | `createOrder` manual 分支 | 同上 |
-| 管理员确认发卡 | `order_issued` | `markPaidAndIssue` | 同上 |
-| PayJS 回调发卡 | `order_issued` | `markPaidAndIssue`（callback） | 同上 |
-| 订单过期 | `order_expired` | `checkAndExpireOrder` | 同上 |
-| 下单成功 | — | 行业标准：**不发送** | — |
+| 线下支付下单 | `order_pending` | `createOfflineOrder`（pay.ts） | 同上 |
+| 管理员确认发卡 | `order_issued` | `markPaidAndIssue`（admin.ts） | 同上 |
+| PayJS 回调发卡 | `order_issued` | `markPaidAndIssue`（pay callback） | 同上 |
+| /pay/status 过期 | `order_expired` | `checkAndExpireOrder`（pay.ts） | 同上 |
+| Cron 清理过期 | `order_expired` | `checkAndExpireOrder`（cleanup-service） | 同上 |
+| 下单成功（paid） | `order_paid` | — | 模板存在但未使用，行业标准不发 |
 
 ---
 
