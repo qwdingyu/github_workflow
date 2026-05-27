@@ -131,6 +131,45 @@ await markPaidAndIssue(db, order.id, { RESEND_API_KEY: c.env.RESEND_API_KEY, EMA
 
 **铁律**：状态变更 → 用户通知 必须绑定。
 
+### 3.5 CSP img-src 不允许外部图片 URL
+
+**问题**：管理员设置 `coverUrl` 为外部 CDN 图片 URL 时，前端页面被浏览器 CSP 拦截，图片显示空白。
+
+**根因**：`src/index.ts` CSP 配置 `img-src 'self' data:` 只允许本站和 data: URI。
+
+**修复**：改为 `"img-src 'self' data: https:"` 允许所有 HTTPS 图片源。
+
+**铁律**：CSP 白名单必须覆盖所有用户可输入的外部资源 URL。
+
+### 3.6 Admin 后台功能断层（待修复）
+
+**问题 1**：订单状态机有 `canceled`/`refunded` 状态，但没有 API 触发路径（死状态）。
+
+- 前端订单筛选器有"已取消"/"已退款"选项
+- 但管理后台没有"取消订单"/"退款"按钮
+- 后端没有 `POST /admin/orders/:id/cancel` 和 `/refund` 路由
+- 管理员如果需要处理纠纷或取消误创建订单，只能手动操作数据库
+
+**问题 2**：商品列表缺少 `issueMode`（发卡模式）列。
+
+- `issueMode`（direct/manual）是影响购买流程的核心字段
+- 编辑表单有该字段，但列表未展示
+- 管理员无法一眼看出哪些商品是自动发卡、哪些需人工确认
+
+**问题 3**：商品删除功能缺失。
+
+- 管理端只有"上架/下架"和"编辑"，无"删除"
+- 废弃商品只能下架，数据永久存在
+- 如有订单关联则不可物理删除（外键约束）
+
+**问题 4**：`fulfillmentMode` 硬编码。
+
+- `createProduct` 中 `fulfillmentMode: "card"` 硬编码
+- 前端编辑表单和 Zod schema 中都没有该字段
+- 未来扩展非卡密发卡模式时需改代码
+
+**优先级**：问题 1（P1），问题 2-4（P2，当前不影响核心功能）
+
 ---
 
 ## 四、完整邮件触发矩阵
