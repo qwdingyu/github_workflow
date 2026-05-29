@@ -92,7 +92,17 @@ log_step "Step 3/4: 设置 Variables"
 gh_set_variable "$GITHUB_REPO" "WORKER_NAME" "$WORKER_NAME"
 [ -n "$DOMAIN" ] && gh_set_variable "$GITHUB_REPO" "APP_DOMAIN" "$DOMAIN"
 [ -n "$DOMAIN" ] && gh_set_variable "$GITHUB_REPO" "BIND_DOMAIN" "true"
-gh_set_variable "$GITHUB_REPO" "APP_ORIGIN" "https://${DOMAIN:-${WORKER_NAME}.workers.dev}"
+# APP_ORIGIN 优先从 .credentials/BASE_URL 读取（Step 03 保存的实际 URL）
+# 其次用自定义域名，最后回退到 workers.dev（可能不准确，需手动修正）
+ACTUAL_BASE_URL=$(cred_load "BASE_URL" 2>/dev/null || echo "")
+if [ -n "$DOMAIN" ]; then
+  gh_set_variable "$GITHUB_REPO" "APP_ORIGIN" "https://${DOMAIN}"
+elif [ -n "$ACTUAL_BASE_URL" ]; then
+  gh_set_variable "$GITHUB_REPO" "APP_ORIGIN" "$ACTUAL_BASE_URL"
+else
+  gh_set_variable "$GITHUB_REPO" "APP_ORIGIN" "https://${WORKER_NAME}.workers.dev"
+  log_warn "APP_ORIGIN 使用默认值，可能不准确（实际 URL 含账户子域名）"
+fi
 
 # ── Step 4: 提交并触发部署 ────────────────────────────────────────────────────
 log_step "Step 4/4: 提交 Workflows 并触发首次部署"

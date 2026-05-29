@@ -72,7 +72,7 @@ DB_HOSTNAME=$(echo "$EXISTING" | jq -r '.database.Hostname // empty' 2>/dev/null
 if [ -n "$DB_HOSTNAME" ] && [ "$DB_HOSTNAME" != "null" ]; then
   log_ok "数据库已存在: $DB_HOSTNAME"
 else
-  log_info "创建新数据库（group: $GROUP_NAME）..."
+  log_info "创建新数据库 (group: ${GROUP_NAME}) ..."
   RESULT=$(turso_api POST "/organizations/${ORG}/databases" "{\"name\":\"${DB_NAME}\",\"group\":\"${GROUP_NAME}\"}")
   DB_HOSTNAME=$(echo "$RESULT" | jq -r '.database.Hostname // empty')
   if [ -z "$DB_HOSTNAME" ]; then
