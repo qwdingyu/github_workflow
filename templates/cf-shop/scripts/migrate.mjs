@@ -56,17 +56,31 @@ for (const file of files) {
   console.log(`  📄 ${file} (${statements.length} statements)`);
 
   for (const stmt of statements) {
-    try {
-      await client.execute(stmt);
-    } catch (err) {
-      // CREATE TABLE IF NOT EXISTS 等幂等语句可能报 "already exists"
-      // 这类错误可以安全忽略
-      if (err.message?.includes("already exists")) {
-        continue;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await client.execute(stmt);
+        break;
+      } catch (err) {
+        // CREATE TABLE IF NOT EXISTS 等幂等语句可能报 "already exists"
+        // 这类错误可以安全忽略
+        if (err.message?.includes("already exists")) {
+          break;
+        }
+        // Turso 服务端临时故障（502/503/504）可重试
+        if (err.message?.includes("502") || err.message?.includes("503") || err.message?.includes("504") || err.message?.includes("SERVER_ERROR")) {
+          retries--;
+          if (retries > 0) {
+            const delay = (4 - retries) * 2 + 2;
+            console.warn(`    ⚠️ Turso 临时错误 (${err.message.slice(0, 60)})，${delay}s 后重试 (剩余 ${retries} 次)...`);
+            await new Promise((r) => setTimeout(r, delay * 1000));
+            continue;
+          }
+        }
+        console.error(`    ❌ Error: ${err.message}`);
+        console.error(`    SQL: ${stmt.slice(0, 100)}...`);
+        process.exit(1);
       }
-      console.error(`    ❌ Error: ${err.message}`);
-      console.error(`    SQL: ${stmt.slice(0, 100)}...`);
-      process.exit(1);
     }
   }
 }
