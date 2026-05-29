@@ -42,8 +42,9 @@ else
   log_ok "无构建步骤，跳过"
 fi
 
-# ── SEO 页面生成（仅 pages 模式，如果有 generate-seo-pages 脚本） ─────────────
-if is_pages_mode && grep -q '"generate:seo"' package.json 2>/dev/null; then
+# ── SEO 页面生成（仅 pages 模式，且没有 build 脚本时才单独运行） ──────────────
+# 如果 build 脚本存在，它应该已经包含了 SEO 生成逻辑，不再重复执行
+if is_pages_mode && ! grep -q '"build"' package.json 2>/dev/null && grep -q '"generate:seo"' package.json 2>/dev/null; then
   log_step "生成 SEO 页面"
   npm run generate:seo
   log_ok "SEO 页面生成完成"
@@ -128,7 +129,7 @@ EOF
 # 模式分支：Pages 部署
 # ═══════════════════════════════════════════════════════════════════════════════
 deploy_pages() {
-  log_step "部署 Pages"
+  log_step "部署 Pages" >&2
 
   PAGES_PROJECT=$(cred_load "PAGES_PROJECT_NAME" 2>/dev/null || echo "${PROJECT_NAME}")
   PAGES_DIR="${PAGES_DIR:-public}"
@@ -139,9 +140,9 @@ deploy_pages() {
   PAGES_URL=$(pages_get_url "$PAGES_PROJECT")
   if [ -z "$PAGES_URL" ]; then
     PAGES_URL="${PAGES_PROJECT}.pages.dev"
-    log_warn "无法获取 Pages URL，使用默认: https://$PAGES_URL"
+    log_warn "无法获取 Pages URL，使用默认: https://$PAGES_URL" >&2
   else
-    log_ok "Pages URL: https://$PAGES_URL"
+    log_ok "Pages URL: https://$PAGES_URL" >&2
   fi
 
   echo "https://$PAGES_URL"
@@ -230,4 +231,7 @@ step_done "03-deploy-worker"
 echo ""
 log_ok "✅ 部署完成 ($MODE)"
 echo "  URL: $BASE_URL"
-[ "$MODE" != "pages" ] && echo "  Admin: $BASE_URL/admin"
+if [ "$MODE" != "pages" ]; then
+  echo "  Admin: $BASE_URL/admin"
+fi
+exit 0

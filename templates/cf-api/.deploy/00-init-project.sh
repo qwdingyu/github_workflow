@@ -15,7 +15,8 @@
 source "$(dirname "$0")/shared.sh"
 
 PROJECT_NAME="${PROJECT_NAME:-$(basename "$(pwd)")}"
-banner "项目初始化: $PROJECT_NAME"
+MODE=$(detect_deploy_mode)
+banner "项目初始化: $PROJECT_NAME [$MODE]"
 
 if step_check "00-init-project"; then
   log_ok "已完成，跳过（删除 .credentials/.deploy-progress 重跑）"
@@ -44,7 +45,11 @@ log_step "Step 2/4: 检查环境变量"
 
 FAIL=0
 check_env CLOUDFLARE_API_TOKEN "从 https://dash.cloudflare.com/profile/api-tokens 获取" || FAIL=1
-check_env TURSO_API_TOKEN "从 https://turso.tech/app/tokens 获取" || FAIL=1
+if [ "$MODE" != "pages" ]; then
+  check_env TURSO_API_TOKEN "从 https://turso.tech/app/tokens 获取" || FAIL=1
+else
+  log_ok "TURSO_API_TOKEN (pages 模式跳过)"
+fi
 
 if [ "$FAIL" -eq 1 ]; then
   echo ""

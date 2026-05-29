@@ -207,7 +207,7 @@ cred_save() {
   local name="$1" value="$2"
   echo "$value" > "${CRED_DIR}/${name}"
   chmod 600 "${CRED_DIR}/${name}"
-  log_ok "凭证已保存: ${CRED_DIR}/${name}"
+  log_ok "凭证已保存: ${CRED_DIR}/${name}" >&2
 }
 
 cred_load() {
@@ -281,32 +281,47 @@ is_hybrid_mode()  { [ "$(detect_deploy_mode)" = "hybrid" ]; }
 # 部署 Pages（带重试）
 # 参数：$1 = Pages 项目名, $2 = 部署目录（默认 public）
 pages_deploy() {
-  local project_name="${1:?Pages 项目名不能为空}"
+  if [ -z "${1:-}" ]; then
+    log_error "Pages 项目名不能为空" >&2
+    return 1
+  fi
+  local project_name="$1"
   local deploy_dir="${2:-public}"
 
   if [ ! -d "$deploy_dir" ]; then
-    log_error "Pages 部署目录不存在: $deploy_dir"
+    log_error "Pages 部署目录不存在: $deploy_dir" >&2
     return 1
   fi
 
-  log_info "部署 Pages: $project_name (目录: $deploy_dir)"
+  # 确保 Pages 项目存在（首次部署时自动创建）
+  log_info "检查 Pages 项目: $project_name" >&2
+  if ! CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler pages project list 2>/dev/null | grep -q "$project_name"; then
+    log_info "创建 Pages 项目: $project_name" >&2
+    CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler pages project create "$project_name" --production-branch main >&2 || {
+      log_error "Pages 项目创建失败" >&2
+      return 1
+    }
+  fi
+
+  log_info "部署 Pages: $project_name (目录: $deploy_dir)" >&2
 
   local retries=2
   for attempt in 1 2 3; do
     if CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler pages deploy "$deploy_dir" \
       --project-name="$project_name" \
       --branch=main \
-      --commit-msg="deploy $(date +%Y%m%d-%H%M%S)" 2>&1; then
-      log_ok "Pages 部署成功: $project_name"
+      --commit-message="deploy $(date +%Y%m%d-%H%M%S)" \
+      --commit-dirty=true >&2; then
+      log_ok "Pages 部署成功: $project_name" >&2
       return 0
     fi
     if [ "$attempt" -le "$retries" ]; then
-      log_warn "Pages 部署失败（第 ${attempt}/3 次），5s 后重试..."
+      log_warn "Pages 部署失败（第 ${attempt}/3 次），5s 后重试..." >&2
       sleep 5
     fi
   done
 
-  log_error "Pages 部署失败（3 次重试后仍失败）"
+  log_error "Pages 部署失败（3 次重试后仍失败）" >&2
   return 1
 }
 
