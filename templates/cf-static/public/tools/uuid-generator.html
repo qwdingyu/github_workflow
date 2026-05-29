@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UUID v4 Generator — DevTools Online</title>
+  <meta name="description" content="Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.">
+  <meta name="keywords" content="uuid generator, uuid v4, random uuid, generate uuid online, uuid creator">
+  <link rel="canonical" href="https://YOUR_DOMAIN.example.com/tools/uuid-generator.html">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="UUID v4 Generator — DevTools Online">
+  <meta property="og:description" content="Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.">
+  <meta property="og:url" content="https://YOUR_DOMAIN.example.com/tools/uuid-generator.html">
+  <meta property="og:site_name" content="DevTools Online">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="UUID v4 Generator — DevTools Online">
+  <meta name="twitter:description" content="Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.">
+  <meta name="twitter:site" content="@yourhandle">
+
+  <!-- Schema.org JSON-LD: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "UUID v4 Generator",
+    "description": "Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.",
+    "url": "https://YOUR_DOMAIN.example.com/tools/uuid-generator.html",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Your Name"
+    }
+  }
+  </script>
+
+  <!-- Schema.org JSON-LD: FAQPage -->
+  <script type="application/ld+json">
+  {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is a UUID?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A UUID (Universally Unique Identifier) is a 128-bit identifier that is unique across space and time. UUID v4 is randomly generated."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is UUID v4 truly unique?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The probability of generating two identical UUID v4 values is astronomically low — approximately 1 in 2^122."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use UUIDs as database primary keys?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, UUIDs are commonly used as primary keys in distributed systems where auto-incrementing IDs are not practical."
+      }
+    }
+  ]
+}
+  </script>
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">DevTools Online</a>
+      <div class="nav-links"><a href="/tools/base64-decode.html">Base64</a>
+      <a href="/tools/json-formatter.html">JSON</a>
+      <a href="/tools/uuid-generator.html">UUID</a></div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>UUID v4 Generator</h1>
+      <p class="description">Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.</p>
+    </section>
+
+    <section class="tool-area">
+      
+    <div class="tool-container" id="tool-uuid-generator">
+      <div class="tool-input">
+        <textarea id="input" placeholder="Paste your input here..." rows="10"></textarea>
+      </div>
+      <div class="tool-actions">
+        <button onclick="processTool('uuid-generator')" class="btn-primary">Process</button>
+        <button onclick="copyOutput()" class="btn-secondary">Copy Output</button>
+        <button onclick="clearAll()" class="btn-secondary">Clear</button>
+      </div>
+      <div class="tool-output">
+        <textarea id="output" placeholder="Output will appear here..." rows="10" readonly></textarea>
+      </div>
+    </div>
+    <script src="/js/uuid-generator.js"></script>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently Asked Questions</h2>
+      
+    <details>
+      <summary>What is a UUID?</summary>
+      <p>A UUID (Universally Unique Identifier) is a 128-bit identifier that is unique across space and time. UUID v4 is randomly generated.</p>
+    </details>
+
+    <details>
+      <summary>Is UUID v4 truly unique?</summary>
+      <p>The probability of generating two identical UUID v4 values is astronomically low — approximately 1 in 2^122.</p>
+    </details>
+
+    <details>
+      <summary>Can I use UUIDs as database primary keys?</summary>
+      <p>Yes, UUIDs are commonly used as primary keys in distributed systems where auto-incrementing IDs are not practical.</p>
+    </details>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 DevTools Online. All rights reserved.</p>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+  </footer>
+</body>
+</html>

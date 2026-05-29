@@ -1,0 +1,22 @@
+{
+  "slug": "json-formatter",
+  "title": "JSON Formatter & Beautifier",
+  "description": "Format, beautify, and validate JSON data online. Free, fast, and privacy-friendly — no data sent to servers.",
+  "keywords": ["json formatter", "json beautifier", "json validator", "format json online", "pretty print json"],
+  "category": "formatter",
+  "icon": "{ }",
+  "faq": [
+    {
+      "q": "What is JSON Formatter?",
+      "a": "JSON Formatter is a free online tool that formats, beautifies, and validates JSON data. It makes raw JSON data human-readable with proper indentation and syntax highlighting."
+    },
+    {
+      "q": "Is my data safe?",
+      "a": "Yes. All formatting happens entirely in your browser. No data is sent to any server."
+    },
+    {
+      "q": "Is it free?",
+      "a": "Yes, completely free with no usage limits."
+    }
+  ]
+}

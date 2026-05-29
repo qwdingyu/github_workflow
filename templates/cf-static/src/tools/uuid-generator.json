@@ -1,0 +1,22 @@
+{
+  "slug": "uuid-generator",
+  "title": "UUID v4 Generator",
+  "description": "Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.",
+  "keywords": ["uuid generator", "uuid v4", "random uuid", "generate uuid online", "uuid creator"],
+  "category": "generator",
+  "icon": "ID",
+  "faq": [
+    {
+      "q": "What is a UUID?",
+      "a": "A UUID (Universally Unique Identifier) is a 128-bit identifier that is unique across space and time. UUID v4 is randomly generated."
+    },
+    {
+      "q": "Is UUID v4 truly unique?",
+      "a": "The probability of generating two identical UUID v4 values is astronomically low — approximately 1 in 2^122."
+    },
+    {
+      "q": "Can I use UUIDs as database primary keys?",
+      "a": "Yes, UUIDs are commonly used as primary keys in distributed systems where auto-incrementing IDs are not practical."
+    }
+  ]
+}

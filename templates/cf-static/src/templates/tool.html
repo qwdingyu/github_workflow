@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}} — {{SITE_NAME}}</title>
+  <meta name="description" content="{{DESCRIPTION}}">
+  <meta name="keywords" content="{{KEYWORDS}}">
+  <link rel="canonical" href="{{CANONICAL_URL}}">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{TITLE}} — {{SITE_NAME}}">
+  <meta property="og:description" content="{{DESCRIPTION}}">
+  <meta property="og:url" content="{{CANONICAL_URL}}">
+  <meta property="og:site_name" content="{{SITE_NAME}}">
+  <meta property="og:locale" content="{{LOCALE}}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{TITLE}} — {{SITE_NAME}}">
+  <meta name="twitter:description" content="{{DESCRIPTION}}">
+  {{TWITTER_SITE}}
+
+  <!-- Schema.org JSON-LD: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "{{TITLE}}",
+    "description": "{{DESCRIPTION}}",
+    "url": "{{CANONICAL_URL}}",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "{{AUTHOR}}"
+    }
+  }
+  </script>
+
+  <!-- Schema.org JSON-LD: FAQPage -->
+  {{FAQ_SCHEMA}}
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">{{SITE_NAME}}</a>
+      <div class="nav-links">{{NAV_LINKS}}</div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>{{TITLE}}</h1>
+      <p class="description">{{DESCRIPTION}}</p>
+    </section>
+
+    <section class="tool-area">
+      {{TOOL_CONTENT}}
+    </section>
+
+    <section class="faq">
+      <h2>Frequently Asked Questions</h2>
+      {{FAQ_CONTENT}}
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; {{YEAR}} {{SITE_NAME}}. All rights reserved.</p>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+  </footer>
+</body>
+</html>

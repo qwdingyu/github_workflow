@@ -244,6 +244,89 @@ step_check() {
   [ -f "$STEP_FILE" ] && grep -qx "$1" "$STEP_FILE" 2>/dev/null
 }
 
+# ── 部署模式检测 ──────────────────────────────────────────────────────────────
+# 三种模式：
+#   workers  — 纯 Workers + Static Assets（默认，eshop/xtools 等）
+#   pages    — 纯 Cloudflare Pages（静态站、SEO 工具站、文档站）
+#   hybrid   — Workers + Pages 混合模式（vcode 模式，API 走 Worker，前端走 Pages）
+#
+# 检测优先级：
+#   1. DEPLOY_MODE 环境变量（最高优先）
+#   2. 项目根目录 .deploy-mode 文件
+#   3. 默认 "workers"
+
+detect_deploy_mode() {
+  if [ -n "${DEPLOY_MODE:-}" ]; then
+    echo "$DEPLOY_MODE"
+    return
+  fi
+  if [ -f ".deploy-mode" ]; then
+    local mode
+    mode=$(cat .deploy-mode | tr -d '[:space:]')
+    case "$mode" in
+      workers|pages|hybrid) echo "$mode"; return ;;
+    esac
+    log_warn ".deploy-mode 文件内容无效: '$mode'，使用默认 workers" >&2
+  fi
+  echo "workers"
+}
+
+# 模式判断快捷函数
+is_workers_mode() { [ "$(detect_deploy_mode)" = "workers" ]; }
+is_pages_mode()   { [ "$(detect_deploy_mode)" = "pages" ]; }
+is_hybrid_mode()  { [ "$(detect_deploy_mode)" = "hybrid" ]; }
+
+# ── Cloudflare Pages 部署函数 ─────────────────────────────────────────────────
+
+# 部署 Pages（带重试）
+# 参数：$1 = Pages 项目名, $2 = 部署目录（默认 public）
+pages_deploy() {
+  local project_name="${1:?Pages 项目名不能为空}"
+  local deploy_dir="${2:-public}"
+
+  if [ ! -d "$deploy_dir" ]; then
+    log_error "Pages 部署目录不存在: $deploy_dir"
+    return 1
+  fi
+
+  log_info "部署 Pages: $project_name (目录: $deploy_dir)"
+
+  local retries=2
+  for attempt in 1 2 3; do
+    if CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler pages deploy "$deploy_dir" \
+      --project-name="$project_name" \
+      --branch=main \
+      --commit-msg="deploy $(date +%Y%m%d-%H%M%S)" 2>&1; then
+      log_ok "Pages 部署成功: $project_name"
+      return 0
+    fi
+    if [ "$attempt" -le "$retries" ]; then
+      log_warn "Pages 部署失败（第 ${attempt}/3 次），5s 后重试..."
+      sleep 5
+    fi
+  done
+
+  log_error "Pages 部署失败（3 次重试后仍失败）"
+  return 1
+}
+
+# 获取 Pages 项目 URL
+# 参数：$1 = Pages 项目名
+pages_get_url() {
+  local project_name="$1"
+  local account_id
+  account_id=$(cf_get_account_id)
+  if [ -z "$account_id" ]; then
+    echo ""
+    return
+  fi
+  local resp
+  resp=$(cf_api GET "/accounts/${account_id}/pages/projects/${project_name}" 2>/dev/null || echo '{}')
+  local url
+  url=$(echo "$resp" | jq -r '.result.subdomain // empty' 2>/dev/null)
+  echo "$url"
+}
+
 # ── 横幅 ──────────────────────────────────────────────────────────────────────
 banner() {
   echo ""

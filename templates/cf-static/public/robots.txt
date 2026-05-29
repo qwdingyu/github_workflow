@@ -1,0 +1,27 @@
+# robots.txt for DevTools Online
+# Allow all crawlers including AI search engines
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# AI Search Engines — explicitly allowed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+Sitemap: https://YOUR_DOMAIN.example.com/sitemap.xml

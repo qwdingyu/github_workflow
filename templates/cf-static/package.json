@@ -1,0 +1,17 @@
+{
+  "name": "cf-static",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Pages 纯静态站模板 — SEO 工具站 / 文档站 / 博客 / 落地页",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve public -l 8787",
+    "build": "node scripts/generate-seo-pages.mjs",
+    "generate:seo": "node scripts/generate-seo-pages.mjs",
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "deploy": "npx wrangler pages deploy public/"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

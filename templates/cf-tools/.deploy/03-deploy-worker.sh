@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# 03-deploy-worker.sh — 构建 + 部署 Worker + 冒烟测试
+# 03-deploy.sh — 构建 + 部署 + 冒烟测试（支持三种部署模式）
 #
-# 功能：
-#   1. 构建前端（如有 build:frontend 脚本）
-#   2. 通过 --secrets-file 部署 Worker（含所有 Secrets）
-#   3. 运行冒烟测试
+# 部署模式（由 .deploy-mode 文件或 DEPLOY_MODE 环境变量决定）：
+#   workers  — Cloudflare Workers + Static Assets（默认）
+#   pages    — Cloudflare Pages（纯静态站）
+#   hybrid   — Workers + Pages 混合模式
 #
 # 输入：CLOUDFLARE_API_TOKEN + .credentials/ 下的所有凭证
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -13,7 +13,9 @@ source "$(dirname "$0")/shared.sh"
 
 PROJECT_NAME=$(cred_load "PROJECT_NAME" 2>/dev/null || basename "$(pwd)")
 WORKER_NAME="${WORKER_NAME:-${PROJECT_NAME}}"
-banner "部署 Worker: $WORKER_NAME"
+MODE=$(detect_deploy_mode)
+
+banner "部署 ($MODE): $PROJECT_NAME"
 
 # ── 独立运行时的前置检查 ──────────────────────────────────────────────────────
 FAIL=0
@@ -25,133 +27,207 @@ if step_check "03-deploy-worker"; then
   exit 0
 fi
 
-# ── 加载凭证 ──────────────────────────────────────────────────────────────────
-TURSO_URL=$(cred_load "TURSO_URL" 2>/dev/null || echo "")
-TURSO_TOKEN=$(cred_load "TURSO_TOKEN" 2>/dev/null || echo "")
-ADMIN_TOKEN=$(cred_load "ADMIN_TOKEN" 2>/dev/null || echo "")
-RATE_LIMIT_SALT=$(cred_load "RATE_LIMIT_SALT" 2>/dev/null || echo "")
-JWT_SECRET=$(cred_load "JWT_SECRET" 2>/dev/null || echo "")
-CREDENTIALS_ENCRYPTION_KEY=$(cred_load "CREDENTIALS_ENCRYPTION_KEY" 2>/dev/null || echo "")
-
-if [ -z "$TURSO_URL" ]; then
-  log_error "TURSO_URL 未找到，请先运行 01-setup-turso.sh"
-  exit 1
-fi
-
-# ── Step 1: 构建前端（可选） ─────────────────────────────────────────────────
-log_step "Step 1/3: 构建前端"
+# ── 公共：构建前端（可选） ────────────────────────────────────────────────────
+log_step "构建前端"
 
 if grep -q '"build:frontend"' package.json 2>/dev/null; then
   log_info "npm run build:frontend ..."
   npm run build:frontend
   log_ok "前端构建完成"
+elif grep -q '"build"' package.json 2>/dev/null && is_pages_mode; then
+  log_info "npm run build ..."
+  npm run build
+  log_ok "构建完成"
 else
-  log_ok "无前端构建步骤，跳过"
+  log_ok "无构建步骤，跳过"
 fi
 
-# ── Step 2: 部署 Worker ──────────────────────────────────────────────────────
-log_step "Step 2/3: 部署 Worker"
+# ── SEO 页面生成（仅 pages 模式，如果有 generate-seo-pages 脚本） ─────────────
+if is_pages_mode && grep -q '"generate:seo"' package.json 2>/dev/null; then
+  log_step "生成 SEO 页面"
+  npm run generate:seo
+  log_ok "SEO 页面生成完成"
+fi
 
-# 生成临时 secrets 文件
-SECRETS_FILE=".deploy-secrets.env"
-cat > "$SECRETS_FILE" <<EOF
+# ═══════════════════════════════════════════════════════════════════════════════
+# 模式分支：Workers 部署
+# ═══════════════════════════════════════════════════════════════════════════════
+deploy_workers() {
+  log_step "部署 Workers"
+
+  # 加载凭证
+  TURSO_URL=$(cred_load "TURSO_URL" 2>/dev/null || echo "")
+  TURSO_TOKEN=$(cred_load "TURSO_TOKEN" 2>/dev/null || echo "")
+  ADMIN_TOKEN=$(cred_load "ADMIN_TOKEN" 2>/dev/null || echo "")
+  RATE_LIMIT_SALT=$(cred_load "RATE_LIMIT_SALT" 2>/dev/null || echo "")
+  JWT_SECRET=$(cred_load "JWT_SECRET" 2>/dev/null || echo "")
+  CREDENTIALS_ENCRYPTION_KEY=$(cred_load "CREDENTIALS_ENCRYPTION_KEY" 2>/dev/null || echo "")
+
+  # 生成临时 secrets 文件
+  SECRETS_FILE=".deploy-secrets.env"
+  cat > "$SECRETS_FILE" <<EOF
 TURSO_URL=${TURSO_URL}
 TURSO_TOKEN=${TURSO_TOKEN}
 ADMIN_TOKEN=${ADMIN_TOKEN}
 RATE_LIMIT_SALT=${RATE_LIMIT_SALT}
 EOF
 
-# 可选 secrets（非空才加入）
-[ -n "$JWT_SECRET" ] && echo "JWT_SECRET=${JWT_SECRET}" >> "$SECRETS_FILE"
-[ -n "$CREDENTIALS_ENCRYPTION_KEY" ] && echo "CREDENTIALS_ENCRYPTION_KEY=${CREDENTIALS_ENCRYPTION_KEY}" >> "$SECRETS_FILE"
+  # 可选 secrets（非空才加入）
+  [ -n "$JWT_SECRET" ] && echo "JWT_SECRET=${JWT_SECRET}" >> "$SECRETS_FILE"
+  [ -n "$CREDENTIALS_ENCRYPTION_KEY" ] && echo "CREDENTIALS_ENCRYPTION_KEY=${CREDENTIALS_ENCRYPTION_KEY}" >> "$SECRETS_FILE"
 
-# 加载项目特有的 secrets（.credentials/ 下大写文件）
-for f in .credentials/[A-Z]*; do
-  [ -f "$f" ] || continue
-  name=$(basename "$f")
-  # 跳过已处理的
-  case "$name" in
-    TURSO_URL|TURSO_TOKEN|ADMIN_TOKEN|RATE_LIMIT_SALT|JWT_SECRET|CREDENTIALS_ENCRYPTION_KEY) continue ;;
-    GITHUB_REPO|PROJECT_NAME|DB_NAME) continue ;;
-    .deploy-progress) continue ;;
-  esac
-  value=$(cat "$f")
-  echo "${name}=${value}" >> "$SECRETS_FILE"
-done
+  # 加载项目特有的 secrets（.credentials/ 下大写文件）
+  for f in .credentials/[A-Z]*; do
+    [ -f "$f" ] || continue
+    name=$(basename "$f")
+    case "$name" in
+      TURSO_URL|TURSO_TOKEN|ADMIN_TOKEN|RATE_LIMIT_SALT|JWT_SECRET|CREDENTIALS_ENCRYPTION_KEY) continue ;;
+      GITHUB_REPO|PROJECT_NAME|DB_NAME|WORKER_NAME|BASE_URL|DOMAIN|DEPLOY_MODE) continue ;;
+      PAGES_PROJECT_NAME|TURNSTILE_SITE_KEY|TURSO_LOCATION|GROUP_NAME) continue ;;
+      .deploy-progress) continue ;;
+    esac
+    value=$(cat "$f")
+    echo "${name}=${value}" >> "$SECRETS_FILE"
+  done
 
-log_info "npx wrangler deploy --secrets-file ..."
-DEPLOY_OUTPUT=$(CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler deploy --secrets-file="$SECRETS_FILE" 2>&1)
-echo "$DEPLOY_OUTPUT"
+  log_info "npx wrangler deploy --secrets-file ..."
+  DEPLOY_OUTPUT=$(CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN}" npx wrangler deploy --secrets-file="$SECRETS_FILE" 2>&1)
+  echo "$DEPLOY_OUTPUT"
 
-# 清理临时文件
-: > "$SECRETS_FILE" && rm -f "$SECRETS_FILE"
-log_ok "Worker 已部署"
+  # 清理临时文件
+  : > "$SECRETS_FILE" && rm -f "$SECRETS_FILE"
+  log_ok "Worker 已部署"
 
-# ── Step 3: 冒烟测试 ─────────────────────────────────────────────────────────
-log_step "Step 3/3: 冒烟测试"
+  # 从 wrangler deploy 输出中解析实际 URL
+  WORKER_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9._-]+\.workers\.dev' | head -1)
+  if [ -z "$WORKER_URL" ]; then
+    WORKER_URL="https://${WORKER_NAME}.workers.dev"
+    log_warn "无法从 deploy 输出解析 URL，使用默认: $WORKER_URL"
+  fi
 
-# 从 wrangler deploy 输出中解析实际 URL（账户子域名可能不是 workers.dev）
-BASE_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'https://[a-zA-Z0-9._-]+\.workers\.dev' | head -1)
-if [ -z "$BASE_URL" ]; then
-  BASE_URL="https://${WORKER_NAME}.workers.dev"
-  log_warn "无法从 deploy 输出解析 URL，使用默认: $BASE_URL"
-fi
+  # CF API 验证
+  log_info "通过 CF API 验证 Worker 部署状态..."
+  CF_ACCOUNT_ID=$(curl -sS "https://api.cloudflare.com/client/v4/accounts" \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null | jq -r '.result[0].id // empty')
 
-# ── 通过 Cloudflare API 权威验证 Worker 是否在线 ──
-log_info "通过 CF API 验证 Worker 部署状态..."
-CF_ACCOUNT_ID=$(curl -sS "https://api.cloudflare.com/client/v4/accounts" \
-  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null | jq -r '.result[0].id // empty')
+  if [ -n "$CF_ACCOUNT_ID" ]; then
+    WORKER_EXISTS=$(curl -sS "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null | \
+      jq -r ".result[] | select(.id == \"${WORKER_NAME}\") | .id" 2>/dev/null)
+    if [ "$WORKER_EXISTS" = "$WORKER_NAME" ]; then
+      log_ok "CF API 确认 Worker '${WORKER_NAME}' 已在线"
+    else
+      log_warn "CF API 未找到 Worker '${WORKER_NAME}'（可能延迟同步）"
+    fi
+  fi
 
-if [ -n "$CF_ACCOUNT_ID" ]; then
-  WORKER_EXISTS=$(curl -sS "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts" \
-    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null | \
-    jq -r ".result[] | select(.id == \"${WORKER_NAME}\") | .id" 2>/dev/null)
-  if [ "$WORKER_EXISTS" = "$WORKER_NAME" ]; then
-    log_ok "CF API 确认 Worker '${WORKER_NAME}' 已在线"
+  echo "$WORKER_URL"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 模式分支：Pages 部署
+# ═══════════════════════════════════════════════════════════════════════════════
+deploy_pages() {
+  log_step "部署 Pages"
+
+  PAGES_PROJECT=$(cred_load "PAGES_PROJECT_NAME" 2>/dev/null || echo "${PROJECT_NAME}")
+  PAGES_DIR="${PAGES_DIR:-public}"
+
+  pages_deploy "$PAGES_PROJECT" "$PAGES_DIR"
+
+  # 获取 Pages URL
+  PAGES_URL=$(pages_get_url "$PAGES_PROJECT")
+  if [ -z "$PAGES_URL" ]; then
+    PAGES_URL="${PAGES_PROJECT}.pages.dev"
+    log_warn "无法获取 Pages URL，使用默认: https://$PAGES_URL"
   else
-    log_warn "CF API 未找到 Worker '${WORKER_NAME}'（可能延迟同步）"
+    log_ok "Pages URL: https://$PAGES_URL"
+  fi
+
+  echo "https://$PAGES_URL"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 按模式执行部署
+# ═══════════════════════════════════════════════════════════════════════════════
+BASE_URL=""
+
+case "$MODE" in
+  workers)
+    BASE_URL=$(deploy_workers)
+    ;;
+  pages)
+    BASE_URL=$(deploy_pages)
+    ;;
+  hybrid)
+    deploy_workers > /dev/null
+    BASE_URL=$(deploy_pages)
+    ;;
+  *)
+    log_error "未知的部署模式: $MODE（支持 workers/pages/hybrid）"
+    exit 1
+    ;;
+esac
+
+# ── 冒烟测试 ─────────────────────────────────────────────────────────────────
+log_step "冒烟测试"
+
+if [ "$MODE" = "pages" ]; then
+  # Pages 模式：只检查首页可访问性
+  log_info "HTTP 冒烟测试 (${BASE_URL}) ..."
+  HTTP_STATUS=$(curl -sS -o /tmp/smoke-index.html -w "%{http_code}" --max-time 10 \
+    "${BASE_URL}/" 2>/dev/null || echo "000")
+
+  if [ "$HTTP_STATUS" = "200" ]; then
+    log_ok "首页可访问 (HTTP 200)"
+    PAGE_SIZE=$(wc -c < /tmp/smoke-index.html 2>/dev/null || echo "0")
+    log_info "页面大小: ${PAGE_SIZE} bytes"
+  elif [ "$HTTP_STATUS" = "000" ]; then
+    log_warn "HTTP 连接超时（pages.dev 在部分地区不稳定）"
+  else
+    log_warn "首页返回 HTTP $HTTP_STATUS"
   fi
 else
-  log_warn "无法获取 CF Account ID，跳过 API 验证"
-fi
+  # Workers/Hybrid 模式：检查 API 健康端点
+  log_info "HTTP 冒烟测试 (${BASE_URL}/api/health) ..."
+  HTTP_STATUS=$(curl -sS -o /tmp/smoke-health.json -w "%{http_code}" --max-time 10 \
+    "${BASE_URL}/api/health" 2>/dev/null || echo "000")
 
-# ── HTTP 冒烟测试（带超时容错，workers.dev 在部分地区可能不可达） ──
-log_info "HTTP 冒烟测试 (${BASE_URL}/api/health) ..."
-HTTP_STATUS=$(curl -sS -o /tmp/smoke-health.json -w "%{http_code}" --max-time 10 \
-  "${BASE_URL}/api/health" 2>/dev/null || echo "000")
-
-if [ "$HTTP_STATUS" = "200" ]; then
-  log_ok "健康检查通过 (HTTP 200)"
-  cat /tmp/smoke-health.json 2>/dev/null | jq . 2>/dev/null || true
-elif [ "$HTTP_STATUS" = "000" ]; then
-  log_warn "HTTP 连接超时（workers.dev 在部分地区不稳定）"
-  log_info "Worker 已通过 CF API 确认在线，如需稳定访问请绑定自定义域名"
-  log_info "  DOMAIN=\"your-domain.com\" bash .deploy/04-bind-domain.sh"
-else
-  log_warn "健康检查返回 HTTP $HTTP_STATUS"
-fi
-
-# 管理端冒烟（同样带超时容错）
-if [ -n "$ADMIN_TOKEN" ]; then
-  ADMIN_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 \
-    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    "${BASE_URL}/api/admin/summary" 2>/dev/null || echo "000")
-  if [ "$ADMIN_STATUS" = "200" ]; then
-    log_ok "管理端认证通过 (HTTP 200)"
-  elif [ "$ADMIN_STATUS" = "000" ]; then
-    log_warn "管理端连接超时（同 HTTP 冒烟测试）"
-  elif [ "$ADMIN_STATUS" = "401" ]; then
-    log_error "管理端认证失败 (HTTP 401)，ADMIN_TOKEN 可能不正确"
+  if [ "$HTTP_STATUS" = "200" ]; then
+    log_ok "健康检查通过 (HTTP 200)"
+    cat /tmp/smoke-health.json 2>/dev/null | jq . 2>/dev/null || true
+  elif [ "$HTTP_STATUS" = "000" ]; then
+    log_warn "HTTP 连接超时（workers.dev 在部分地区不稳定）"
+    log_info "如需稳定访问请绑定自定义域名: DOMAIN=\"xxx\" bash .deploy/04-bind-domain.sh"
   else
-    log_warn "管理端返回 HTTP $ADMIN_STATUS"
+    log_warn "健康检查返回 HTTP $HTTP_STATUS"
+  fi
+
+  # 管理端冒烟
+  ADMIN_TOKEN=$(cred_load "ADMIN_TOKEN" 2>/dev/null || echo "")
+  if [ -n "$ADMIN_TOKEN" ]; then
+    ADMIN_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${BASE_URL}/api/admin/summary" 2>/dev/null || echo "000")
+    if [ "$ADMIN_STATUS" = "200" ]; then
+      log_ok "管理端认证通过 (HTTP 200)"
+    elif [ "$ADMIN_STATUS" = "000" ]; then
+      log_warn "管理端连接超时"
+    elif [ "$ADMIN_STATUS" = "401" ]; then
+      log_error "管理端认证失败 (HTTP 401)，ADMIN_TOKEN 可能不正确"
+    else
+      log_warn "管理端返回 HTTP $ADMIN_STATUS"
+    fi
   fi
 fi
 
+# ── 保存凭证 ──────────────────────────────────────────────────────────────────
 cred_save "WORKER_NAME" "$WORKER_NAME"
 cred_save "BASE_URL" "$BASE_URL"
+cred_save "DEPLOY_MODE" "$MODE"
 step_done "03-deploy-worker"
 
 echo ""
-log_ok "✅ Worker 部署完成"
+log_ok "✅ 部署完成 ($MODE)"
 echo "  URL: $BASE_URL"
-echo "  Admin: $BASE_URL/admin"
+[ "$MODE" != "pages" ] && echo "  Admin: $BASE_URL/admin"

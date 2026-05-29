@@ -1,0 +1,22 @@
+{
+  "slug": "base64-decode",
+  "title": "Base64 Decoder & Encoder",
+  "description": "Decode and encode Base64 strings online. Free, fast, and privacy-friendly — all processing in your browser.",
+  "keywords": ["base64 decode", "base64 encode", "base64 converter", "decode base64 online", "base64 to text"],
+  "category": "encoder",
+  "icon": "B64",
+  "faq": [
+    {
+      "q": "What is Base64?",
+      "a": "Base64 is an encoding scheme that represents binary data in an ASCII string format. It is commonly used for encoding data in URLs, email attachments, and data URIs."
+    },
+    {
+      "q": "Is my data safe?",
+      "a": "Yes. All encoding and decoding happens entirely in your browser. No data is sent to any server."
+    },
+    {
+      "q": "Can I encode files?",
+      "a": "Yes, you can paste file contents or drag-and-drop small files for encoding."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "siteName": "DevTools Online",
+  "siteUrl": "https://YOUR_DOMAIN.example.com",
+  "description": "Free online developer tools — JSON formatter, Base64 decoder, UUID generator, and more",
+  "author": "Your Name",
+  "locale": "en_US",
+  "twitterHandle": "@yourhandle",
+  "googleSiteVerification": "",
+  "bingSiteVerification": "",
+  "analyticsId": ""
+}

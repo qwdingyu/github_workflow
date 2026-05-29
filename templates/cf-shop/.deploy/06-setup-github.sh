@@ -22,8 +22,9 @@ fi
 
 WORKER_NAME=$(cred_load "WORKER_NAME" 2>/dev/null || echo "$PROJECT_NAME")
 DOMAIN=$(cred_load "DOMAIN" 2>/dev/null || echo "")
+MODE=$(detect_deploy_mode)
 
-banner "GitHub Actions: $GITHUB_REPO"
+banner "GitHub Actions: $GITHUB_REPO [$MODE]"
 
 if step_check "06-setup-github"; then
   log_ok "已完成，跳过"
@@ -90,6 +91,7 @@ done
 log_step "Step 3/4: 设置 Variables"
 
 gh_set_variable "$GITHUB_REPO" "WORKER_NAME" "$WORKER_NAME"
+gh_set_variable "$GITHUB_REPO" "DEPLOY_MODE" "$MODE"
 [ -n "$DOMAIN" ] && gh_set_variable "$GITHUB_REPO" "APP_DOMAIN" "$DOMAIN"
 [ -n "$DOMAIN" ] && gh_set_variable "$GITHUB_REPO" "BIND_DOMAIN" "true"
 # APP_ORIGIN 优先从 .credentials/BASE_URL 读取（Step 03 保存的实际 URL）
