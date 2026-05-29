@@ -140,7 +140,8 @@ jobs:
           npx wrangler pages deploy "$PAGES_DIR" \
             --project-name="$PAGES_PROJECT" \
             --branch=main \
-            --commit-msg="CI deploy ${{ github.sha }}"
+            --commit-message="CI deploy ${{ github.sha }}" \
+            --commit-dirty=true
 
       # ── 绑定自定义域名（可选） ──────────────────────────────────────────
       - name: Bind custom domain
