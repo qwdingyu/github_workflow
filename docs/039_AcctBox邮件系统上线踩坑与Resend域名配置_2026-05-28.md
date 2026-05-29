@@ -141,7 +141,61 @@ await markPaidAndIssue(db, order.id, { RESEND_API_KEY: c.env.RESEND_API_KEY, EMA
 
 **铁律**：CSP 白名单必须覆盖所有用户可输入的外部资源 URL。
 
-### 3.6 Admin 后台功能断层（待修复）
+### 3.6 Admin Loading 遮罩卡住 — MutationObserver 不可靠 + HTML 非法
+
+**问题**：`/admin` 页面加载后一直显示"正在加载管理后台…"遮罩，Vue 模板内容被完全遮盖。
+
+**根因 1（HTML 非法）**：`<div id="admin-loading">` 被错误地放在 `<head>` 标签内。`<head>` 只能包含元数据元素（`<meta>`, `<link>`, `<script>`, `<style>` 等），`<div>` 是流内容，浏览器会自动纠正 DOM 结构，导致 `#admin-loading` 的实际位置与预期不符。
+
+**根因 2（MutationObserver 不可靠）**：原方案用 `MutationObserver` 监听 `#app` 的 `v-cloak` 属性移除来触发 loading 消失。但：
+- Observer 连接时机不确定（可能在 Vue 挂载前/后）
+- `v-cloak` 移除是属性变化，但 `<div v-cloak>` 在自定义指令中是通过 `el.removeAttribute('v-cloak')` 操作的，Observer 配置 `attributes: true` 能捕获，但前提是 DOM 结构正确
+- 当 `#admin-loading` 被浏览器纠正到 `<body>` 外时，`loader.remove()` 虽然能执行，但 Observer 回调本身可能从未触发
+
+**修复**：
+```html
+<!-- ❌ 错误：loading div 在 <head> 内 -->
+<head>
+  <div id="admin-loading">...</div>
+  ...
+</head>
+
+<!-- ✅ 正确：loading div 在 <body> 开头 -->
+<body>
+  <div id="admin-loading">...</div>
+  <div id="app" v-cloak>...</div>
+  ...
+</body>
+```
+```js
+// ❌ 错误：MutationObserver 方案（不可靠）
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.attributeName === 'v-cloak') {
+      var loader = document.getElementById('admin-loading');
+      if (loader && !loader.hasAttribute('v-cloak')) {
+        observer.disconnect();
+        loader.remove();
+      }
+    }
+  });
+});
+observer.observe(document.getElementById('app'), { attributes: true });
+
+// ✅ 正确：app.mount() 后 nextTick 直接移除
+app.mount('#app');
+Vue.nextTick(function() {
+  var loader = document.getElementById('admin-loading');
+  if (loader) loader.remove();
+});
+```
+
+**铁律**：
+1. **Loading 遮罩移除必须绑定到确定性事件**（`app.mount()` 回调），不要用 MutationObserver 监听 DOM 变化——时机不确定、易遗漏。
+2. **`<head>` 内严禁放 `<div>` 等流内容元素**——浏览器纠正 DOM 后会导致选择器失效、事件监听错位。
+3. **始终保留超时兜底**（`setTimeout` 10s）——防止 JS 异常导致遮罩永久存在。
+
+### 3.7 Admin 后台功能断层（待修复）
 
 **问题 1**：订单状态机有 `canceled`/`refunded` 状态，但没有 API 触发路径（死状态）。
 
@@ -180,9 +234,9 @@ await markPaidAndIssue(db, order.id, { RESEND_API_KEY: c.env.RESEND_API_KEY, EMA
 | manual 下单 | `order_pending` | `createOrder` manual 分支 | 同上 |
 | 线下支付下单 | `order_pending` | `createOfflineOrder`（pay.ts） | 同上 |
 | 管理员确认发卡 | `order_issued` | `markPaidAndIssue`（admin.ts） | 同上 |
-| PayJS 回调发卡 | `order_issued` | `markPaidAndIssue`（pay callback） | 同上 |
+| 支付宝回调发卡 | `order_issued` | `markPaidAndIssue`（pay callback） | 同上 |
 | /pay/status 过期 | `order_expired` | `checkAndExpireOrder`（pay.ts） | 同上 |
-| Cron 清理过期 | `order_expired` | `checkAndExpireOrder`（cleanup-service） | 同上 |
+| GitHub Actions 定时清理过期 | `order_expired` | `checkAndExpireOrder`（cleanup-service） | 同上 |
 | 下单成功（paid） | `order_paid` | — | 模板存在但未使用，行业标准不发 |
 
 ---
