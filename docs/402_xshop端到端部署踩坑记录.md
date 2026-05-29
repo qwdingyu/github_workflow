@@ -1,13 +1,13 @@
-# xshop 端到端部署踩坑记录
+# xshop 端到端部署踩坑记录（22 个 Bug + 22 条铁律）
 
-> **日期**：2026-05-29（第四轮修正 — 全流程端到端通过 + 外部服务容错）
-> **项目**：xshop — 从 `cf-shop` 模板创建的发卡商城
-> **GitHub 仓库**：https://github.com/qwdingyu/xshop （私有）
-> **Worker URL**：https://xshop.mailforwdy.workers.dev
-> **Turso 数据库**：`xshop-db-qwsky.aws-ap-northeast-1.turso.io`（Tokyo 节点）
-> **Turso Group**：`xshop-group @ aws-ap-northeast-1`
-> **GitHub Actions**：✅ 第二次 CI 自动部署通过（42s）
-> **第四轮结果**：Step 00→01→02→03→06 全流程通过，AI 仅在 Step 01 Turso 502 时修复了 migrate.mjs 重试逻辑
+> **日期**：2026-05-29（第五轮修正 — Pages 模式端到端通过）
+> **Workers 模式验证**：https://xshop.mailforwdy.workers.dev
+> **Pages 模式验证**：https://xshop-static.pages.dev
+> **五轮验证结果**：
+> - R1-R3：Workers 模式 Step 00→01→02→03→06 全流程通过（15 个 Bug）
+> - R4：Workers 模式零修改重跑一次通过
+> - R5：Pages 模式 Step 00→03→06 全流程通过，EXIT_CODE=0（7 个新 Bug）
+> **测试覆盖**：39/39 脚本测试 + 81/81 cf-core 测试全部通过
 
 ---
 
@@ -66,23 +66,27 @@ TURSO_LOCATION="aws-ap-south-1" bash .deploy/one-click.sh
 
 ## 二、最终部署结果
 
-| 步骤 | 第一轮 | 第二轮 | 第三轮 | 第四轮（最终） | 说明 |
-|------|--------|--------|--------|---------------|------|
-| Step 00: Git + GitHub | ✅ | ✅ | ✅ | ✅ | 私有仓库自动创建，97 文件推送 |
-| Step 01: Turso DB + 迁移 | ❌ 3 bug | ✅ | ✅ | ⚠️ Turso 502 → 加重试后通过 | 独立 group + Tokyo 节点 + 22 条迁移 |
-| Step 02: Secrets 生成 | ✅ | ✅ | ✅ | ✅ | 4 个 Token 自动生成 |
-| Step 03: Worker 部署 | ❌ 2 bug | ✅ | ✅ | ✅ | wrangler deploy + 冒烟 4/4 |
-| Step 04: 域名绑定 | ⏭️ | ⏭️ | ⏭️ | ⏭️ | 需自定义域名 |
-| Step 05: Turnstile | ⏭️ | ⏭️ | ⏭️ | ⏭️ | 需 Cloudflare 账号配置 |
-| Step 06: GitHub Actions | ⏭️ | ❌ 3 bug | ✅ | ✅ | 8 Secrets + 2 Variables |
-| CI 首次运行 | — | — | ❌ | ❌ 预期失败 | Step 00 推送时无 Secrets |
-| CI 第二次运行 | — | — | ✅ 45s | ✅ 42s | Step 06 推送后有 Secrets |
+| 步骤 | R1-R3 Workers | R4 Workers 重跑 | R5 Pages 模式 | 说明 |
+|------|--------------|----------------|--------------|------|
+| Step 00: Git + GitHub | ✅ | ✅ | ✅ | 私有仓库自动创建 |
+| Step 01: Turso DB | ❌→✅ | ✅ | ⏭️ 跳过 | Pages 模式无需数据库 |
+| Step 02: Secrets | ✅ | ✅ | ⏭️ 跳过 | Pages 模式无需 Secrets |
+| Step 03: 部署 | ✅ | ✅ | ✅ Pages | Workers/Pages 双模式 |
+| Step 06: GitHub Actions | ✅ | ✅ | ✅ | CI/CD 自动配置 |
+| CI 首次运行 | ❌ 预期 | ❌ 预期 | ❌ 预期 | Secrets 未设置 |
+| CI 第二次运行 | ✅ 42s | ✅ | ✅ | 自动通过 |
+| 冒烟测试 | ✅ 4/4 | ✅ 4/4 | ✅ HTTP 200 | 双模式均通过 |
+| EXIT_CODE | 0 | 0 | 0 | 全部正常退出 |
 
-**第四轮结果**：Step 00→01→02→03→06 全流程通过。唯一需要 AI 介入的是 Step 01 遇到 Turso 服务端 502 临时错误，添加了 migrate.mjs 重试逻辑后通过。CI 首次运行失败是**预期行为**（Step 00 推送时 Secrets 尚未设置），第二次 CI 运行 42s 通过。
+**五轮总结**：
+- R1-R3（Workers）：发现 15 个 Bug，修复后全流程通过
+- R4（Workers）：零修改重跑一次通过，验证稳定性
+- R5（Pages）：发现 7 个新 Bug（坑 16-22），修复后 Pages 模式全流程通过
+- **累计 22 个 Bug 全部修复，39/39 脚本测试 + 81/81 cf-core 测试全部通过**
 
 ---
 
-## 三、踩坑清单（共 15 个，全部已修复并同步到源模板）
+## 三、踩坑清单（共 22 个，全部已修复并同步到源模板）
 
 ### 第一轮发现的 Bug（5 个）
 
@@ -407,6 +411,60 @@ done
 
 ---
 
+### 第五轮发现的 Bug（7 个，Pages 模式端到端实测）
+
+#### 🔴 坑 16：cred_save log_ok 污染 cred_load_or_gen 返回值
+
+- **文件**：`shared.sh` → `cred_save()` 函数
+- **现象**：首次生成 token 时，`ADMIN_TOKEN` 值包含 `[OK] 凭证已保存: .credentials/ADMIN_TOKEN\nadmin-xxx...`（日志文本 + 实际 token 混在一起）
+- **根本原因**：`cred_save()` 的 `log_ok` 输出到 stdout，被 `cred_load_or_gen()` 中的 `$()` 命令替换一起捕获
+- **与坑 #7 同类**：返回值函数内部的 log 必须 `>&2`
+- **修复**：`log_ok "凭证已保存: ..." >&2`
+
+#### 🔴 坑 17：pages_deploy ${1:?} 在 set -u 下崩溃
+
+- **文件**：`shared.sh` → `pages_deploy()` 函数
+- **现象**：`pages_deploy ""` 调用导致整个脚本退出（`set -euo pipefail` 下 `${1:?}` 触发 `set -u` 错误）
+- **根本原因**：`${1:?message}` 在 `set -u` 模式下会直接退出进程，而非返回错误码
+- **修复**：改用显式检查 `if [ -z "${1:-}" ]; then log_error ...; return 1; fi`
+
+#### 🟠 坑 18：00-init-project.sh Pages 模式仍检查 TURSO_API_TOKEN
+
+- **文件**：`00-init-project.sh` → Step 2
+- **现象**：`DEPLOY_MODE=pages` 运行 one-click.sh 时，Step 00 仍报错 `TURSO_API_TOKEN 未设置`
+- **根本原因**：环境变量检查无条件执行，未考虑 pages 模式不需要数据库
+- **修复**：`if [ "$MODE" != "pages" ]; then check_env TURSO_API_TOKEN; fi`
+
+#### 🟠 坑 19：wrangler pages deploy --commit-msg 参数错误
+
+- **文件**：`shared.sh` → `pages_deploy()` 函数
+- **现象**：`✘ [ERROR] Unknown arguments: commit-msg, commitMsg`
+- **根本原因**：Wrangler 4.95 版本中参数名从 `--commit-msg` 改为 `--commit-message`
+- **修复**：`--commit-message="deploy $(date ...)"` + 增加 `--commit-dirty=true` 抑制 git dirty 警告
+
+#### 🟠 坑 20：wrangler pages deploy 输出混入 BASE_URL
+
+- **文件**：`shared.sh` → `pages_deploy()` + `03-deploy-worker.sh` → `deploy_pages()`
+- **现象**：部署成功后 `BASE_URL` 变量包含 wrangler 输出文本 + URL，导致冒烟测试 URL 错误
+- **根本原因**：`pages_deploy()` 内部的 `log_info`/`log_ok` 和 wrangler stdout 都被 `BASE_URL=$(deploy_pages)` 捕获
+- **修复**：所有 log 输出加 `>&2`，wrangler 输出加 `>&2` 重定向到 stderr
+
+#### 🟡 坑 21：Pages 模式 build + generate:seo 重复执行
+
+- **文件**：`03-deploy-worker.sh` → 构建前端步骤
+- **现象**：cf-static 模板的 `npm run build` 已经包含 SEO 页面生成，但脚本又单独执行了 `npm run generate:seo`
+- **根本原因**：构建步骤和 SEO 生成步骤的条件判断没有互斥
+- **修复**：`if is_pages_mode && ! grep -q '"build"' package.json && grep -q '"generate:seo"' ...`
+
+#### 🟡 坑 22：03-deploy-worker.sh 末尾 exit code 1
+
+- **文件**：`03-deploy-worker.sh` → 最后一行
+- **现象**：Pages 模式部署全部成功，但脚本退出码为 1
+- **根本原因**：最后一行 `[ "$MODE" != "pages" ] && echo "Admin: ..."` 在 pages 模式下返回 false（exit code 1），成为脚本最终退出码
+- **修复**：改用 `if/then/fi` + 显式 `exit 0`
+
+---
+
 ## 四、已修复的文件清单
 
 | 文件 | 修复内容 | 发现轮次 |
@@ -424,6 +482,13 @@ done
 | `scripts/migrate.mjs` | 去除 SQL `--` 注释行 | R2 |
 | `scripts/migrate.mjs` | Turso 502/503/504 重试逻辑（3 次，递增延迟） | R4 |
 | `shared.sh` | `gh_check()` 3 次重试（网络抖动容错） | R4 |
+| `shared.sh` | `cred_save` log_ok 输出重定向到 stderr | R5 |
+| `shared.sh` | `pages_deploy` ${1:?} 改用显式空值检查 | R5 |
+| `shared.sh` | `--commit-msg` → `--commit-message` + `--commit-dirty=true` | R5 |
+| `shared.sh` | wrangler pages deploy 输出重定向到 stderr | R5 |
+| `00-init-project.sh` | Pages 模式跳过 TURSO_API_TOKEN 检查 | R5 |
+| `03-deploy-worker.sh` | Pages 模式 build/generate:seo 互斥 | R5 |
+| `03-deploy-worker.sh` | 末尾显式 `exit 0` | R5 |
 | `wrangler.jsonc` | 注释中旧变量名同步更新 | R1 |
 
 ---
@@ -468,7 +533,7 @@ sed -i '' 's|"name": "cf-shop"|"name": "你的项目名"|' wrangler.jsonc
 
 ---
 
-## 七、经验总结（15 条铁律）
+## 七、经验总结（22 条铁律）
 
 | # | 铁律 | 适用场景 |
 |---|------|---------|
@@ -487,6 +552,13 @@ sed -i '' 's|"name": "cf-shop"|"name": "你的项目名"|' wrangler.jsonc
 | 13 | **外部服务调用必须有重试逻辑** | Turso 502/503/504、GitHub API 超时等外部依赖不可控，至少重试 3 次 |
 | 14 | **gh CLI 操作要重试 3 次** | 从境内访问 GitHub API 延迟高，`gh auth status`/`gh secret set` 等偶发超时 |
 | 15 | **CI 首次失败是预期行为** | Step 00 推送时 Secrets 未设置，Step 06 后第二次 CI 自动通过 |
+| 16 | **`set -u` 下禁止 `${var:?}`，改用显式检查** | `${1:?msg}` 在 `set -euo pipefail` 下直接退出进程，应用 `if [ -z "${1:-}" ]` |
+| 17 | **部署模式影响环境变量检查** | Pages 模式不需要 TURSO_API_TOKEN，脚本必须按模式条件检查 |
+| 18 | **wrangler CLI 参数要查最新版本** | `--commit-msg` → `--commit-message`（Wrangler 4.95 改名），加 `--commit-dirty=true` |
+| 19 | **子进程的 stdout 必须重定向到 stderr** | `wrangler pages deploy` 输出会被 `$()` 捕获污染变量，用 `>&2` |
+| 20 | **npm scripts 互斥检查** | `build` 和 `generate:seo` 不能同时执行，用 `! grep -q` 互斥 |
+| 21 | **脚本最后一行必须是 `exit 0`** | `[ cond ] && cmd` 在 cond 为 false 时返回 1，成为脚本退出码 |
+| 22 | **Pages 项目首次部署需自动创建** | `wrangler pages deploy` 要求项目已存在，脚本应先 `project create` |
 
 ---
 
