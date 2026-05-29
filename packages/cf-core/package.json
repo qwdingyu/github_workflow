@@ -1,0 +1,52 @@
+{
+  "name": "@eforge/cf-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Workers 共享内核 — Hono + Turso + Drizzle 标准化基础设施",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./http": "./src/http.ts",
+    "./security": "./src/security.ts",
+    "./rate-limit": "./src/rate-limit.ts",
+    "./cache": "./src/cache.ts",
+    "./idempotency": "./src/idempotency.ts",
+    "./audit": "./src/audit.ts",
+    "./config": "./src/config.ts",
+    "./bootstrap": "./src/bootstrap.ts",
+    "./error": "./src/error.ts",
+    "./logger": "./src/logger.ts",
+    "./crypto": "./src/crypto.ts",
+    "./db": "./src/db/index.ts",
+    "./db/schema": "./src/db/schema.ts",
+    "./auth/jwt": "./src/auth/jwt.ts",
+    "./auth/password": "./src/auth/password.ts",
+    "./middleware": "./src/middleware/index.ts",
+    "./features/payment": "./features/payment/index.ts",
+    "./features/email": "./features/email/index.ts",
+    "./features/webhook": "./features/webhook/index.ts",
+    "./features/thompson-router": "./features/thompson-router/index.ts",
+    "./features/anti-abuse": "./features/anti-abuse/index.ts",
+    "./features/telegram-miniapp": "./features/telegram-miniapp/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.7.0",
+    "hono": "^4.12.22",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260524.1",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

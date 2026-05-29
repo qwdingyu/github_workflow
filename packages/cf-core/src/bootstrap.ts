@@ -1,0 +1,209 @@
+/**
+ * Worker 入口工厂
+ *
+ * 将三项目 index.ts 中高度重复的 Worker 启动逻辑抽象为统一工厂函数：
+ * - 数据库初始化中间件
+ * - 请求体大小限制
+ * - 安全响应头注入
+ * - API 路由 / 静态资源分流
+ * - 全局错误处理
+ *
+ * 来源：eshop/xtools/vcode 三项目 index.ts 入口合并
+ */
+
+import { Hono } from "hono";
+import { initDatabase, type DrizzleInstance } from "./db/connection";
+import { fail } from "./http";
+import { buildSecurityHeaders, type SecurityHeadersOptions } from "./security";
+
+export interface BootstrapOptions<TSchema extends Record<string, unknown> = Record<string, never>> {
+  /** Drizzle schema（传入后支持关系查询） */
+  schema?: TSchema;
+
+  /** API 路由前缀，默认 "/api" */
+  apiPrefix?: string;
+
+  /** 请求体大小限制（字节），默认 100KB */
+  maxBodySize?: number;
+
+  /** 安全响应头配置 */
+  securityHeaders?: SecurityHeadersOptions;
+
+  /** 注册 API 路由的回调 */
+  registerRoutes: (api: Hono) => void;
+
+  /**
+   * 静态资源路由表 — 页面路径到 HTML 文件的映射
+   * @example { "/admin": "/admin.html", "/shop": "/index.html" }
+   */
+  pageRoutes?: Record<string, string>;
+
+  /**
+   * SPA 路由 — 这些路径都返回同一个 HTML 文件
+   * @example { fallback: "/_app/index.html", paths: ["/shop", "/order"] }
+   */
+  spaRoutes?: {
+    fallback: string;
+    paths: string[];
+  };
+
+  /**
+   * 长缓存路径前缀（如 /_app/assets/）
+   * 匹配的路径会设置 Cache-Control: immutable, max-age=31536000
+   */
+  immutablePrefixes?: string[];
+}
+
+/**
+ * 创建 Cloudflare Workers 应用
+ *
+ * 返回标准的 Workers fetch handler 导出对象。
+ *
+ * @example
+ * ```ts
+ * import * as schema from "./db/schema";
+ * import { bootstrap } from "@eforge/cf-core/bootstrap";
+ *
+ * export default bootstrap({
+ *   schema,
+ *   registerRoutes: (api) => {
+ *     api.route("/products", productRoutes);
+ *     api.route("/orders", orderRoutes);
+ *   },
+ *   pageRoutes: { "/admin": "/admin.html" },
+ *   spaRoutes: { fallback: "/_app/index.html", paths: ["/shop", "/order"] },
+ *   immutablePrefixes: ["/_app/assets/"],
+ * });
+ * ```
+ */
+export function bootstrap<TSchema extends Record<string, unknown>>(
+  options: BootstrapOptions<TSchema>,
+) {
+  const {
+    schema,
+    apiPrefix = "/api",
+    maxBodySize = 1024 * 100,
+    securityHeaders: secOpts = {},
+    registerRoutes,
+    pageRoutes = {},
+    spaRoutes,
+    immutablePrefixes = [],
+  } = options;
+
+  const api = new Hono();
+
+  // ── DB 初始化中间件 ──
+  api.use("*", async (c, next) => {
+    const isHealth = c.req.path === "/health";
+    try {
+      const db = initDatabase(c.env.TURSO_URL, c.env.TURSO_TOKEN, schema);
+      c.set("db", db);
+      if ("executionCtx" in c) {
+        c.set("executionCtx", (c as unknown as { executionCtx: ExecutionContext }).executionCtx);
+      }
+      await next();
+    } catch (err) {
+      console.error("[bootstrap:db-init]", err);
+      if (isHealth) {
+        c.set("db", undefined);
+        await next();
+        return;
+      }
+      return fail(c, "服务暂时不可用", 503);
+    }
+  });
+
+  // ── 请求体大小限制 ──
+  api.use("*", async (c, next) => {
+    const len = parseInt(c.req.header("content-length") || "0");
+    if (len > maxBodySize) return fail(c, `请求体过大（最大 ${Math.floor(maxBodySize / 1024)}KB）`, 413);
+    await next();
+  });
+
+  // ── 注册业务路由 ──
+  registerRoutes(api);
+
+  // ── 404 + 全局错误 ──
+  api.notFound((c) => fail(c, "API not found", 404));
+  api.onError((error, c) => {
+    console.error("[bootstrap:onError]", error?.constructor?.name, error?.message, error?.stack);
+    return fail(c, "服务暂时不可用", 500, { error: error?.message });
+  });
+
+  // ── 预计算安全响应头 ──
+  const defaultHeaders = buildSecurityHeaders(secOpts);
+  const adminHeaders = buildSecurityHeaders({ ...secOpts, allowUnsafeEval: true });
+
+  function applyHeaders(response: Response, isImmutable = false, isAdmin = false): Response {
+    const headers = new Headers(response.headers);
+    const base = isAdmin ? adminHeaders : defaultHeaders;
+    for (const [k, v] of base) headers.set(k, v);
+    if (isImmutable) {
+      headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    }
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+
+  return {
+    async fetch(request: Request, env: Record<string, unknown>, ctx: ExecutionContext) {
+      try {
+        const url = new URL(request.url);
+        const path = url.pathname;
+
+        // API 路由 → Hono
+        const prefix = apiPrefix.replace(/\/$/, "");
+        if (path === prefix || path.startsWith(`${prefix}/`)) {
+          url.pathname = path.replace(new RegExp(`^${prefix}`), "") || "/";
+          return api.fetch(new Request(url, request), env, ctx);
+        }
+
+        // 静态资源处理需要 ASSETS binding
+        const assets = env.ASSETS as Fetcher | undefined;
+        if (!assets) {
+          return new Response(JSON.stringify({ ok: false, error: "ASSETS binding not configured" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        // 长缓存静态资源
+        if (immutablePrefixes.some((p) => path.startsWith(p))) {
+          return applyHeaders(await assets.fetch(request), true);
+        }
+
+        // 页面路由（pageRoutes 精确匹配）
+        for (const [route, file] of Object.entries(pageRoutes)) {
+          if (path === route || path.startsWith(`${route}/`)) {
+            url.pathname = file;
+            const isAdmin = route === "/admin" || route.startsWith("/admin");
+            return applyHeaders(await assets.fetch(new Request(url, request)), false, isAdmin);
+          }
+        }
+
+        // SPA 路由
+        if (spaRoutes && spaRoutes.paths.some((p) => path === p || path.startsWith(`${p}/`))) {
+          url.pathname = spaRoutes.fallback;
+          const res = await assets.fetch(new Request(url, request));
+          if (res.ok) return applyHeaders(res);
+          url.pathname = "/index.html";
+          return applyHeaders(await assets.fetch(new Request(url, request)));
+        }
+
+        // 根路径
+        if (path === "/") {
+          url.pathname = "/index.html";
+          return applyHeaders(await assets.fetch(new Request(url, request)));
+        }
+
+        // 其他静态资源
+        return applyHeaders(await assets.fetch(request));
+      } catch (err) {
+        console.error("[bootstrap:fetch]", err);
+        return new Response(JSON.stringify({ ok: false, error: "服务暂时不可用" }), {
+          status: 500,
+          headers: { "content-type": "application/json" },
+        });
+      }
+    },
+  };
+}

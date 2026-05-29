@@ -1,0 +1,42 @@
+{
+  // ═══ 基本配置 ═══
+  "name": "cf-tools",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-24",
+
+  // ═══ 静态资源 ═══
+  // public 目录下的文件会自动上传，通过 ASSETS binding 访问
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  // ═══ 可观测性 ═══
+  "observability": {
+    "enabled": true
+  },
+
+  // ═══ KV 命名空间绑定（按需启用） ═══
+  // 如果需要 KV 缓存，取消注释以下配置：
+  // "kv_namespaces": [
+  //   { "binding": "KV", "id": "<your-kv-namespace-id>" }
+  // ],
+
+  // ═══ D1 数据库绑定（如需 D1 替代 Turso） ═══
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "cf-tools", "database_id": "<your-d1-id>" }
+  // ],
+
+  // ═══ Secrets（通过 wrangler secret put 设置） ═══
+  // 必须设置的 Secrets：
+  //   - TURSO_URL       : Turso 数据库连接 URL
+  //   - TURSO_TOKEN     : Turso 认证 Token
+  //   - JWT_SECRET      : JWT 签名密钥（至少 32 字符随机字符串）
+  //   - ADMIN_TOKEN     : 管理端 API 认证 Token
+  //
+  // 可选 Secrets：
+  //   - TURNSTILE_SECRET_KEY : Cloudflare Turnstile 人机验证密钥
+  //   - RATE_LIMIT_SALT      : 限流 IP 哈希盐值
+  //   - APP_ORIGIN           : 站点域名（如 https://tools.example.com）
+  //   - ENCRYPTION_KEY       : AES-256-GCM 加密密钥（64 位 hex）
+}

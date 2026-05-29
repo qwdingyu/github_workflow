@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CF-API 管理后台</title>
+  <!-- Element Plus CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/theme-chalk/dark/css-vars.css">
+  <style>
+    html { color-scheme: dark; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; background: #0f1117; }
+    .app-header { background: #1a1d27; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3148; }
+    .app-header h1 { margin: 0; font-size: 1.2rem; color: #e4e6f0; }
+    .app-container { padding: 1.5rem 2rem; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 8px; padding: 1.25rem; }
+    .stat-card .label { color: #8b8fa3; font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .stat-card .value { font-size: 1.8rem; font-weight: 700; color: #e4e6f0; }
+  </style>
+</head>
+<body class="dark">
+  <div id="app">
+    <div class="app-header">
+      <h1>CF-API 管理后台</h1>
+      <div>
+        <el-input v-model="adminToken" placeholder="Admin Token" style="width: 240px; margin-right: 8px;" type="password" show-password></el-input>
+        <el-button type="primary" @click="loadAll">连接</el-button>
+      </div>
+    </div>
+
+    <div class="app-container">
+      <!-- 统计面板 -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="label">总凭证数</div>
+          <div class="value">{{ stats.totalTokens }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">今日凭证</div>
+          <div class="value">{{ stats.todayTokens }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">活跃渠道</div>
+          <div class="value">{{ stats.activeChannels }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">今日调用</div>
+          <div class="value">{{ stats.todayCalls }}</div>
+        </div>
+      </div>
+
+      <!-- 选项卡 -->
+      <el-tabs v-model="activeTab">
+        <!-- 渠道管理 -->
+        <el-tab-pane label="渠道管理" name="channels">
+          <el-button type="primary" @click="showCreateChannel = true" style="margin-bottom: 1rem;">新建渠道</el-button>
+          <el-table :data="channelList" stripe style="width: 100%">
+            <el-table-column prop="name" label="名称" width="150"></el-table-column>
+            <el-table-column prop="type" label="类型" width="120"></el-table-column>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 'active' ? 'success' : row.status === 'disabled' ? 'danger' : 'warning'" size="small">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="priority" label="优先级" width="80"></el-table-column>
+            <el-table-column prop="successRate" label="成功率" width="80">
+              <template #default="{ row }">{{ row.successRate }}%</template>
+            </el-table-column>
+            <el-table-column prop="todayCalls" label="今日调用" width="100"></el-table-column>
+            <el-table-column label="操作" width="200">
+              <template #default="{ row }">
+                <el-button size="small" @click="editChannel(row)">编辑</el-button>
+                <el-button size="small" type="danger" @click="deleteChannel(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+
+        <!-- 凭证列表 -->
+        <el-tab-pane label="凭证列表" name="tokens">
+          <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+            <el-select v-model="tokenFilter.status" placeholder="状态" clearable style="width: 140px;">
+              <el-option v-for="s in tokenStatuses" :key="s" :label="s" :value="s"></el-option>
+            </el-select>
+            <el-select v-model="tokenFilter.serviceType" placeholder="服务类型" clearable style="width: 160px;">
+              <el-option v-for="s in serviceTypes" :key="s" :label="s" :value="s"></el-option>
+            </el-select>
+            <el-button @click="loadTokens">查询</el-button>
+          </div>
+          <el-table :data="tokenList" stripe style="width: 100%">
+            <el-table-column prop="id" label="ID" width="280">
+              <template #default="{ row }"><code style="font-size: 0.75rem;">{{ row.id.slice(0, 8) }}...</code></template>
+            </el-table-column>
+            <el-table-column prop="serviceType" label="服务类型" width="130"></el-table-column>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="channelId" label="渠道" width="100"></el-table-column>
+            <el-table-column prop="createdAt" label="创建时间" width="180">
+              <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+            </el-table-column>
+          </el-table>
+          <el-pagination
+            v-if="tokenPagination.total > 0"
+            style="margin-top: 1rem; justify-content: flex-end;"
+            :current-page="tokenPagination.page"
+            :page-size="tokenPagination.limit"
+            :total="tokenPagination.total"
+            layout="total, prev, pager, next"
+            @current-change="onTokenPageChange"
+          ></el-pagination>
+        </el-tab-pane>
+
+        <!-- API Key 管理 -->
+        <el-tab-pane label="API Key" name="apikeys">
+          <el-button type="primary" @click="showCreateKey = true" style="margin-bottom: 1rem;">创建 Key</el-button>
+          <el-table :data="apiKeyList" stripe style="width: 100%">
+            <el-table-column prop="name" label="名称" width="150"></el-table-column>
+            <el-table-column prop="tier" label="等级" width="100">
+              <template #default="{ row }">
+                <el-tag size="small">{{ row.tier }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="状态" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.enabled ? 'success' : 'danger'" size="small">{{ row.enabled ? '启用' : '禁用' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="配额" width="140">
+              <template #default="{ row }">{{ row.monthlyUsage }} / {{ row.monthlyQuota || '无限制' }}</template>
+            </el-table-column>
+            <el-table-column prop="createdAt" label="创建时间" width="180">
+              <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="200">
+              <template #default="{ row }">
+                <el-button size="small" @click="toggleKey(row)">{{ row.enabled ? '禁用' : '启用' }}</el-button>
+                <el-button size="small" type="danger" @click="deleteKey(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 新建渠道对话框 -->
+    <el-dialog v-model="showCreateChannel" title="新建渠道" width="500">
+      <el-form :model="channelForm" label-width="80px">
+        <el-form-item label="名称"><el-input v-model="channelForm.name"></el-input></el-form-item>
+        <el-form-item label="类型"><el-input v-model="channelForm.type" placeholder="如 channel_a"></el-input></el-form-item>
+        <el-form-item label="优先级"><el-input-number v-model="channelForm.priority" :min="0" :max="999"></el-input-number></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateChannel = false">取消</el-button>
+        <el-button type="primary" @click="createChannel">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 创建 API Key 对话框 -->
+    <el-dialog v-model="showCreateKey" title="创建 API Key" width="500">
+      <el-form :model="keyForm" label-width="80px">
+        <el-form-item label="名称"><el-input v-model="keyForm.name"></el-input></el-form-item>
+        <el-form-item label="等级">
+          <el-select v-model="keyForm.tier">
+            <el-option label="Free" value="free"></el-option>
+            <el-option label="Basic" value="basic"></el-option>
+            <el-option label="Pro" value="pro"></el-option>
+            <el-option label="Enterprise" value="enterprise"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="月度配额"><el-input-number v-model="keyForm.monthlyQuota" :min="0"></el-input-number></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateKey = false">取消</el-button>
+        <el-button type="primary" @click="createKey">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Key 创建结果 -->
+    <el-dialog v-model="showKeyResult" title="API Key 已创建" width="500">
+      <el-alert type="warning" :closable="false" style="margin-bottom: 1rem;">
+        请立即复制以下 Key，关闭后将无法再次查看！
+      </el-alert>
+      <el-input :model-value="createdKey" readonly>
+        <template #append>
+          <el-button @click="copyKey">复制</el-button>
+        </template>
+      </el-input>
+    </el-dialog>
+  </div>
+
+  <!-- Vue 3 + Element Plus -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus"></script>
+
+  <script>
+    const { createApp, ref, reactive, onMounted } = Vue;
+
+    const app = createApp({
+      setup() {
+        // 认证
+        const adminToken = ref(localStorage.getItem("cf_api_admin_token") || "");
+
+        // 通用请求
+        const api = async (path, opts = {}) => {
+          const res = await fetch(`/api${path}`, {
+            ...opts,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${adminToken.value}`,
+              ...(opts.headers || {}),
+            },
+          });
+          return res.json();
+        };
+
+        // 统计
+        const stats = reactive({ totalTokens: 0, todayTokens: 0, activeChannels: 0, todayCalls: 0 });
+
+        // 渠道
+        const channelList = ref([]);
+        const showCreateChannel = ref(false);
+        const channelForm = reactive({ name: "", type: "", priority: 10 });
+
+        // 凭证
+        const tokenList = ref([]);
+        const tokenFilter = reactive({ status: "", serviceType: "" });
+        const tokenPagination = reactive({ page: 1, limit: 20, total: 0 });
+        const tokenStatuses = ["unused", "pending", "active", "completed", "failed", "expired", "released"];
+        const serviceTypes = ["email_verify", "sms_verify", "captcha_solve", "account_create", "data_lookup"];
+
+        // API Key
+        const apiKeyList = ref([]);
+        const showCreateKey = ref(false);
+        const showKeyResult = ref(false);
+        const createdKey = ref("");
+        const keyForm = reactive({ name: "", tier: "free", monthlyQuota: 0 });
+
+        const activeTab = ref("channels");
+
+        // 加载所有数据
+        const loadAll = async () => {
+          localStorage.setItem("cf_api_admin_token", adminToken.value);
+          await Promise.all([loadStats(), loadChannels(), loadTokens(), loadApiKeys()]);
+        };
+
+        const loadStats = async () => {
+          const d = await api("/admin/stats");
+          if (d.ok) Object.assign(stats, d.stats);
+        };
+
+        const loadChannels = async () => {
+          const d = await api("/admin/channels");
+          if (d.ok) channelList.value = d.channels;
+        };
+
+        const loadTokens = async () => {
+          const params = new URLSearchParams({ page: tokenPagination.page, limit: tokenPagination.limit });
+          if (tokenFilter.status) params.set("status", tokenFilter.status);
+          if (tokenFilter.serviceType) params.set("serviceType", tokenFilter.serviceType);
+          const d = await api(`/admin/tokens?${params}`);
+          if (d.ok) {
+            tokenList.value = d.tokens;
+            Object.assign(tokenPagination, d.pagination);
+          }
+        };
+
+        const loadApiKeys = async () => {
+          const d = await api("/admin/api-keys");
+          if (d.ok) apiKeyList.value = d.apiKeys;
+        };
+
+        // 渠道操作
+        const createChannel = async () => {
+          const d = await api("/admin/channels", { method: "POST", body: JSON.stringify(channelForm) });
+          if (d.ok) { showCreateChannel.value = false; loadChannels(); }
+          else ElementPlus.ElMessage.error(d.error);
+        };
+
+        const editChannel = (row) => {
+          Object.assign(channelForm, { name: row.name, type: row.type, priority: row.priority });
+          showCreateChannel.value = true;
+        };
+
+        const deleteChannel = async (id) => {
+          if (!confirm("确认删除此渠道？")) return;
+          await api(`/admin/channels/${id}`, { method: "DELETE" });
+          loadChannels();
+        };
+
+        // 凭证操作
+        const onTokenPageChange = (page) => { tokenPagination.page = page; loadTokens(); };
+
+        // API Key 操作
+        const createKey = async () => {
+          const d = await api("/admin/api-keys", { method: "POST", body: JSON.stringify(keyForm) });
+          if (d.ok) {
+            showCreateKey.value = false;
+            createdKey.value = d.key;
+            showKeyResult.value = true;
+            loadApiKeys();
+          } else {
+            ElementPlus.ElMessage.error(d.error);
+          }
+        };
+
+        const toggleKey = async (row) => {
+          await api(`/admin/api-keys/${row.id}`, {
+            method: "PUT",
+            body: JSON.stringify({ enabled: !row.enabled }),
+          });
+          loadApiKeys();
+        };
+
+        const deleteKey = async (id) => {
+          if (!confirm("确认删除此 API Key？")) return;
+          await api(`/admin/api-keys/${id}`, { method: "DELETE" });
+          loadApiKeys();
+        };
+
+        const copyKey = () => {
+          navigator.clipboard.writeText(createdKey.value);
+          ElementPlus.ElMessage.success("已复制");
+        };
+
+        // 工具函数
+        const statusTagType = (status) => {
+          const map = { completed: "success", failed: "danger", expired: "info", active: "", pending: "warning", unused: "info", released: "info" };
+          return map[status] || "";
+        };
+
+        const formatDate = (iso) => {
+          if (!iso) return "-";
+          return new Date(iso).toLocaleString("zh-CN");
+        };
+
+        return {
+          adminToken, stats, activeTab,
+          channelList, showCreateChannel, channelForm,
+          tokenList, tokenFilter, tokenPagination, tokenStatuses, serviceTypes,
+          apiKeyList, showCreateKey, showKeyResult, createdKey, keyForm,
+          loadAll, loadTokens, onTokenPageChange,
+          createChannel, editChannel, deleteChannel,
+          createKey, toggleKey, deleteKey, copyKey,
+          statusTagType, formatDate,
+        };
+      },
+    });
+
+    app.use(ElementPlus);
+    app.mount("#app");
+  </script>
+</body>
+</html>

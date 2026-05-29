@@ -1,0 +1,20 @@
+# Cloudflare 自定义响应头
+# 参考：https://developers.cloudflare.com/pages/platform/headers/
+
+# 全局安全响应头
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# 静态资源长缓存
+/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+# HTML 不缓存
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate

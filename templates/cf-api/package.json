@@ -1,0 +1,28 @@
+{
+  "name": "cf-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate": "node scripts/migrate.mjs",
+    "smoke:readonly": "node scripts/smoke-readonly.mjs"
+  },
+  "dependencies": {
+    "@eforge/cf-core": "file:../../packages/cf-core",
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.7.0",
+    "hono": "^4.12.22",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260524.1",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.94.0"
+  }
+}

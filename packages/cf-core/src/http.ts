@@ -1,0 +1,105 @@
+/**
+ * HTTP 响应工具模块
+ *
+ * 提供统一的 ok/fail 响应格式，以及常用的请求解析工具。
+ * 泛型设计：兼容任意 Hono AppEnv 类型，无需绑定特定项目。
+ *
+ * 来源：eshop/xtools/vcode 三项目 lib/http.ts 合并
+ */
+
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+
+/**
+ * 成功响应 — 统一格式 { ok: true, ...data }
+ */
+export function ok<E extends { Bindings: Record<string, unknown> }>(
+  c: Context<E>,
+  data: Record<string, unknown>,
+  status: ContentfulStatusCode = 200,
+) {
+  return c.json({ ok: true, ...data } as Record<string, unknown>, status);
+}
+
+/**
+ * 失败响应 — 统一格式 { ok: false, error: message }
+ */
+export function fail<E extends { Bindings: Record<string, unknown> }>(
+  c: Context<E>,
+  message: string,
+  status: ContentfulStatusCode = 400,
+  details?: unknown,
+) {
+  return c.json(
+    { ok: false, error: message, ...(details ? { details } : {}) } as Record<string, unknown>,
+    status,
+  );
+}
+
+/**
+ * 获取站点域名 — 优先使用环境变量 APP_ORIGIN，降级使用请求 URL
+ */
+export function getOrigin<E extends { Bindings: { APP_ORIGIN?: string } }>(c: Context<E>): string {
+  return c.env.APP_ORIGIN || new URL(c.req.url).origin;
+}
+
+/**
+ * 安全读取 JSON body — 解析失败返回 undefined（避免非 JSON 请求体导致 400）
+ */
+export async function safeJsonBody(c: Context): Promise<unknown> {
+  return c.req.json().catch(() => undefined);
+}
+
+/**
+ * 联系方式脱敏 — 用于管理端展示
+ *
+ * - 邮箱：ab***@example.com
+ * - 手机/其他：ab***cd
+ * - 长度 ≤ 4：***
+ */
+export function maskContact(value: string): string {
+  const text = value.trim();
+  if (text.length <= 4) return "***";
+  if (text.includes("@") && !text.startsWith("@")) {
+    const [name, domain] = text.split("@");
+    return `${name.slice(0, 2)}***@${domain}`;
+  }
+  return `${text.slice(0, 2)}***${text.slice(-2)}`;
+}
+
+/**
+ * 标准化编码 — trim + lowercase（用于优惠码/折扣码等）
+ */
+export function normalizeCode(value?: string): string {
+  return (value || "").trim().toLowerCase();
+}
+
+/**
+ * CSV 注入防护 — 对导出值做安全转义
+ *
+ * 如果值以 = + - @ \t \n 开头，前置制表符阻止公式注入。
+ * 来源：eshop admin 订单导出
+ */
+export function csvEscape(value: unknown): string {
+  const str = String(value ?? "");
+  if (/^[=+\-@\t\n]/.test(str)) {
+    return `\t${str}`;
+  }
+  return str;
+}
+
+/**
+ * 将对象数组导出为 CSV 字符串
+ */
+export function toCsv(rows: Record<string, unknown>[], columns: string[]): string {
+  const header = columns.join(",");
+  const body = rows.map((row) =>
+    columns.map((col) => {
+      const val = csvEscape(row[col]);
+      return val.includes(",") || val.includes('"') || val.includes("\n")
+        ? `"${val.replace(/"/g, '""')}"`
+        : val;
+    }).join(","),
+  ).join("\n");
+  return `${header}\n${body}`;
+}

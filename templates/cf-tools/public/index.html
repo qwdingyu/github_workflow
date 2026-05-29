@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CF Tools — 在线工具箱</title>
+  <style>
+    /* ═══ 全局样式（暗色主题） ═══ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-card: #222639;
+      --bg-card-hover: #2a2f45;
+      --text-primary: #e4e6eb;
+      --text-secondary: #8b8fa3;
+      --text-muted: #5c6070;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --border: #2d3148;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ═══ 头部导航 ═══ */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .header-logo {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .header-logo span {
+      color: var(--text-primary);
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    /* ═══ 主内容区 ═══ */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    /* ═══ 搜索栏 ═══ */
+    .search-bar {
+      max-width: 480px;
+      margin: 0 auto 40px;
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .search-bar input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-bar svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ═══ 分类标签 ═══ */
+    .categories {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .category-tag {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.825rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .category-tag:hover,
+    .category-tag.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* ═══ 工具卡片网格 ═══ */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .tool-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .tool-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .tool-card:hover::before {
+      opacity: 1;
+    }
+
+    .tool-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .tool-card-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .tool-card-desc {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .tool-card-category {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--accent);
+    }
+
+    /* ═══ 工具执行弹窗 ═══ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 90%;
+      max-width: 560px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    .modal h2 {
+      font-size: 1.25rem;
+      margin-bottom: 20px;
+    }
+
+    .modal label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .modal textarea,
+    .modal select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      outline: none;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .modal textarea:focus,
+    .modal select:focus {
+      border-color: var(--accent);
+    }
+
+    .modal textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+      white-space: pre-wrap;
+      display: none;
+    }
+
+    .result-box.visible {
+      display: block;
+    }
+
+    .result-box.success {
+      border-color: var(--success);
+    }
+
+    .result-box.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* ═══ 底部 ═══ */
+    .footer {
+      text-align: center;
+      padding: 32px 24px;
+      color: var(--text-muted);
+      font-size: 0.825rem;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    /* ═══ 加载状态 ═══ */
+    .loading {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ═══ 响应式 ═══ */
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.75rem; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .modal { width: 95%; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ 头部导航 ═══ -->
+  <header class="header">
+    <div class="header-logo">CF <span>Tools</span></div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btnLogin">登录</button>
+      <button class="btn btn-primary" id="btnRegister">注册</button>
+    </div>
+  </header>
+
+  <!-- ═══ 主内容 ═══ -->
+  <main class="main">
+    <!-- 英雄区 -->
+    <section class="hero">
+      <h1>在线工具箱</h1>
+      <p>快速、安全、免费 — 开发者常用的在线小工具集合</p>
+    </section>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+      </svg>
+      <input type="text" id="searchInput" placeholder="搜索工具..." />
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="categories" id="categories"></div>
+
+    <!-- 工具卡片网格 -->
+    <div class="tools-grid" id="toolsGrid">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>加载工具列表...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ 工具执行弹窗 ═══ -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">工具名称</h2>
+      <p id="modalDesc" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px;"></p>
+
+      <!-- 文本哈希生成器表单 -->
+      <div id="formTextHash">
+        <label for="inputText">输入文本</label>
+        <textarea id="inputText" placeholder="请输入要哈希的文本..."></textarea>
+
+        <label for="selectAlgo">哈希算法</label>
+        <select id="selectAlgo">
+          <option value="SHA-256">SHA-256</option>
+          <option value="SHA-1">SHA-1</option>
+          <option value="MD5">MD5</option>
+        </select>
+      </div>
+
+      <!-- 通用表单（其他工具） -->
+      <div id="formGeneric" style="display: none;">
+        <label for="genericInput">输入数据（JSON 格式）</label>
+        <textarea id="genericInput" placeholder='{"key": "value"}'></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btnCloseModal">关闭</button>
+        <button class="btn btn-primary" id="btnRunTool">执行</button>
+      </div>
+
+      <!-- 结果展示 -->
+      <div class="result-box" id="resultBox"></div>
+    </div>
+  </div>
+
+  <!-- ═══ 底部 ═══ -->
+  <footer class="footer">
+    <p>Powered by Cloudflare Workers &amp; @eforge/cf-core</p>
+  </footer>
+
+  <script>
+    // ═══ 状态管理 ═══
+    const state = {
+      tools: [],
+      activeCategory: 'all',
+      searchQuery: '',
+      currentTool: null,
+      token: localStorage.getItem('token') || '',
+    };
+
+    // ═══ API 调用 ═══
+    async function api(path, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+      const res = await fetch(`/api${path}`, { ...options, headers });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+
+    // ═══ 加载工具列表 ═══
+    async function loadTools() {
+      try {
+        const data = await api('/tools');
+        state.tools = data.tools || [];
+        renderTools();
+        renderCategories();
+      } catch (err) {
+        document.getElementById('toolsGrid').innerHTML =
+          `<div class="loading"><p>加载失败: ${err.message}</p></div>`;
+      }
+    }
+
+    // ═══ 渲染分类标签 ═══
+    function renderCategories() {
+      const cats = [...new Set(state.tools.map(t => t.category))];
+      const container = document.getElementById('categories');
+
+      let html = `<button class="category-tag ${state.activeCategory === 'all' ? 'active' : ''}"
+                    onclick="filterCategory('all')">全部</button>`;
+      cats.forEach(cat => {
+        html += `<button class="category-tag ${state.activeCategory === cat ? 'active' : ''}"
+                  onclick="filterCategory('${cat}')">${cat}</button>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function filterCategory(cat) {
+      state.activeCategory = cat;
+      renderCategories();
+      renderTools();
+    }
+
+    // ═══ 渲染工具卡片 ═══
+    function renderTools() {
+      const container = document.getElementById('toolsGrid');
+      let filtered = state.tools;
+
+      // 按分类过滤
+      if (state.activeCategory !== 'all') {
+        filtered = filtered.filter(t => t.category === state.activeCategory);
+      }
+
+      // 按搜索词过滤
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        filtered = filtered.filter(t =>
+          t.name.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q) ||
+          t.slug.toLowerCase().includes(q)
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="loading"><p>没有找到匹配的工具</p></div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(tool => `
+        <div class="tool-card" onclick="openTool('${tool.slug}')">
+          <div class="tool-card-icon">${tool.icon || '#'}</div>
+          <div class="tool-card-name">${tool.name}</div>
+          <div class="tool-card-desc">${tool.description}</div>
+          <span class="tool-card-category">${tool.category}</span>
+        </div>
+      `).join('');
+    }
+
+    // ═══ 搜索 ═══
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      renderTools();
+    });
+
+    // ═══ 打开工具弹窗 ═══
+    function openTool(slug) {
+      const tool = state.tools.find(t => t.slug === slug);
+      if (!tool) return;
+
+      state.currentTool = tool;
+      document.getElementById('modalTitle').textContent = tool.name;
+      document.getElementById('modalDesc').textContent = tool.description;
+
+      // 根据工具类型显示不同表单
+      if (slug === 'text-hash') {
+        document.getElementById('formTextHash').style.display = 'block';
+        document.getElementById('formGeneric').style.display = 'none';
+      } else {
+        document.getElementById('formTextHash').style.display = 'none';
+        document.getElementById('formGeneric').style.display = 'block';
+      }
+
+      // 隐藏结果
+      const resultBox = document.getElementById('resultBox');
+      resultBox.className = 'result-box';
+      resultBox.textContent = '';
+
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    // ═══ 关闭弹窗 ═══
+    document.getElementById('btnCloseModal').addEventListener('click', () => {
+      document.getElementById('modalOverlay').classList.remove('active');
+    });
+
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        document.getElementById('modalOverlay').classList.remove('active');
+      }
+    });
+
+    // ═══ 执行工具 ═══
+    document.getElementById('btnRunTool').addEventListener('click', async () => {
+      if (!state.currentTool) return;
+
+      const btn = document.getElementById('btnRunTool');
+      const resultBox = document.getElementById('resultBox');
+      btn.textContent = '执行中...';
+      btn.disabled = true;
+      resultBox.className = 'result-box visible';
+      resultBox.textContent = '正在执行...';
+
+      try {
+        let input = {};
+
+        if (state.currentTool.slug === 'text-hash') {
+          input = {
+            text: document.getElementById('inputText').value,
+            algorithm: document.getElementById('selectAlgo').value,
+          };
+        } else {
+          try {
+            input = JSON.parse(document.getElementById('genericInput').value || '{}');
+          } catch {
+            throw new Error('输入数据不是有效的 JSON');
+          }
+        }
+
+        const data = await api(`/tools/${state.currentTool.slug}/run`, {
+          method: 'POST',
+          body: JSON.stringify(input),
+        });
+
+        resultBox.className = 'result-box visible success';
+        resultBox.textContent = JSON.stringify(data.result, null, 2) +
+          `\n\n--- 耗时: ${data.durationMs}ms ---`;
+      } catch (err) {
+        resultBox.className = 'result-box visible error';
+        resultBox.textContent = err.message;
+      } finally {
+        btn.textContent = '执行';
+        btn.disabled = false;
+      }
+    });
+
+    // ═══ 登录/注册（简化版，生产环境替换为完整表单） ═══
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+      const email = prompt('邮箱:');
+      const password = prompt('密码:');
+      if (!email || !password) return;
+
+      try {
+        const data = await api('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        state.token = data.token;
+        localStorage.setItem('token', data.token);
+        alert('登录成功!');
+        updateAuthUI();
+      } catch (err) {
+        alert('登录失败: ' + err.message);
+      }
+    });
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+      const email = prompt('邮箱:');
+      const password = prompt('密码 (至少8位):');
+      if (!email || !password) return;
+
+      try {
+        const data = await api('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        state.token = data.token;
+        localStorage.setItem('token', data.token);
+        alert('注册成功!');
+        updateAuthUI();
+      } catch (err) {
+        alert('注册失败: ' + err.message);
+      }
+    });
+
+    // ═══ 更新认证 UI ═══
+    function updateAuthUI() {
+      const actions = document.querySelector('.header-actions');
+      if (state.token) {
+        actions.innerHTML = `
+          <button class="btn btn-ghost" onclick="logout()">退出</button>
+          <a href="/admin" class="btn btn-primary" style="text-decoration:none;">管理后台</a>
+        `;
+      }
+    }
+
+    function logout() {
+      state.token = '';
+      localStorage.removeItem('token');
+      location.reload();
+    }
+
+    // ═══ 初始化 ═══
+    updateAuthUI();
+    loadTools();
+  </script>
+
+</body>
+</html>
