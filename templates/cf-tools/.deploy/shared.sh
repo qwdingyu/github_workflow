@@ -166,11 +166,19 @@ gh_check() {
     log_error "gh CLI 未安装 — brew install gh"
     return 1
   fi
-  if ! gh auth status &>/dev/null 2>&1; then
-    log_error "gh CLI 未登录 — gh auth login"
-    return 1
-  fi
-  log_ok "gh CLI 已登录 ($(gh auth status 2>&1 | head -1))"
+  # 重试 3 次（网络抖动容错）
+  for attempt in 1 2 3; do
+    if gh auth status &>/dev/null 2>&1; then
+      log_ok "gh CLI 已登录 ($(gh auth status 2>&1 | head -1))"
+      return 0
+    fi
+    if [ "$attempt" -lt 3 ]; then
+      log_warn "gh auth status 失败（第 ${attempt}/3 次），2s 后重试..."
+      sleep 2
+    fi
+  done
+  log_error "gh CLI 未登录 — gh auth login"
+  return 1
 }
 
 gh_set_secret() {

@@ -38,5 +38,5 @@
   //   - TURNSTILE_SECRET_KEY : Cloudflare Turnstile 人机验证密钥
   //   - RATE_LIMIT_SALT      : 限流 IP 哈希盐值
   //   - APP_ORIGIN           : 站点域名（如 https://tools.example.com）
-  //   - ENCRYPTION_KEY       : AES-256-GCM 加密密钥（64 位 hex）
+  //   - CREDENTIALS_ENCRYPTION_KEY : AES-256-GCM 加密密钥（64 字符 hex = 256 bit）
 }
