@@ -1,4 +1,4 @@
-# robots.txt for DevTools Online
+# robots.txt for 在线开发工具
 # Allow all crawlers including AI search engines
 
 User-agent: *

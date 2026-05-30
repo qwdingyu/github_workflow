@@ -1,17 +1,17 @@
-# DevTools Online
+# 在线开发工具
 
-> Free online developer tools — JSON formatter, Base64 decoder, UUID generator, and more
+> 免费在线开发者工具 — JSON 格式化、Base64 编解码、UUID 生成等
 
 ## Tools
-- [Base64 Decoder & Encoder](https://YOUR_DOMAIN.example.com/tools/base64-decode.html): Decode and encode Base64 strings online. Free, fast, and privacy-friendly — all processing in your browser.
-- [JSON Formatter & Beautifier](https://YOUR_DOMAIN.example.com/tools/json-formatter.html): Format, beautify, and validate JSON data online. Free, fast, and privacy-friendly — no data sent to servers.
-- [UUID v4 Generator](https://YOUR_DOMAIN.example.com/tools/uuid-generator.html): Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.
+- [Base64 编解码工具](https://YOUR_DOMAIN.example.com/tools/base64-decode.html): 在线解码和编码 Base64 字符串。免费、快速、注重隐私 — 所有操作在浏览器中完成。
+- [JSON 格式化与美化工具](https://YOUR_DOMAIN.example.com/tools/json-formatter.html): 在线格式化、美化和验证 JSON 数据。免费、快速、注重隐私 — 数据不会发送到任何服务器。
+- [UUID v4 生成器](https://YOUR_DOMAIN.example.com/tools/uuid-generator.html): 即时生成随机 UUID v4 标识符。免费、快速、支持离线使用 — 符合 RFC 4122 标准。
 
 ## Blog
-- [Getting Started with Our Developer Tools](https://YOUR_DOMAIN.example.com/posts/getting-started.html): A quick guide to getting started with our free online developer tools.
+- [开发者工具快速入门指南](https://YOUR_DOMAIN.example.com/posts/getting-started.html): 快速上手我们的免费在线开发者工具的入门指南。
 
 ## Documentation
-- [Introduction](https://YOUR_DOMAIN.example.com/docs/introduction.html): Introduction to our developer tools platform.
+- [简介](https://YOUR_DOMAIN.example.com/docs/introduction.html): 开发者工具平台简介。
 
 ## Optional
 - [Sitemap](https://YOUR_DOMAIN.example.com/sitemap.xml)
