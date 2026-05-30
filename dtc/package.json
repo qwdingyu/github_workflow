@@ -1,0 +1,31 @@
+{
+  "name": "dtc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DTC (Diagnostic Trouble Code) Lookup Service — 汽车故障码查询服务",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8780",
+    "deploy": "wrangler deploy",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "node scripts/migrate.mjs",
+    "import:data": "node scripts/import-data.mjs",
+    "generate:pages": "node scripts/generate-pages.mjs"
+  },
+  "dependencies": {
+    "@eforge/cf-core": "file:../packages/cf-core",
+    "@libsql/client": "^0.14.0",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "hono": "^4.12.22",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260524.1",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.94.0"
+  }
+}
