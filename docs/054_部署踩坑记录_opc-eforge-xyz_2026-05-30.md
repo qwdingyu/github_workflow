@@ -173,6 +173,44 @@ SyntaxError: Expected ',' or '}' after property value in JSON at position 553
 - 5 个模板的 `.deploy/` 是副本
 - 修改后必须用 MD5 校验确认一致性
 
+**铁律 17：Pages 自定义域名 CNAME 必须用 `proxied: false`**
+- Pages 自己管理 SSL 证书
+- 橙云代理（`proxied: true`）会拦截 SSL 握手，导致 `ERR_CONNECTION_CLOSED`
+- 必须用灰云 DNS only（`proxied: false`）
+
+---
+
+## 六、问题 4：Pages CNAME 代理模式导致 SSL 握手失败
+
+### 现象
+
+DNS CNAME 创建成功后，浏览器访问 `https://opc.eforge.xyz/` 返回：
+
+```
+ERR_CONNECTION_CLOSED
+```
+
+### 根因
+
+DNS CNAME 记录创建时使用了 `proxied: true`（橙云代理模式）。Cloudflare Pages 自己管理 SSL 证书，橙云代理会拦截 SSL 握手，导致连接被关闭。
+
+### 修复
+
+将 DNS CNAME 记录改为 `proxied: false`（灰云 DNS only 模式）：
+
+```bash
+curl -X PUT ".../dns_records/{record_id}" \
+  --data '{"type":"CNAME","proxied":false}'
+```
+
+### 脚本修复
+
+`04-bind-domain.sh` 中 Pages CNAME 的 `"proxied"` 从 `true` 改为 `false`。同步到 7 副本（MD5: `24cc1c98`）。
+
+### 铁律
+
+**Pages 自定义域名的 DNS CNAME 必须用 `proxied: false`（DNS only），不能用橙云代理。** Pages 自己管 SSL，橙云代理会导致 SSL 握手失败。
+
 ---
 
 ## 七、最终解决方案（✅ 已实施）
@@ -213,7 +251,7 @@ bash .deploy/one-click.sh
 |------|------|
 | Pages 部署 | ✅ freelancer-calc.pages.dev (HTTP 200) |
 | 域名绑定 | ✅ opc.eforge.xyz → freelancer-calc.pages.dev |
-| DNS CNAME | ✅ proxied: true |
+| DNS CNAME | ✅ proxied: false（DNS only） |
 | Pages domain | ✅ status: active |
 | Verification | ✅ active |
 | Validation | ✅ active |
