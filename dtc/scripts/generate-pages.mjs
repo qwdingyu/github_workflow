@@ -14,8 +14,45 @@
  */
 
 import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
+import { sql, count, eq as drizzleEq } from "drizzle-orm";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+// ══════════════════════════════════════════════════════════
+// Drizzle ORM Schema — 与 src/db/schema.ts 结构一致
+// ══════════════════════════════════════════════════════════
+
+const dtcCodes = sqliteTable("dtc_codes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code").notNull(),
+  system: text("system").notNull(),
+  systemShort: text("system_short").notNull(),
+  description: text("description").notNull(),
+  descriptionZh: text("description_zh").default("").notNull(),
+  manufacturer: text("manufacturer").notNull(),
+  isGeneric: integer("is_generic").default(1).notNull(),
+  locale: text("locale").default("en").notNull(),
+  source: text("source").default("wal33d/dtc-database").notNull(),
+  cause: text("cause").default("").notNull(),
+  remedy: text("remedy").default("").notNull(),
+  severity: text("severity").default("medium").notNull(),
+  relatedCodes: text("related_codes").default("[]").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+});
+
+const manufacturers = sqliteTable("manufacturers", {
+  id: text("id").primaryKey(),
+  displayName: text("display_name").notNull(),
+  fullName: text("full_name").default("").notNull(),
+  country: text("country").default("").notNull(),
+  brands: text("brands").default("[]").notNull(),
+  codeCount: integer("code_count").default(0).notNull(),
+  logoUrl: text("logo_url").default("").notNull(),
+  createdAt: text("created_at").notNull(),
+});
 
 // ── 配置 ──
 
@@ -424,8 +461,9 @@ async function main() {
   console.log(`📡 数据库: ${TURSO_URL.replace(/\/\/.*@/, "//***@")}`);
   console.log(`📂 输出目录: ${OUTPUT_DIR}`);
 
-  // 连接数据库
+  // 连接数据库 — 使用 Drizzle ORM（铁律 #13）
   const client = createClient({ url: TURSO_URL, authToken: TURSO_TOKEN || undefined });
+  const db = drizzle(client, { schema: { dtcCodes } });
 
   // 确保输出目录存在
   const dtcDir = join(OUTPUT_DIR, "dtc");
@@ -435,28 +473,35 @@ async function main() {
   mkdirSync(mfrDir, { recursive: true });
   mkdirSync(cssDir, { recursive: true });
 
-  // 查询所有 DTC 数据
+  // 查询所有 DTC 数据 — 使用 Drizzle ORM（铁律 #13）
   console.log("\n📖 查询 DTC 数据...");
 
-  // 统计信息
-  const stats: any = {};
-  const totalResult = await client.execute("SELECT COUNT(*) as count FROM dtc_codes");
-  stats.total = Number(totalResult.rows[0]?.count || 0);
+  // ── 统计信息 ──
+  const stats = {};
 
-  const mfrResult = await client.execute("SELECT COUNT(*) as count FROM manufacturers");
-  stats.manufacturers = Number(mfrResult.rows[0]?.count || 0);
+  const totalResult = await db.select({ count: count() }).from(dtcCodes);
+  stats.total = Number(totalResult[0]?.count || 0);
 
-  const bySystemResult = await client.execute("SELECT system_short, COUNT(*) as count FROM dtc_codes GROUP BY system_short");
+  const mfrResult = await db.select({ count: count() }).from(manufacturers).catch(() => [{ count: 0 }]);
+  stats.manufacturers = Number(mfrResult[0]?.count || 0);
+
+  const bySystemResult = await db
+    .select({ systemShort: dtcCodes.systemShort, count: count() })
+    .from(dtcCodes)
+    .groupBy(dtcCodes.systemShort);
   stats.bySystem = {};
-  for (const r of bySystemResult.rows) {
-    stats.bySystem[String(r.system_short)] = Number(r.count);
+  for (const r of bySystemResult) {
+    stats.bySystem[r.systemShort] = Number(r.count);
   }
 
-  // 热门码（选择前 30 条最常被搜索的 DTC）
-  const topCodesResult = await client.execute(
-    "SELECT code, description FROM dtc_codes WHERE manufacturer = 'GENERIC' ORDER BY code ASC LIMIT 30"
-  );
-  stats.topCodes = topCodesResult.rows.map((r: any) => ({ code: String(r.code), description: String(r.description || "") }));
+  // 热门码（前 30 条）
+  const topCodesResult = await db
+    .select({ code: dtcCodes.code, description: dtcCodes.description })
+    .from(dtcCodes)
+    .where(drizzleEq(dtcCodes.manufacturer, "GENERIC"))
+    .orderBy(dtcCodes.code)
+    .limit(30);
+  stats.topCodes = topCodesResult.map((r) => ({ code: r.code, description: r.description || "" }));
 
   // 生成首页
   console.log("  📄 生成首页...");
@@ -464,7 +509,7 @@ async function main() {
 
   // 生成 sitemap.xml
   console.log("  🗺️ 生成站点地图...");
-  const sitemapUrls: string[] = [];
+  const sitemapUrls = [];
   sitemapUrls.push(SITE_URL + "/");
 
   // 系统页面
@@ -483,32 +528,43 @@ async function main() {
   let totalGenerated = 0;
 
   while (true) {
-    const rows = await client.execute({
-      sql: "SELECT code, system, system_short, description, description_zh, manufacturer, is_generic, cause, remedy, severity, related_codes FROM dtc_codes ORDER BY code ASC LIMIT ? OFFSET ?",
-      args: [PAGE_SIZE, offset],
-    });
+    const rows = await db
+      .select({
+        code: dtcCodes.code,
+        system: dtcCodes.system,
+        systemShort: dtcCodes.systemShort,
+        description: dtcCodes.description,
+        descriptionZh: dtcCodes.descriptionZh,
+        manufacturer: dtcCodes.manufacturer,
+        isGeneric: dtcCodes.isGeneric,
+        cause: dtcCodes.cause,
+        remedy: dtcCodes.remedy,
+        severity: dtcCodes.severity,
+        relatedCodes: dtcCodes.relatedCodes,
+      })
+      .from(dtcCodes)
+      .orderBy(dtcCodes.code)
+      .limit(PAGE_SIZE)
+      .offset(offset);
 
-    if (rows.rows.length === 0) break;
+    if (rows.length === 0) break;
 
-    for (const row of rows.rows) {
-      const code = String(row.code);
-      const record = {
-        code,
-        system: String(row.system || ""),
-        system_short: String(row.system_short || ""),
-        description: String(row.description || ""),
-        description_zh: String(row.description_zh || ""),
-        manufacturer: String(row.manufacturer || "GENERIC"),
-        is_generic: Number(row.is_generic || 1),
-        cause: String(row.cause || ""),
-        remedy: String(row.remedy || ""),
-        severity: String(row.severity || "medium"),
-        related_codes: String(row.related_codes || "[]"),
-      };
-
-      const html = generateDtcPageHtml(code, record, []);
-      writeFileSync(join(dtcDir, `${code}.html`), html);
-      sitemapUrls.push(`${SITE_URL}/dtc/${code}.html`);
+    for (const row of rows) {
+      const html = generateDtcPageHtml(row.code, {
+        code: row.code,
+        system: row.system,
+        system_short: row.systemShort,
+        description: row.description,
+        description_zh: row.descriptionZh,
+        manufacturer: row.manufacturer || "GENERIC",
+        is_generic: row.isGeneric,
+        cause: row.cause,
+        remedy: row.remedy,
+        severity: row.severity || "medium",
+        related_codes: row.relatedCodes || "[]",
+      }, []);
+      writeFileSync(join(dtcDir, `${row.code}.html`), html);
+      sitemapUrls.push(`${SITE_URL}/dtc/${row.code}.html`);
       totalGenerated++;
     }
 
@@ -518,15 +574,16 @@ async function main() {
 
   // 生成系统分类页面
   for (const short of ["P", "B", "C", "U"]) {
-    const sysRows = await client.execute({
-      sql: "SELECT code, manufacturer, description FROM dtc_codes WHERE system_short = ? ORDER BY code ASC",
-      args: [short],
-    });
+    const sysRows = await db
+      .select({ code: dtcCodes.code, manufacturer: dtcCodes.manufacturer, description: dtcCodes.description })
+      .from(dtcCodes)
+      .where(drizzleEq(dtcCodes.systemShort, short))
+      .orderBy(dtcCodes.code);
 
-    const codes = sysRows.rows.map((r) => ({
-      code: String(r.code),
-      manufacturer: String(r.manufacturer || ""),
-      description: String(r.description || ""),
+    const codes = sysRows.map((r) => ({
+      code: r.code,
+      manufacturer: r.manufacturer || "",
+      description: r.description || "",
     }));
 
     const sysHtml = generateSystemPageHtml(short, codes);
@@ -536,34 +593,45 @@ async function main() {
 
   // 生成制造商页面
   console.log("\n  🏭 生成制造商页面...");
-  const mfrRows = await client.execute("SELECT id, display_name, full_name, country, code_count FROM manufacturers ORDER BY code_count DESC");
-  for (const row of mfrRows.rows) {
-    const mfrId = String(row.id);
+  const mfrRows = await db
+    .select({
+      id: manufacturers.id,
+      displayName: manufacturers.displayName,
+      fullName: manufacturers.fullName,
+      country: manufacturers.country,
+      codeCount: manufacturers.codeCount,
+    })
+    .from(manufacturers)
+    .orderBy(sql`code_count desc`);
+
+  for (const row of mfrRows) {
     const mfr = {
-      id: mfrId,
-      displayName: String(row.display_name || mfrId),
-      fullName: String(row.full_name || ""),
-      country: String(row.country || ""),
-      codeCount: Number(row.code_count || 0),
+      id: row.id,
+      displayName: row.displayName || row.id,
+      fullName: row.fullName || "",
+      country: row.country || "",
+      codeCount: Number(row.codeCount || 0),
     };
 
     // 查询该制造商的前 200 条码（太多会导致页面过大）
-    const codeRows = await client.execute({
-      sql: "SELECT code, system_short, description FROM dtc_codes WHERE manufacturer = ? ORDER BY code ASC LIMIT 200",
-      args: [mfrId],
-    });
+    const codeRows = await db
+      .select({ code: dtcCodes.code, systemShort: dtcCodes.systemShort, description: dtcCodes.description })
+      .from(dtcCodes)
+      .where(drizzleEq(dtcCodes.manufacturer, row.id))
+      .orderBy(dtcCodes.code)
+      .limit(200);
 
-    const codes = codeRows.rows.map((r) => ({
-      code: String(r.code),
-      system_short: String(r.system_short || ""),
-      description: String(r.description || ""),
+    const codes = codeRows.map((r) => ({
+      code: r.code,
+      system_short: r.systemShort || "",
+      description: r.description || "",
     }));
 
     const mfrHtml = generateManufacturerPageHtml(mfr, codes);
-    writeFileSync(join(mfrDir, `${mfrId}.html`), mfrHtml);
-    sitemapUrls.push(`${SITE_URL}/manufacturers/${mfrId}.html`);
+    writeFileSync(join(mfrDir, `${row.id}.html`), mfrHtml);
+    sitemapUrls.push(`${SITE_URL}/manufacturers/${row.id}.html`);
   }
-  console.log(`    📄 生成 ${mfrRows.rows.length} 个制造商页面`);
+  console.log(`    📄 生成 ${mfrRows.length} 个制造商页面`);
 
   // 生成 sitemap.xml
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
