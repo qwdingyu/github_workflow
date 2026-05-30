@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{LOCALE}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{TITLE}} — {{SITE_NAME}}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="description" content="{{DESCRIPTION}}">
   <meta name="keywords" content="{{KEYWORDS}}">
   <link rel="canonical" href="{{CANONICAL_URL}}">
@@ -15,11 +16,15 @@
   <meta property="og:url" content="{{CANONICAL_URL}}">
   <meta property="og:site_name" content="{{SITE_NAME}}">
   <meta property="og:locale" content="{{LOCALE}}">
+  <meta property="og:image" content="{{OG_IMAGE}}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{TITLE}} — {{SITE_NAME}}">
   <meta name="twitter:description" content="{{DESCRIPTION}}">
+  <meta name="twitter:image" content="{{OG_IMAGE}}">
   {{TWITTER_SITE}}
 
   <!-- Schema.org JSON-LD: SoftwareApplication -->
@@ -55,14 +60,16 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header>
-    <nav>
+  <header role="banner">
+    <nav aria-label="主导航">
       <a href="/" class="logo">{{SITE_NAME}}</a>
       <div class="nav-links">{{NAV_LINKS}}</div>
     </nav>
   </header>
 
-  <main>
+  <main role="main">
+    {{BREADCRUMB_HTML}}
+
     <section class="hero">
       <h1>{{TITLE}}</h1>
       <p class="description">{{DESCRIPTION}}</p>
@@ -73,17 +80,19 @@
     </section>
 
     <section class="faq">
-      <h2>Frequently Asked Questions</h2>
+      <h2>常见问题</h2>
       {{FAQ_CONTENT}}
     </section>
+
+    {{RELATED_TOOLS}}
   </main>
 
-  <footer>
-    <p>&copy; {{YEAR}} {{SITE_NAME}}. All rights reserved.</p>
+  <footer role="contentinfo">
+    <p>&copy; {{YEAR}} {{SITE_NAME}} 版权所有</p>
     <nav>
-      <a href="/">Home</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
+      <a href="/">首页</a>
+      <a href="/privacy">隐私政策</a>
+      <a href="/terms">使用条款</a>
     </nav>
   </footer>
 </body>

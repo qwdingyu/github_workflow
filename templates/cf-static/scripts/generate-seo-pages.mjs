@@ -35,30 +35,108 @@ const SRC = join(ROOT, "src");
 const PUBLIC = join(ROOT, "public");
 const TOOLS_OUT = join(PUBLIC, "tools");
 
+// ── 构建计时 ──────────────────────────────────────────────────────────────────
+const buildStart = Date.now();
+
+// ── OG Image SVG 生成器 ───────────────────────────────────────────────────────
+function generateOgImageSvg(title, siteName, type = "tool") {
+  const typeLabel = { tool: "🔧 Tool", post: "📝 Article", doc: "📄 Documentation" }[type] || "Tool";
+  const safeTitle = title.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+  const safeSiteName = siteName.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+  
+  // 截断过长标题
+  const displayTitle = safeTitle.length > 60 ? safeTitle.slice(0, 57) + "..." : safeTitle;
+  
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1d27;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="80" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#9ca3af" text-anchor="middle">${typeLabel}</text>
+  <text x="600" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#e4e4e7" text-anchor="middle">${displayTitle}</text>
+  <text x="600" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="32" fill="#6366f1" text-anchor="middle">${safeSiteName}</text>
+</svg>`;
+}
+
+// ── 安全 JSON 解析 ────────────────────────────────────────────────────────────
+function safeJsonParse(filePath, description) {
+  try {
+    return JSON.parse(readFileSync(filePath, "utf-8"));
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      console.error(`❌ ${description} 不存在: ${filePath}`);
+      process.exit(1);
+    }
+    if (err instanceof SyntaxError) {
+      console.error(`❌ ${description} JSON 语法错误: ${filePath}`);
+      console.error(`   ${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+}
+
+// ── 安全读取目录中的 JSON 文件 ────────────────────────────────────────────────
+function readJsonDir(dirPath, description) {
+  if (!existsSync(dirPath)) return [];
+  const files = readdirSync(dirPath).filter((f) => f.endsWith(".json")).sort();
+  return files.map((f) => {
+    const fullPath = join(dirPath, f);
+    const data = safeJsonParse(fullPath, `${description}/${f}`);
+    // 输入验证：检查必填字段
+    if (!data.slug) {
+      console.error(`❌ ${description}/${f}: 缺少必填字段 "slug"`);
+      process.exit(1);
+    }
+    if (!data.title) {
+      console.error(`❌ ${description}/${f}: 缺少必填字段 "title"`);
+      process.exit(1);
+    }
+    return data;
+  });
+}
+
 // ── 读取配置 ──────────────────────────────────────────────────────────────────
-const siteConfig = JSON.parse(readFileSync(join(SRC, "seo-config.json"), "utf-8"));
-const toolTemplate = readFileSync(join(SRC, "templates", "tool.html"), "utf-8");
+const siteConfig = safeJsonParse(join(SRC, "seo-config.json"), "站点配置文件");
+
+// 验证配置必填字段
+if (!siteConfig.siteName) {
+  console.error("❌ seo-config.json: 缺少必填字段 siteName");
+  process.exit(1);
+}
+if (!siteConfig.siteUrl) {
+  console.error("❌ seo-config.json: 缺少必填字段 siteUrl");
+  process.exit(1);
+}
+
+const toolTemplatePath = join(SRC, "templates", "tool.html");
+if (!existsSync(toolTemplatePath)) {
+  console.error(`❌ 工具模板不存在: ${toolTemplatePath}`);
+  process.exit(1);
+}
+const toolTemplate = readFileSync(toolTemplatePath, "utf-8");
 
 // ── 读取所有工具定义 ──────────────────────────────────────────────────────────
 const toolsDir = join(SRC, "tools");
-const toolFiles = readdirSync(toolsDir).filter((f) => f.endsWith(".json")).sort();
-const tools = toolFiles.map((f) => JSON.parse(readFileSync(join(toolsDir, f), "utf-8")));
+if (!existsSync(toolsDir)) {
+  console.error(`❌ 工具目录不存在: ${toolsDir}`);
+  console.error(`   请创建 src/tools/ 目录并添加工具 JSON 文件`);
+  process.exit(1);
+}
+const tools = readJsonDir(toolsDir, "工具");
 
 // ── 读取博客文章 ──────────────────────────────────────────────────────────────
 const postsDir = join(SRC, "posts");
-const posts = existsSync(postsDir)
-  ? readdirSync(postsDir).filter((f) => f.endsWith(".json")).sort()
-      .map((f) => JSON.parse(readFileSync(join(postsDir, f), "utf-8")))
-      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
-  : [];
+const posts = readJsonDir(postsDir, "博客")
+  .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
 // ── 读取文档页面 ──────────────────────────────────────────────────────────────
 const docsDir = join(SRC, "docs");
-const docs = existsSync(docsDir)
-  ? readdirSync(docsDir).filter((f) => f.endsWith(".json")).sort()
-      .map((f) => JSON.parse(readFileSync(join(docsDir, f), "utf-8")))
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
-  : [];
+const docs = readJsonDir(docsDir, "文档")
+  .sort((a, b) => (a.order || 0) - (b.order || 0));
 
 console.log(`📦 Site: ${siteConfig.siteName}`);
 console.log(`🔧 Tools: ${tools.length} found`);
@@ -68,9 +146,11 @@ console.log(`📄 Docs: ${docs.length} found`);
 // ── 确保输出目录存在 ──────────────────────────────────────────────────────────
 const POSTS_OUT = join(PUBLIC, "posts");
 const DOCS_OUT = join(PUBLIC, "docs");
+const IMAGES_OUT = join(PUBLIC, "images");
 if (!existsSync(TOOLS_OUT)) mkdirSync(TOOLS_OUT, { recursive: true });
 if (!existsSync(POSTS_OUT)) mkdirSync(POSTS_OUT, { recursive: true });
 if (!existsSync(DOCS_OUT)) mkdirSync(DOCS_OUT, { recursive: true });
+if (!existsSync(IMAGES_OUT)) mkdirSync(IMAGES_OUT, { recursive: true });
 
 // ── 模板变量替换 ──────────────────────────────────────────────────────────────
 function render(html, vars) {
@@ -113,6 +193,41 @@ function generateBreadcrumbSchema(siteName, siteUrl, items) {
     })),
   };
   return `<script type="application/ld+json">\n  ${JSON.stringify(schema)}\n  </script>`;
+}
+
+// ── 生成面包屑 HTML 导航 ─────────────────────────────────────────────────────
+function generateBreadcrumbHtml(items) {
+  if (!items || items.length === 0) return "";
+  return `<nav class="breadcrumb" aria-label="面包屑导航">
+    ${items.map((item, i) => {
+      const isLast = i === items.length - 1;
+      if (isLast) {
+        return `<span class="current">${item.name}</span>`;
+      }
+      return `<a href="${item.url || "/"}">${item.name}</a><span class="separator">/</span>`;
+    }).join("\n    ")}
+  </nav>`;
+}
+
+// ── 生成相关工具推荐 HTML ─────────────────────────────────────────────────────
+function generateRelatedToolsHtml(currentSlug, tools) {
+  if (!tools || tools.length <= 1) return "";
+  const related = tools.filter((t) => t.slug !== currentSlug).slice(0, 4);
+  if (related.length === 0) return "";
+  
+  const cards = related.map((t) => `
+    <a href="/tools/${t.slug}.html" class="related-tool-card">
+      <div class="tool-icon">${t.icon || "🔧"}</div>
+      <h4>${t.title}</h4>
+      <p>${t.description.slice(0, 80)}${t.description.length > 80 ? "..." : ""}</p>
+    </a>`).join("\n");
+  
+  return `<section class="related-tools">
+    <h3>相关工具</h3>
+    <div class="related-tools-grid">
+      ${cards}
+    </div>
+  </section>`;
 }
 
 // ── 生成 FAQ HTML ─────────────────────────────────────────────────────────────
@@ -166,6 +281,18 @@ const year = new Date().getFullYear();
 
 for (const tool of tools) {
   const canonicalUrl = `${siteConfig.siteUrl}/tools/${tool.slug}.html`;
+  const ogImageUrl = `${siteConfig.siteUrl}/images/${tool.slug}.svg`;
+  
+  // 生成 og:image SVG
+  const ogImageSvg = generateOgImageSvg(tool.title, siteConfig.siteName, "tool");
+  writeFileSync(join(IMAGES_OUT, `${tool.slug}.svg`), ogImageSvg, "utf-8");
+
+  // 生成面包屑数据
+  const breadcrumbItems = [
+    { name: siteConfig.siteName, url: "/" },
+    { name: "工具", url: "/tools/" },
+    { name: tool.title },
+  ];
 
   const vars = {
     TITLE: tool.title,
@@ -175,15 +302,14 @@ for (const tool of tools) {
     SITE_NAME: siteConfig.siteName,
     AUTHOR: siteConfig.author,
     LOCALE: siteConfig.locale,
+    OG_IMAGE: ogImageUrl,
     TWITTER_SITE: siteConfig.twitterHandle
       ? `<meta name="twitter:site" content="${siteConfig.twitterHandle}">`
       : "",
     FAQ_SCHEMA: generateFaqSchema(tool.faq),
-    BREADCRUMB_SCHEMA: generateBreadcrumbSchema(siteConfig.siteName, siteConfig.siteUrl, [
-      { name: siteConfig.siteName, url: "/" },
-      { name: "Tools" },
-      { name: tool.title, url: `/tools/${tool.slug}.html` },
-    ]),
+    BREADCRUMB_SCHEMA: generateBreadcrumbSchema(siteConfig.siteName, siteConfig.siteUrl, breadcrumbItems),
+    BREADCRUMB_HTML: generateBreadcrumbHtml(breadcrumbItems),
+    RELATED_TOOLS: generateRelatedToolsHtml(tool.slug, tools),
     FAQ_CONTENT: generateFaqHtml(tool.faq),
     NAV_LINKS: navLinks,
     TOOL_CONTENT: generateToolContent(tool),
@@ -214,11 +340,23 @@ function toBcp47(locale) {
 if (postTemplate) {
   for (const post of posts) {
     const canonicalUrl = `${siteConfig.siteUrl}/posts/${post.slug}.html`;
+    const ogImageUrl = `${siteConfig.siteUrl}/images/${post.slug}.svg`;
     const dateObj = post.date ? new Date(post.date) : new Date();
     const dateIso = dateObj.toISOString();
     const dateDisplay = dateObj.toLocaleDateString(toBcp47(post.locale || siteConfig.locale), {
       year: "numeric", month: "long", day: "numeric"
     });
+    
+    // 生成 og:image SVG
+    const ogImageSvg = generateOgImageSvg(post.title, siteConfig.siteName, "post");
+    writeFileSync(join(IMAGES_OUT, `${post.slug}.svg`), ogImageSvg, "utf-8");
+
+    // 生成面包屑数据
+    const breadcrumbItems = [
+      { name: siteConfig.siteName, url: "/" },
+      { name: "博客", url: "/blog/" },
+      { name: post.title },
+    ];
 
     const vars = {
       TITLE: post.title,
@@ -231,6 +369,9 @@ if (postTemplate) {
       DATE_ISO: dateIso,
       DATE_DISPLAY: dateDisplay,
       CONTENT: post.content || "",
+      OG_IMAGE: ogImageUrl,
+      BREADCRUMB_SCHEMA: generateBreadcrumbSchema(siteConfig.siteName, siteConfig.siteUrl, breadcrumbItems),
+      BREADCRUMB_HTML: generateBreadcrumbHtml(breadcrumbItems),
       TWITTER_SITE: siteConfig.twitterHandle
         ? `<meta name="twitter:site" content="${siteConfig.twitterHandle}">`
         : "",
@@ -258,17 +399,32 @@ if (postTemplate) {
     </a>`;
   }).join("\n");
 
+  // 生成博客列表页 og:image
+  const blogOgImageUrl = `${siteConfig.siteUrl}/images/blog.svg`;
+  const blogOgImageSvg = generateOgImageSvg("Blog", siteConfig.siteName, "post");
+  writeFileSync(join(IMAGES_OUT, "blog.svg"), blogOgImageSvg, "utf-8");
+
   const blogIndexHtml = `<!DOCTYPE html>
 <html lang="${siteConfig.locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blog — ${siteConfig.siteName}</title>
-  <meta name="description" content="Latest articles and tutorials from ${siteConfig.siteName}">
+  <title>博客 — ${siteConfig.siteName}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="description" content="来自${siteConfig.siteName}的最新文章和教程">
   <link rel="canonical" href="${siteConfig.siteUrl}/blog/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Blog — ${siteConfig.siteName}">
+  <meta property="og:title" content="博客 — ${siteConfig.siteName}">
+  <meta property="og:description" content="来自${siteConfig.siteName}的最新文章和教程">
   <meta property="og:url" content="${siteConfig.siteUrl}/blog/">
+  <meta property="og:site_name" content="${siteConfig.siteName}">
+  <meta property="og:image" content="${blogOgImageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="博客 — ${siteConfig.siteName}">
+  <meta name="twitter:description" content="来自${siteConfig.siteName}的最新文章和教程">
+  <meta name="twitter:image" content="${blogOgImageUrl}">
   ${analyticsScript}
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -277,26 +433,26 @@ if (postTemplate) {
     <nav>
       <a href="/" class="logo">${siteConfig.siteName}</a>
       <div class="nav-links">
-        <a href="/blog/">Blog</a>
-        <a href="/docs/">Docs</a>
+        <a href="/blog/">博客</a>
+        <a href="/docs/">文档</a>
       </div>
     </nav>
   </header>
   <main>
     <section class="hero">
-      <h1>Blog</h1>
-      <p>Latest articles and tutorials</p>
+      <h1>博客</h1>
+      <p>最新文章和教程</p>
     </section>
     <section class="posts-list">
-      ${postCards || "<p>No posts yet.</p>"}
+      ${postCards || "<p>暂无文章。</p>"}
     </section>
   </main>
   <footer>
-    <p>&copy; ${year} ${siteConfig.siteName}. All rights reserved.</p>
+    <p>&copy; ${year} ${siteConfig.siteName} 版权所有</p>
     <nav>
-      <a href="/">Home</a>
-      <a href="/blog/">Blog</a>
-      <a href="/docs/">Docs</a>
+      <a href="/">首页</a>
+      <a href="/blog/">博客</a>
+      <a href="/docs/">文档</a>
     </nav>
   </footer>
 </body>
@@ -316,6 +472,7 @@ if (docTemplate) {
   for (let i = 0; i < docs.length; i++) {
     const doc = docs[i];
     const canonicalUrl = `${siteConfig.siteUrl}/docs/${doc.slug}.html`;
+    const ogImageUrl = `${siteConfig.siteUrl}/images/${doc.slug}.svg`;
 
     const prevDoc = i > 0 ? docs[i - 1] : null;
     const nextDoc = i < docs.length - 1 ? docs[i + 1] : null;
@@ -325,6 +482,17 @@ if (docTemplate) {
     const nextLink = nextDoc
       ? `<a href="/docs/${nextDoc.slug}.html" class="next">${nextDoc.title} →</a>`
       : "";
+    
+    // 生成 og:image SVG
+    const ogImageSvg = generateOgImageSvg(doc.title, siteConfig.siteName, "doc");
+    writeFileSync(join(IMAGES_OUT, `${doc.slug}.svg`), ogImageSvg, "utf-8");
+
+    // 生成面包屑数据
+    const breadcrumbItems = [
+      { name: siteConfig.siteName, url: "/" },
+      { name: "文档", url: "/docs/" },
+      { name: doc.title },
+    ];
 
     const vars = {
       TITLE: doc.title,
@@ -335,6 +503,9 @@ if (docTemplate) {
       AUTHOR: doc.author || siteConfig.author,
       LOCALE: doc.locale || siteConfig.locale,
       CONTENT: doc.content || "",
+      OG_IMAGE: ogImageUrl,
+      BREADCRUMB_SCHEMA: generateBreadcrumbSchema(siteConfig.siteName, siteConfig.siteUrl, breadcrumbItems),
+      BREADCRUMB_HTML: generateBreadcrumbHtml(breadcrumbItems),
       DOCS_NAV: docsNav,
       PREV_LINK: prevLink,
       NEXT_LINK: nextLink,
@@ -359,17 +530,32 @@ if (docTemplate) {
     </a>`
   ).join("\n");
 
+  // 生成文档列表页 og:image
+  const docsOgImageUrl = `${siteConfig.siteUrl}/images/docs.svg`;
+  const docsOgImageSvg = generateOgImageSvg("文档", siteConfig.siteName, "doc");
+  writeFileSync(join(IMAGES_OUT, "docs.svg"), docsOgImageSvg, "utf-8");
+
   const docsIndexHtml = `<!DOCTYPE html>
 <html lang="${siteConfig.locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentation — ${siteConfig.siteName}</title>
-  <meta name="description" content="Documentation for ${siteConfig.siteName}">
+  <title>文档 — ${siteConfig.siteName}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="description" content="${siteConfig.siteName}的使用文档">
   <link rel="canonical" href="${siteConfig.siteUrl}/docs/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Documentation — ${siteConfig.siteName}">
+  <meta property="og:title" content="文档 — ${siteConfig.siteName}">
+  <meta property="og:description" content="${siteConfig.siteName}的使用文档">
   <meta property="og:url" content="${siteConfig.siteUrl}/docs/">
+  <meta property="og:site_name" content="${siteConfig.siteName}">
+  <meta property="og:image" content="${docsOgImageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="文档 — ${siteConfig.siteName}">
+  <meta name="twitter:description" content="${siteConfig.siteName}的使用文档">
+  <meta name="twitter:image" content="${docsOgImageUrl}">
   ${analyticsScript}
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -378,26 +564,26 @@ if (docTemplate) {
     <nav>
       <a href="/" class="logo">${siteConfig.siteName}</a>
       <div class="nav-links">
-        <a href="/blog/">Blog</a>
-        <a href="/docs/">Docs</a>
+        <a href="/blog/">博客</a>
+        <a href="/docs/">文档</a>
       </div>
     </nav>
   </header>
   <main>
     <section class="hero">
-      <h1>Documentation</h1>
-      <p>Everything you need to know</p>
+      <h1>文档</h1>
+      <p>你需要知道的一切</p>
     </section>
     <section class="docs-list">
-      ${docCards || "<p>No documentation yet.</p>"}
+      ${docCards || "<p>暂无文档。</p>"}
     </section>
   </main>
   <footer>
-    <p>&copy; ${year} ${siteConfig.siteName}. All rights reserved.</p>
+    <p>&copy; ${year} ${siteConfig.siteName} 版权所有</p>
     <nav>
-      <a href="/">Home</a>
-      <a href="/blog/">Blog</a>
-      <a href="/docs/">Docs</a>
+      <a href="/">首页</a>
+      <a href="/blog/">博客</a>
+      <a href="/docs/">文档</a>
     </nav>
   </footer>
 </body>
@@ -408,6 +594,11 @@ if (docTemplate) {
 }
 
 // ── 生成首页（工具列表） ─────────────────────────────────────────────────────
+// 生成首页 og:image
+const indexOgImageUrl = `${siteConfig.siteUrl}/images/index.svg`;
+const indexOgImageSvg = generateOgImageSvg(siteConfig.siteName, siteConfig.siteName, "tool");
+writeFileSync(join(IMAGES_OUT, "index.svg"), indexOgImageSvg, "utf-8");
+
 const indexTools = tools
   .map(
     (t) => `
@@ -420,11 +611,12 @@ const indexTools = tools
   .join("\n");
 
 const indexHtml = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${siteConfig.locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${siteConfig.siteName} — ${siteConfig.description}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="description" content="${siteConfig.description}">
   <link rel="canonical" href="${siteConfig.siteUrl}/">
   <meta property="og:type" content="website">
@@ -432,6 +624,13 @@ const indexHtml = `<!DOCTYPE html>
   <meta property="og:description" content="${siteConfig.description}">
   <meta property="og:url" content="${siteConfig.siteUrl}/">
   <meta property="og:site_name" content="${siteConfig.siteName}">
+  <meta property="og:image" content="${indexOgImageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${siteConfig.siteName}">
+  <meta name="twitter:description" content="${siteConfig.description}">
+  <meta name="twitter:image" content="${indexOgImageUrl}">
   ${siteConfig.googleSiteVerification ? `<meta name="google-site-verification" content="${siteConfig.googleSiteVerification}">` : ""}
   ${siteConfig.bingSiteVerification ? `<meta name="msvalidate.01" content="${siteConfig.bingSiteVerification}">` : ""}
   ${analyticsScript}
@@ -475,26 +674,30 @@ writeFileSync(join(PUBLIC, "index.html"), indexHtml, "utf-8");
 console.log(`  ✅ index.html`);
 
 // ── 生成 sitemap.xml ──────────────────────────────────────────────────────────
+const today = new Date().toISOString().split("T")[0];
 const sitemapUrls = [
-  { url: "/", priority: "1.0", changefreq: "weekly" },
+  { url: "/", priority: "1.0", changefreq: "weekly", lastmod: today },
   ...tools.map((t) => ({
     url: `/tools/${t.slug}.html`,
     priority: "0.8",
     changefreq: "monthly",
+    lastmod: t.updated || today,
   })),
   ...posts.map((p) => ({
     url: `/posts/${p.slug}.html`,
     priority: "0.7",
     changefreq: "monthly",
+    lastmod: p.date || today,
   })),
   ...docs.map((d) => ({
     url: `/docs/${d.slug}.html`,
     priority: "0.6",
     changefreq: "monthly",
+    lastmod: d.updated || today,
   })),
 ];
-if (posts.length > 0) sitemapUrls.push({ url: "/blog/", priority: "0.7", changefreq: "weekly" });
-if (docs.length > 0) sitemapUrls.push({ url: "/docs/", priority: "0.6", changefreq: "weekly" });
+if (posts.length > 0) sitemapUrls.push({ url: "/blog/", priority: "0.7", changefreq: "weekly", lastmod: today });
+if (docs.length > 0) sitemapUrls.push({ url: "/docs/", priority: "0.6", changefreq: "weekly", lastmod: today });
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -502,6 +705,7 @@ ${sitemapUrls
   .map(
     (u) => `  <url>
     <loc>${siteConfig.siteUrl}${u.url}</loc>
+    <lastmod>${u.lastmod}</lastmod>
     <changefreq>${u.changefreq}</changefreq>
     <priority>${u.priority}</priority>
   </url>`
@@ -576,4 +780,6 @@ const totalDocs = docs.length;
 const totalIndexPages = 1 + (totalPosts > 0 ? 1 : 0) + (totalDocs > 0 ? 1 : 0);
 const totalPages = totalTools + totalPosts + totalDocs + totalIndexPages;
 
+const buildTime = Date.now() - buildStart;
 console.log(`\n✅ Generated ${totalPages} pages (${totalTools} tools, ${totalPosts} posts, ${totalDocs} docs) + sitemap + robots.txt`);
+console.log(`⏱️  Build time: ${buildTime}ms`);
