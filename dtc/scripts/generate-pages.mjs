@@ -13,7 +13,7 @@
  *   TURSO_URL=libsql://xxx.turso.io TURSO_TOKEN=xxx node scripts/generate-pages.mjs
  */
 
-import { createClient } from "@libsql/client/web";
+import { createClient } from "@libsql/client";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 

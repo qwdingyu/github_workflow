@@ -18,9 +18,7 @@
     "@eforge/cf-core": "file:../packages/cf-core",
     "@libsql/client": "^0.14.0",
     "drizzle-orm": "^0.45.2",
-    "drizzle-zod": "^0.8.3",
-    "hono": "^4.12.22",
-    "zod": "^4.4.3"
+    "hono": "^4.12.22"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260524.1",

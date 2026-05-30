@@ -12,7 +12,7 @@
  *   次源：dtcmapping_normalized.json（wzr1337/dtcmapping，22,473 条，通用码补充）
  */
 
-import { createClient } from "@libsql/client/web";
+import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
