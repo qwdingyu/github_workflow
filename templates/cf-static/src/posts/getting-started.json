@@ -1,0 +1,10 @@
+{
+  "slug": "getting-started",
+  "title": "Getting Started with Our Developer Tools",
+  "description": "A quick guide to getting started with our free online developer tools.",
+  "keywords": ["getting started", "developer tools", "tutorial"],
+  "category": "tutorial",
+  "date": "2026-05-29",
+  "author": "DevTools Team",
+  "content": "<h2>Welcome</h2>\n<p>Welcome to our developer tools! This guide will help you get started quickly.</p>\n<h3>Available Tools</h3>\n<ul>\n<li><strong>JSON Formatter</strong> — Format and validate JSON data</li>\n<li><strong>Base64 Decoder</strong> — Encode and decode Base64 strings</li>\n<li><strong>UUID Generator</strong> — Generate unique identifiers</li>\n</ul>\n<h3>How to Use</h3>\n<p>Simply click on any tool from the homepage, paste your input, and click Process. All processing happens in your browser — no data is sent to any server.</p>"
+}

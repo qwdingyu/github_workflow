@@ -3,6 +3,7 @@ name: build-deploy-automation
 description: Build a unified one-click deployment system (bash scripts + CI/CD workflows) that automates project setup from two API tokens to production
 source: auto-skill
 extracted_at: '2026-05-29T14:30:00.000Z'
+updated_at: '2026-05-30T02:27:14.150Z'
 ---
 
 # Build Unified Deploy Automation
