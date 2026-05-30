@@ -1,0 +1,24 @@
+---
+layout: base.njk
+title: 首页
+description: 免费在线开发工具集合
+permalink: /
+---
+
+<section class="hero">
+  <h1>{{ site.siteName }}</h1>
+  <p>{{ site.description }}</p>
+</section>
+
+<section class="tools-grid">
+  {% for tool in tools %}
+  <a href="/tools/{{ tool.slug }}/" class="tool-card">
+    <span class="tool-icon">{{ tool.icon | default('🔧') }}</span>
+    <h3>{{ tool.title }}</h3>
+    <p>{{ tool.description }}</p>
+    {% if tool.category %}
+    <span class="tool-category">{{ tool.category }}</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</section>

@@ -1,0 +1,20 @@
+---
+layout: base.njk
+title: 文档
+description: 在线开发工具使用文档
+permalink: /docs/index.html
+---
+
+<section class="docs-list">
+  <h1>文档</h1>
+  <p class="description">在线开发工具使用文档</p>
+
+  <div class="docs-grid">
+    {% for doc in docs %}
+    <a href="/docs/{{ doc.slug }}/" class="doc-card">
+      <h3>{{ doc.title }}</h3>
+      <p>{{ doc.description }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>

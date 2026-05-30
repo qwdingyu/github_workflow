@@ -2,15 +2,19 @@
   "name": "cf-static",
   "version": "0.1.0",
   "private": true,
-  "description": "Cloudflare Pages 纯静态站模板 — SEO 工具站 / 文档站 / 博客 / 落地页",
+  "description": "Cloudflare Pages 纯静态站模板 — SEO 工具站 / 文档站 / 博客 / 落地页（11ty 驱动）",
   "type": "module",
   "scripts": {
-    "dev": "npx serve public -l 8787",
-    "build": "node scripts/generate-seo-pages.mjs",
-    "generate:seo": "node scripts/generate-seo-pages.mjs",
-    "deploy": "npx wrangler pages deploy public/"
+    "dev": "eleventy --serve",
+    "build": "eleventy",
+    "preview": "npx serve _site",
+    "deploy": "wrangler pages deploy _site"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0"
   },
   "devDependencies": {
+    "wrangler": "^3.80.0",
     "serve": "^14.2.0"
   }
 }

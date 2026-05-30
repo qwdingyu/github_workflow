@@ -1,0 +1,39 @@
+---
+layout: base.njk
+pagination:
+  data: tools
+  size: 1
+  alias: tool
+permalink: "/tools/{{ tool.slug }}/"
+eleventyComputed:
+  title: "{{ tool.title }}"
+  description: "{{ tool.description }}"
+  keywords: "{% if tool.keywords %}{{ tool.keywords | join(', ') }}{% endif %}"
+---
+
+<section class="tool-page">
+  <article>
+    <header>
+      <h1>{{ tool.title }}</h1>
+      <p class="description">{{ tool.description }}</p>
+    </header>
+
+    <div class="tool-content">
+      <div id="tool-container"></div>
+    </div>
+
+    {% if tool.faq and tool.faq.length > 0 %}
+    <section class="faq">
+      <h2>常见问题</h2>
+      {% for item in tool.faq %}
+      <details>
+        <summary>{{ item.q }}</summary>
+        <p>{{ item.a }}</p>
+      </details>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </article>
+</section>
+
+<script src="/assets/js/{{ tool.slug }}.js"></script>

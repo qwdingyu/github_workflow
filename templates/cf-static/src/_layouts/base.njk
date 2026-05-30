@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="{{ locale | default('zh-CN') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO Meta Tags -->
+  <title>{% if title %}{{ title }}{% if siteName %} — {{ siteName }}{% endif %}{% else %}{{ siteName | default('在线开发工具') }}{% endif %}</title>
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  {% if keywords %}<meta name="keywords" content="{{ keywords }}">{% endif %}
+  
+  <!-- Canonical URL -->
+  {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="{{ ogType | default('website') }}">
+  <meta property="og:title" content="{{ title | default(siteName) }}">
+  {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
+  {% if canonical %}<meta property="og:url" content="{{ canonical }}">{% endif %}
+  {% if siteName %}<meta property="og:site_name" content="{{ siteName }}">{% endif %}
+  {% if locale %}<meta property="og:locale" content="{{ locale }}">{% endif %}
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title | default(siteName) }}">
+  {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">{{ siteName | default('在线开发工具') }}</a>
+    </nav>
+  </header>
+  
+  <main>
+    {{ content | safe }}
+  </main>
+  
+  <footer>
+    <p>&copy; 2026 {{ siteName | default('在线开发工具') }}. 保留所有权利。</p>
+  </footer>
+</body>
+</html>
