@@ -1,9 +1,9 @@
 # ── 本地开发环境变量模板 ──
 # 复制此文件为 .dev.vars，填入真实值后即可本地开发
 
-# Turso 数据库连接（必填）
-TURSO_URL=https://your-turso-cluster.turso.io
-TURSO_TOKEN=your-turso-token
+# Turso 数据库连接（生产环境）
+TURSO_URL=libsql://dtc-prod-qwsky.aws-us-west-2.turso.io
+TURSO_TOKEN=your-turso-token-here
 
 # 管理员令牌（必填，生产环境务必用 wrangler secret put 配置）
 ADMIN_TOKEN=dev-only-change-me

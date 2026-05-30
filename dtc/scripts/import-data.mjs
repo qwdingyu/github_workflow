@@ -156,36 +156,43 @@ async function main() {
 
   // 初始化数据库连接
   const client = createClient({ url: TURSO_URL, authToken: TURSO_TOKEN || undefined });
+
+  // 建表 + 建索引（Turso HTTP 模式下使用 client.execute，Drizzle ORM 不自建表）
+  // 首次连接可能超时，重试最多 3 次
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await client.execute(`CREATE TABLE IF NOT EXISTS dtc_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL,
+        system TEXT NOT NULL DEFAULT '', system_short TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '', description_zh TEXT NOT NULL DEFAULT '',
+        manufacturer TEXT NOT NULL DEFAULT 'GENERIC', is_generic INTEGER NOT NULL DEFAULT 1,
+        locale TEXT NOT NULL DEFAULT 'en', source TEXT NOT NULL DEFAULT '',
+        cause TEXT NOT NULL DEFAULT '', remedy TEXT NOT NULL DEFAULT '',
+        severity TEXT NOT NULL DEFAULT 'medium', related_codes TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL DEFAULT (datetime('now') || 'Z'), updated_at TEXT
+      )`);
+      await client.execute(`CREATE TABLE IF NOT EXISTS manufacturers (
+        id TEXT PRIMARY KEY, display_name TEXT NOT NULL DEFAULT '',
+        full_name TEXT NOT NULL DEFAULT '', country TEXT NOT NULL DEFAULT '',
+        brands TEXT NOT NULL DEFAULT '[]', code_count INTEGER NOT NULL DEFAULT 0,
+        logo_url TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now') || 'Z')
+      )`);
+      await client.execute("CREATE INDEX IF NOT EXISTS idx_dtc_codes_code ON dtc_codes(code)");
+      await client.execute("CREATE INDEX IF NOT EXISTS idx_dtc_codes_manufacturer ON dtc_codes(manufacturer)");
+      await client.execute("CREATE INDEX IF NOT EXISTS idx_dtc_codes_system_short ON dtc_codes(system_short)");
+      await client.execute("CREATE INDEX IF NOT EXISTS idx_dtc_codes_code_mfr ON dtc_codes(code, manufacturer)");
+      console.log("  ✅ 表结构创建完成");
+      break;
+    } catch (err) {
+      if (attempt < 3) {
+        console.warn(`  ⚠️ 建表重试 ${attempt}/3: ${err.message?.slice(0, 60)}`);
+        await new Promise(r => setTimeout(r, 2000));
+      } else {
+        throw err;
+      }
+    }
+  }
   const db = drizzle(client, { schema: { dtcCodes, manufacturers } });
-
-  // 自动创建表（CREATE TABLE IF NOT EXISTS 是建表操作，Drizzle ORM 不自建表）
-  // 唯一的 raw SQL — 仅限建表，不含数据操作
-  await db.run(sql`CREATE TABLE IF NOT EXISTS dtc_codes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL, system TEXT NOT NULL DEFAULT '',
-    system_short TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '',
-    description_zh TEXT NOT NULL DEFAULT '', manufacturer TEXT NOT NULL DEFAULT 'GENERIC',
-    is_generic INTEGER NOT NULL DEFAULT 1, locale TEXT NOT NULL DEFAULT 'en',
-    source TEXT NOT NULL DEFAULT '', cause TEXT NOT NULL DEFAULT '',
-    remedy TEXT NOT NULL DEFAULT '', severity TEXT NOT NULL DEFAULT 'medium',
-    related_codes TEXT NOT NULL DEFAULT '[]',
-    created_at TEXT NOT NULL DEFAULT (datetime('now') || 'Z'), updated_at TEXT
-  )`);
-
-  await db.run(sql`CREATE TABLE IF NOT EXISTS manufacturers (
-    id TEXT PRIMARY KEY, display_name TEXT NOT NULL DEFAULT '',
-    full_name TEXT NOT NULL DEFAULT '', country TEXT NOT NULL DEFAULT '',
-    brands TEXT NOT NULL DEFAULT '[]', code_count INTEGER NOT NULL DEFAULT 0,
-    logo_url TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now') || 'Z')
-  )`);
-
-  // 创建索引
-  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_dtc_codes_code ON dtc_codes(code)`);
-  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_dtc_codes_manufacturer ON dtc_codes(manufacturer)`);
-  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_dtc_codes_system_short ON dtc_codes(system_short)`);
-  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_dtc_codes_code_mfr ON dtc_codes(code, manufacturer)`);
-
-  console.log("  ✅ 表结构创建完成");
 
   // 加载数据
   console.log("\n📖 加载 DTC 数据...");
@@ -213,9 +220,13 @@ async function main() {
   // 批量导入（使用 Drizzle ORM 的 insert）
   console.log("\n📤 开始导入到 Turso...");
 
-  // 清空旧数据（使用 Drizzle ORM delete）
-  await db.delete(dtcCodes);
-  await db.delete(manufacturers);
+  // 清空旧数据（使用 client.execute，Drizzle ORM delete 在 Turso HTTP 模式下不支持）
+  try {
+    await client.execute("DELETE FROM dtc_codes");
+    await client.execute("DELETE FROM manufacturers");
+  } catch (err) {
+    console.warn("  ⚠️ 清空失败:", err.message?.slice(0, 80));
+  }
 
   let imported = 0;
   let batchValues = [];
@@ -228,8 +239,23 @@ async function main() {
     if (!code) continue;
 
     const description = (record.description || "").trim();
-    const systemFull = (record.system || "Powertrain").trim();
-    const systemType = record.type || getSystemShort(systemFull);
+    const systemRaw = (record.system || "").trim();
+
+    // systemShort: 优先从 type 字段, 次从 system 全称推断, 最后从 DTC 首字母保底
+    let systemShort = "";
+    if (record.type && typeof record.type === "string" && record.type.length === 1 && "PBCU".includes(record.type.toUpperCase())) {
+      systemShort = record.type.toUpperCase();
+    } else {
+      systemShort = getSystemShort(systemRaw);
+    }
+    if (!systemShort && code.length >= 1 && "PBCU".includes(code[0])) {
+      systemShort = code[0];
+    }
+
+    // system 全称: 从缩写反查, 否则用原始值, 最后保底
+    const systemFull = ({
+      P: "Powertrain", B: "Body", C: "Chassis", U: "Network"
+    })[systemShort] || systemRaw || "Powertrain";
     const manufacturer = (record.manufacturer || "GENERIC").toUpperCase().trim();
     const isGeneric = record.is_generic !== false ? 1 : 0;
     const locale = record.locale || "en";
@@ -238,7 +264,7 @@ async function main() {
     batchValues.push({
       code,
       system: systemFull,
-      systemShort: systemType,
+      systemShort: systemShort,
       description,
       descriptionZh: "",
       manufacturer,
