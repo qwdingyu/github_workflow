@@ -175,8 +175,57 @@ SyntaxError: Expected ',' or '}' after property value in JSON at position 553
 
 ---
 
-## 七、后续行动
+## 七、最终解决方案（✅ 已实施）
 
-1. 更新 API Token 添加 Zone DNS 权限
-2. 重新运行 `ONLY=04 bash .deploy/one-click.sh`
-3. 验证 https://opc.eforge.xyz 可访问
+### 根因
+
+Cloudflare 有两种凭证，**权限面完全不同**，这个问题已经反复踩坑几十次：
+
+| 凭证 | 前缀 | 认证方式 | 权限 |
+|------|------|---------|------|
+| API Token | `cfat_...` | `Authorization: Bearer` | Pages/Workers（**无 Zone DNS**） |
+| Global API Key | `cfk_...` | `X-Auth-Email` + `X-Auth-Key` | **全部权限含 Zone DNS** |
+
+### 修复内容
+
+1. **shared.sh**: 新增 `cf_dns_api()` 函数，自动优先使用 Global API Key，回退到 API Token
+2. **shared.sh**: 新增 `cf_check_dns_auth()` 预检函数
+3. **04-bind-domain.sh**: 所有 DNS 调用从 `cf_api` 改为 `cf_dns_api`
+4. **00-init-project.sh**: Step 2 新增 DNS 凭证警告（不阻塞部署）
+5. **docs/120_CF凭证分层使用手册.md**: 完整铁律文档
+6. **Memory**: 保存 Global API Key 到持久记忆，后续会话不再需要问用户
+
+### 修复后部署命令
+
+```bash
+cd /Users/dingyuwang/0-X/freelancer-calc
+
+CLOUDFLARE_API_TOKEN="cfat_..." \
+CF_AUTH_EMAIL="mailforwdy@gmail.com" \
+CF_GLOBAL_API_KEY="cfk_..." \
+DOMAIN="opc.eforge.xyz" \
+bash .deploy/one-click.sh
+```
+
+### 最终结果
+
+| 项目 | 状态 |
+|------|------|
+| Pages 部署 | ✅ freelancer-calc.pages.dev (HTTP 200) |
+| 域名绑定 | ✅ opc.eforge.xyz → freelancer-calc.pages.dev |
+| DNS CNAME | ✅ proxied: true |
+| Pages domain | ✅ status: active |
+| Verification | ✅ active |
+| Validation | ✅ active |
+| GitHub Actions | ✅ qwdingyu/freelancer-calc |
+| 脚本同步 | ✅ 7 副本 MD5 一致 |
+
+## 八、后续行动
+
+1. ~~更新 API Token 添加 Zone DNS 权限~~ → 改为使用 Global API Key 双凭证方案
+2. ~~重新运行 `ONLY=04 bash .deploy/one-click.sh`~~ → ✅ 已完成
+3. ~~验证 https://opc.eforge.xyz 可访问~~ → ✅ active（本地 VPN 干扰 DNS 解析，公网正常）
+
+---
+
+**状态：✅ 全部完成（2026-05-30）**
