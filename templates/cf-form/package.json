@@ -5,14 +5,11 @@
   "description": "Cloudflare Workers + Turso JSON 驱动动态表单系统",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --port 8787",
+    "dev": "wrangler dev --port 8787",
     "deploy": "wrangler deploy",
     "type-check": "tsc --noEmit",
-    "check": "node scripts/check.mjs",
-    "verify": "node scripts/smoke-readonly.mjs",
-    "smoke:readonly": "node scripts/smoke-readonly.mjs",
-    "smoke:write": "node scripts/smoke-write.mjs",
-    "deploy:full": "node scripts/deploy-full.mjs"
+    "deploy:full": "bash .deploy/one-click.sh",
+    "smoke:shared": "bash .deploy/tests/test-shared.sh"
   },
   "dependencies": {
     "@eforge/cf-core": "file:../../packages/cf-core",

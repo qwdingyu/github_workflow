@@ -5,7 +5,14 @@
   "compatibility_date": "2026-05-24",
   "assets": {
     "directory": "./public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": true
+  },
+  // 可观测性（日志 + 指标）
+  "observability": {
+    "enabled": true
   },
   // Turso 数据库通过环境变量配置（非 D1）
   // 部署时通过 wrangler secret put 设置：
