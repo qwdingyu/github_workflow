@@ -152,7 +152,7 @@ if [ "$MODE" = "pages" ]; then
     else
       log_info "更新现有 CNAME 记录..."
       cf_dns_api PUT "/zones/${ZONE_ID}/dns_records/${EXISTING_DNS_ID}" \
-        "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":true,\"ttl\":1}" > /dev/null
+        "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":false,\"ttl\":1}" > /dev/null
       log_ok "DNS CNAME 记录已更新"
     fi
   else
@@ -164,9 +164,9 @@ if [ "$MODE" = "pages" ]; then
       cf_dns_api DELETE "/zones/${ZONE_ID}/dns_records/${CONFLICT_A_ID}" > /dev/null 2>&1
     fi
 
-    log_info "创建 DNS CNAME 记录: ${DNS_NAME} → ${PAGES_SUBDOMAIN} (proxied)"
+    log_info "创建 DNS CNAME 记录: ${DNS_NAME} → ${PAGES_SUBDOMAIN} (DNS only)"
     DNS_CREATE_RESP=$(cf_dns_api POST "/zones/${ZONE_ID}/dns_records" \
-      "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":true,\"ttl\":1}")
+      "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":false,\"ttl\":1}")
     DNS_RECORD_ID=$(echo "$DNS_CREATE_RESP" | jq -r '.result.id // empty')
     if [ -z "$DNS_RECORD_ID" ]; then
       log_error "创建 DNS 记录失败: $(echo "$DNS_CREATE_RESP" | jq -r '.errors[0].message // "unknown"')"
