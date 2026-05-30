@@ -106,6 +106,11 @@ function generateToolContent(tool) {
     <script src="/js/${tool.slug}.js"></script>`;
 }
 
+// ── 生成 Plausible 分析脚本（如果配置了 plausibleDomain） ─────────────────────
+const analyticsScript = siteConfig.plausibleDomain
+  ? `<script defer data-domain="${siteConfig.plausibleDomain}" src="https://plausible.io/js/script.js"></script>`
+  : "";
+
 // ── 生成每个工具页面 ──────────────────────────────────────────────────────────
 const navLinks = generateNavLinks(tools);
 const year = new Date().getFullYear();
@@ -129,6 +134,7 @@ for (const tool of tools) {
     NAV_LINKS: navLinks,
     TOOL_CONTENT: generateToolContent(tool),
     YEAR: String(year),
+    ANALYTICS_SCRIPT: analyticsScript,
   };
 
   const html = render(template, vars);
@@ -164,6 +170,7 @@ const indexHtml = `<!DOCTYPE html>
   <meta property="og:site_name" content="${siteConfig.siteName}">
   ${siteConfig.googleSiteVerification ? `<meta name="google-site-verification" content="${siteConfig.googleSiteVerification}">` : ""}
   ${siteConfig.bingSiteVerification ? `<meta name="msvalidate.01" content="${siteConfig.bingSiteVerification}">` : ""}
+  ${analyticsScript}
   <link rel="stylesheet" href="/css/style.css">
   <script type="application/ld+json">
   {

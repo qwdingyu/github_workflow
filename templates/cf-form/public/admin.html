@@ -125,7 +125,32 @@
         </el-form-item>
         <el-form-item label="表单定义">
           <textarea class="json-editor" v-model="editingForm.formSchemaJson" placeholder='[{"type":"text","key":"name","label":"姓名","required":true}]'></textarea>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <el-button size="small" @click="formatFormSchema">🔧 格式化 JSON</el-button>
+            <el-button size="small" @click="showSchemaImportDialog = true">📥 从 JSON Schema 导入</el-button>
+            <a href="https://rjsf-team.github.io/react-jsonschema-form/" target="_blank" style="font-size:12px;color:#818cf8;line-height:32px;margin-left:8px">↗ rjsf Playground（在线设计器）</a>
+          </div>
         </el-form-item>
+
+        <!-- JSON Schema 导入弹窗 -->
+        <el-dialog v-model="showSchemaImportDialog" title="从 JSON Schema 导入" width="700px" append-to-body>
+          <p style="color:#666;margin-bottom:12px">
+            在 <a href="https://rjsf-team.github.io/react-jsonschema-form/" target="_blank" style="color:#818cf8">rjsf Playground</a> 中设计表单，
+            复制左侧 JSON Schema 和 uiSchema，粘贴到下方，点击"转换并导入"。
+          </p>
+          <el-form label-width="80px">
+            <el-form-item label="JSON Schema">
+              <textarea class="json-editor" v-model="schemaImportSchema" placeholder='{"type":"object","properties":{"name":{"type":"string","title":"姓名"}},"required":["name"]}' style="min-height:180px"></textarea>
+            </el-form-item>
+            <el-form-item label="uiSchema">
+              <textarea class="json-editor" v-model="schemaImportUi" placeholder='{"name":{"ui:placeholder":"请输入姓名"}}' style="min-height:80px"></textarea>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="showSchemaImportDialog = false">取消</el-button>
+            <el-button type="primary" @click="importJsonSchema">转换并导入</el-button>
+          </template>
+        </el-dialog>
         <el-form-item label="表单设置">
           <textarea class="json-editor" v-model="editingForm.settingsJson" style="min-height:120px" placeholder='{"submitText":"提交","successMessage":"提交成功！"}'></textarea>
         </el-form-item>
@@ -149,6 +174,9 @@ const app = createApp({
     const stats = ref({ forms: 0, submissions: 0, activeForms: 0 });
     const filterForm = ref("");
     const formDialogVisible = ref(false);
+    const showSchemaImportDialog = ref(false);
+    const schemaImportSchema = ref('');
+    const schemaImportUi = ref('');
     const editingForm = ref({
       id: "", title: "", slug: "", description: "", status: "active",
       formSchemaJson: "[]", settingsJson: "{}"
@@ -237,12 +265,87 @@ const app = createApp({
       ElementPlus.ElMessage.success("删除成功");
     }
 
+    // ── 格式化 JSON ──
+    function formatFormSchema() {
+      try {
+        const parsed = JSON.parse(editingForm.value.formSchemaJson);
+        editingForm.value.formSchemaJson = JSON.stringify(parsed, null, 2);
+        ElementPlus.ElMessage.success("JSON 格式化成功");
+      } catch (e) {
+        ElementPlus.ElMessage.error("JSON 格式错误: " + e.message);
+      }
+    }
+
+    // ── JSON Schema 转换器（从 rjsf JSON Schema 转换为 cf-form 格式） ──
+    function jsonSchemaToCfForm(schema, uiSchema) {
+      const fields = [];
+      const required = schema.required || [];
+
+      for (const [key, prop] of Object.entries(schema.properties || {})) {
+        const ui = uiSchema?.[key] || {};
+        const field = {
+          key,
+          label: prop.title || key,
+          required: required.includes(key),
+        };
+
+        // 类型映射
+        if (prop.type === "string") {
+          if (prop.format === "email") field.type = "email";
+          else if (prop.format === "date") field.type = "date";
+          else if (ui["ui:widget"] === "textarea") { field.type = "textarea"; field.rows = ui["ui:options"]?.rows || 4; }
+          else if (prop.enum) {
+            field.type = ui["ui:widget"] === "radio" ? "radio" : "select";
+            field.options = prop.enum.map((v, i) => ({
+              value: v,
+              label: prop.enumNames?.[i] || v,
+            }));
+          }
+          else field.type = "text";
+        } else if (prop.type === "number" || prop.type === "integer") {
+          field.type = "number";
+          if (prop.minimum !== undefined) field.min = prop.minimum;
+          if (prop.maximum !== undefined) field.max = prop.maximum;
+        } else if (prop.type === "boolean") {
+          field.type = "checkbox";
+        } else {
+          field.type = "text";
+        }
+
+        // 验证规则映射
+        if (prop.minLength !== undefined) field.validation = { ...field.validation, min: prop.minLength };
+        if (prop.maxLength !== undefined) field.validation = { ...field.validation, max: prop.maxLength };
+        if (prop.pattern) field.validation = { ...field.validation, pattern: prop.pattern };
+
+        // UI 属性映射
+        if (ui["ui:placeholder"]) field.placeholder = ui["ui:placeholder"];
+        if (ui["ui:help"]) field.help = ui["ui:help"];
+
+        fields.push(field);
+      }
+
+      return fields;
+    }
+
+    function importJsonSchema() {
+      try {
+        const schema = JSON.parse(schemaImportSchema.value);
+        const ui = schemaImportUi.value.trim() ? JSON.parse(schemaImportUi.value) : {};
+        const fields = jsonSchemaToCfForm(schema, ui);
+        editingForm.value.formSchemaJson = JSON.stringify(fields, null, 2);
+        showSchemaImportDialog.value = false;
+        ElementPlus.ElMessage.success(`导入成功：${fields.length} 个字段`);
+      } catch (e) {
+        ElementPlus.ElMessage.error("JSON 格式错误: " + e.message);
+      }
+    }
+
     onMounted(async () => {
       await loadForms();
       await loadSubmissions();
     });
 
-    return { activeTab, forms, submissions, stats, filterForm, formDialogVisible, editingForm, loadForms, loadSubmissions, showCreateForm, editForm, saveForm, deleteForm };
+    return { activeTab, forms, submissions, stats, filterForm, formDialogVisible, editingForm, showSchemaImportDialog, schemaImportSchema, schemaImportUi, loadForms, loadSubmissions, showCreateForm, editForm, saveForm, deleteForm, formatFormSchema, importJsonSchema };
   }
 });
 

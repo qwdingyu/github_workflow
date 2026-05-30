@@ -7,5 +7,6 @@
   "twitterHandle": "@yourhandle",
   "googleSiteVerification": "",
   "bingSiteVerification": "",
-  "analyticsId": ""
+  "analyticsId": "",
+  "plausibleDomain": ""
 }
