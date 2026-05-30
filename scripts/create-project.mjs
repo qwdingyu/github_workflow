@@ -237,8 +237,35 @@ async function main() {
     console.log(`  ${c.g("✅")} seo-config.json 已更新`);
   }
 
-  // ── Step 3: 清理示例数据 ──────────────────────────────────────────────────
+  // ── Step 3: 清理与准备 ─────────────────────────────────────────────────────
   console.log(`${c.b("Step 3/4")} 清理与准备...`);
+
+  // cf-core 依赖处理：Workers 模板依赖 @eforge/cf-core，需要复制到项目内
+  const outputPkgPath = join(outputDir, "package.json");
+  const outputPkg = JSON.parse(readFileSync(outputPkgPath, "utf-8"));
+  const cfCoreDep = outputPkg.dependencies?.["@eforge/cf-core"];
+  if (cfCoreDep && cfCoreDep.startsWith("file:")) {
+    const cfCoreSrc = join(ROOT, "packages", "cf-core");
+    const cfCoreDest = join(outputDir, "packages", "cf-core");
+    if (existsSync(cfCoreSrc)) {
+      mkdirSync(join(outputDir, "packages"), { recursive: true });
+      copyTemplate(cfCoreSrc, cfCoreDest);
+      // 改写 package.json 中的依赖路径
+      outputPkg.dependencies["@eforge/cf-core"] = "file:./packages/cf-core";
+      writeFileSync(outputPkgPath, JSON.stringify(outputPkg, null, 2) + "\n", "utf-8");
+      // 改写 tsconfig.json 中的 paths
+      const tsconfigPath = join(outputDir, "tsconfig.json");
+      if (existsSync(tsconfigPath)) {
+        let tsconfigContent = readFileSync(tsconfigPath, "utf-8");
+        tsconfigContent = tsconfigContent.replace(
+          /\.\.\/\.\.\/packages\/cf-core/g,
+          "./packages/cf-core"
+        );
+        writeFileSync(tsconfigPath, tsconfigContent, "utf-8");
+      }
+      console.log(`  ${c.g("✅")} cf-core 已复制到 packages/（独立部署就绪）`);
+    }
+  }
 
   // 确保 .gitignore 包含敏感目录
   const gitignorePath = join(outputDir, ".gitignore");
