@@ -2,7 +2,7 @@
 name: audit-cross-project-consistency
 description: Systematically audit a multi-project codebase for naming inconsistencies, broken import paths, script closure gaps, and documentation drift
 source: auto-skill
-extracted_at: '2026-05-29T19:30:00.000Z'
+extracted_at: '2026-05-30T03:16:05.656Z'
 ---
 
 # Audit Cross-Project Consistency
@@ -16,17 +16,18 @@ When you have a shared library + multiple templates/projects consuming it, subtl
 - Before a major release or when onboarding new team members
 - When users report "it works in dev but not in production"
 
-## The 5 Audit Dimensions
+## The 6 Audit Dimensions
 
-Run all 5 audits in **parallel** using separate agents. Each dimension catches a different class of bug:
+Run all 6 audits in **parallel** using separate agents. Each dimension catches a different class of bug:
 
 | Dimension | What it catches | Severity of bugs found |
 |-----------|----------------|----------------------|
 | **1. Token naming** | `ENCRYPTION_KEY` vs `CREDENTIALS_ENCRYPTION_KEY` across files | Fatal |
 | **2. Import paths** | `@eforge/cf-core/types` missing from exports | High |
 | **3. Script closure** | Deploy script A writes `FOO`, script B reads `foo` | High |
-| **4. Config uniformity** | tsconfig.json differs between templates | Medium |
+| **4. Config uniformity** | tsconfig.json / wrangler.jsonc structural drift between templates | Medium |
 | **5. Documentation accuracy** | Docs reference removed functions | Low-Medium |
+| **6. CI/CD & test file completeness** | Missing workflow files, undistributed test scripts | High |
 
 ## Audit 1: Token Naming Consistency
 
@@ -168,9 +169,45 @@ diff templates/cf-shop/.deploy/shared.sh templates/cf-api/.deploy/shared.sh
 | `package.json` dependencies | YES | None |
 | `.deploy/` scripts | YES | None (shared source, copied) |
 | `.github/workflows/*.yml` | YES (after template substitution) | `{{WORKER_NAME}}` etc. |
+| `wrangler.jsonc` structure | YES | `name`, `vars` values differ; structure must match |
+| `package.json` scripts | MOSTLY | Template-specific scripts allowed; shared scripts must match |
 | `src/bindings.ts` | NO | Project-specific fields expected |
 | `src/db/schema.ts` | NO | Business tables differ |
 | `src/config.ts` | NO | Domain-specific settings |
+
+### wrangler.jsonc Structural Check
+
+wrangler.jsonc files will have different `name` and `vars` values per template, but the **structure** must be consistent:
+
+```bash
+# Check that all Workers templates have the same top-level keys
+for t in cf-shop cf-api cf-tools cf-form; do
+  echo "=== $t ==="
+  jq -r 'keys[]' "templates/$t/wrangler.jsonc" 2>/dev/null | sort
+done
+
+# Expected: all should have: assets, compatibility_date, main, name, observability, vars
+# Missing "observability" in one template = structural drift
+```
+
+Key structural elements to verify:
+- `"observability": { "enabled": true }` — present in ALL Workers templates
+- `"assets"` block — same sub-keys (`directory`, `binding`, `html_handling`, `not_found_handling`, `run_worker_first`)
+- `"compatibility_date"` — same date across all templates
+
+### package.json Scripts Check
+
+```bash
+# Extract scripts from all templates side-by-side
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  echo "=== $t ==="
+  jq -r '.scripts | to_entries[] | "  \(.key): \(.value)"' "templates/$t/package.json"
+done
+```
+
+Flag any script where the **interpreter doesn't match the file type**:
+- `"node some-file.sh"` → ❌ should be `bash`
+- `"bash some-file.mjs"` → ❌ should be `node`
 
 ## Audit 5: Documentation Accuracy
 
@@ -185,6 +222,84 @@ For each doc file, check:
 3. **File references** — do referenced files still exist at those paths?
 4. **Feature names** — are old names ("plugins") still used instead of current names ("features")?
 5. **Token names** — do docs use the authoritative token names?
+
+## Audit 6: CI/CD & Test File Completeness
+
+**Goal**: Every template must have identical CI/CD workflows, shared test scripts, and deployment infrastructure.
+
+### Procedure
+
+```bash
+# 1. List all workflow files across templates
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  echo "=== $t ==="
+  ls -la "templates/$t/.github/workflows/" 2>/dev/null || echo "  ❌ MISSING .github/workflows/"
+done
+
+# 2. List all .deploy/ test files
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  echo "=== $t ==="
+  ls -la "templates/$t/.deploy/tests/" 2>/dev/null || echo "  ❌ MISSING .deploy/tests/"
+done
+
+# 3. MD5 verify shared files are byte-identical
+for file in shared.sh one-click.sh workflows/deploy.yml workflows/backup-daily.yml workflows/cleanup-schedule.yml; do
+  echo "=== .deploy/$file ==="
+  for t in cf-shop cf-api cf-tools cf-static cf-form; do
+    path="templates/$t/.deploy/$file"
+    [ -f "$path" ] && echo "  $t: $(md5 -q "$path")" || echo "  $t: ❌ MISSING"
+  done
+done
+
+# 4. MD5 verify .github/workflows/*.yml
+for yml in deploy.yml; do
+  echo "=== .github/workflows/$yml ==="
+  for t in cf-shop cf-api cf-tools cf-static cf-form; do
+    path="templates/$t/.github/workflows/$yml"
+    [ -f "$path" ] && echo "  $t: $(md5 -q "$path")" || echo "  $t: ❌ MISSING"
+  done
+done
+```
+
+### What to Check
+
+| File | Must exist in all templates? | Must be identical? |
+|------|----------------------------|-------------------|
+| `.github/workflows/deploy.yml` | YES | YES (with `{{WORKER_NAME}}` placeholders) |
+| `.deploy/shared.sh` | YES | YES (MD5 identical) |
+| `.deploy/one-click.sh` | YES | YES (MD5 identical) |
+| `.deploy/workflows/deploy.yml` | YES | YES (MD5 identical) |
+| `.deploy/workflows/backup-daily.yml` | YES | YES (MD5 identical) |
+| `.deploy/workflows/cleanup-schedule.yml` | YES | YES (MD5 identical) |
+| `.deploy/tests/test-shared.sh` | YES | YES (MD5 identical) |
+
+### Common Issues Found in This Audit
+
+| Issue | Impact | Fix |
+|-------|--------|-----|
+| `.github/workflows/deploy.yml` missing in some templates | GitHub Actions CI/CD broken for those projects | Copy from `.deploy/workflows/deploy.yml` |
+| `test-shared.sh` only in one template | Other templates can't run shared.sh unit tests | Copy to all `.deploy/tests/` |
+| `smoke:readonly` uses `node` to call bash script | Script fails with "SyntaxError" | Rename to `smoke:shared`, use `bash` interpreter |
+| `wrangler.jsonc` missing `observability` block | No metrics/logs in CF dashboard | Add `"observability": { "enabled": true }` |
+| `dev` script has extra `--local` flag | Inconsistent dev experience | Align with other templates |
+
+### MD5 Verification Technique
+
+Using MD5 checksums is the fastest way to verify file identity across many templates:
+
+```bash
+# Single file, all templates
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  echo -n "$t: "; md5 -q "templates/$t/.deploy/shared.sh"
+done
+
+# Expected output: all lines show the SAME hash
+# cf-shop: 5411c21ac78e7dc6c0745c7fd0c0cd44
+# cf-api:  5411c21ac78e7dc6c0745c7fd0c0cd44
+# ...
+```
+
+**Any differing MD5 = bug.** All shared infrastructure files must be byte-identical.
 
 ## Severity Classification
 
@@ -240,6 +355,12 @@ cd packages/cf-core && npx vitest run
 6. **The deploy scripts are the authoritative naming source** — everything else (bindings.ts, docs, workflows) must conform to them
 7. **After fixing, always sync + re-test** — fixing in the source `.deploy/` without copying to templates leaves stale copies
 8. **Create a Token Quick Reference doc** — `docs/070_Token速查表.md` prevents future naming drift by providing a single source of truth
+9. **"Last added template" syndrome** — the most recently added template (e.g., cf-form) accumulates the most inconsistencies because it was created in a different context/time. Always audit the newest template extra carefully against the established patterns.
+10. **MD5 checksums beat diff for N-template verification** — when comparing the same file across 5+ templates, MD5 hashes in a table are faster and more reliable than pairwise `diff` commands. One line per template, one hash per file — any difference jumps out immediately.
+11. **CI/CD files are easy to forget** — `.github/workflows/deploy.yml` must be copied from `.deploy/workflows/` but this step is often missed. Always verify with `ls` across all templates.
+12. **Script interpreter mismatches are silent** — `package.json` script `"smoke:readonly": "node .deploy/tests/test-shared.sh"` fails because `node` can't parse bash. Always verify that the interpreter (`node`, `bash`, `npx`) matches the file type.
+13. **wrangler.jsonc structural drift** — not just content but structure matters. One template may have `"observability": { "enabled": true }` while another doesn't. Compare the full JSON structure, not just specific fields.
+14. **Test file distribution is non-obvious** — shared test files (like `test-shared.sh` that tests `shared.sh`) must be distributed to ALL templates, not just the one where they were developed.
 
 ## References
 

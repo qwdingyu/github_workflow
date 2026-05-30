@@ -445,9 +445,133 @@ Each bug gets an **Iron Rule** — a one-sentence principle that prevents the en
 13. **CI first-run failure is expected** — Step 00 pushes code before Secrets exist; Step 06 sets Secrets and triggers a second CI run that succeeds. Document this so users don't panic
 14. **Be honest about what "zero-touch" means** — after 4 rounds, scripts are zero-touch for all script-level bugs, but external service resilience gaps (Turso 502) required one-time fixes. True zero-touch means building retries for every external call
 
+## Pre-Deployment Static Testing (7-Test Matrix)
+
+Before running against real infrastructure, execute a **static testing matrix** that catches bugs without consuming any API quota or tokens. This was validated on 2026-05-30 with 115+ automated tests across 5 templates.
+
+### Test 1: Environment Prerequisites
+
+Verify all tools required by the deploy scripts are available:
+
+```bash
+for cmd in rtk node npm gh jq curl openssl wrangler turso; do
+  which $cmd >/dev/null 2>&1 && echo "✓ $cmd" || echo "✗ $cmd NOT FOUND"
+done
+```
+
+**Key insight**: `wrangler` may not be globally installed but available via `npx wrangler`. Test both paths.
+
+### Test 2: Bash Syntax Check (ALL Scripts)
+
+Run `bash -n` on every .sh file across all templates and the shared `.deploy/` directory:
+
+```bash
+find templates/ -name "*.sh" -type f | while read f; do
+  bash -n "$f" 2>&1 && echo "✓ $f" || echo "✗ $f"
+done
+```
+
+**Expected**: 51/51 pass (5 templates × 10 scripts + 1 shared).
+
+### Test 3: YAML Syntax Check (ALL Workflows)
+
+Use Python's PyYAML to validate every .yml file:
+
+```bash
+python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$file"
+```
+
+Check both `.github/workflows/` and `.deploy/workflows/` for each template.
+
+**Expected**: 20/20 pass (5 templates × 4 workflow files).
+
+### Test 4: Scaffold Script Full Flow
+
+Run the `create-project.mjs` (or equivalent) for **every template**, then verify the output:
+
+```bash
+for tmpl in cf-shop cf-api cf-tools cf-static cf-form; do
+  echo "Y" | node scripts/create-project.mjs "test-$tmpl" \
+    --template "$tmpl" --domain "test-$tmpl.example.com" --output /tmp/test
+
+  # Verify: directory exists, package.json name replaced, .deploy-mode correct, .git initialized
+  # Verify: wrangler.jsonc name replaced (use node to parse JSONC, stripping comments)
+  # Verify: seo-config.json (for cf-static) has correct siteName
+done
+```
+
+**Critical bug found**: seo-config.json was updated BEFORE text replacement ran, causing double replacement (`"cf-static"` → `"test-cf-static"`, then text replace turned it into `"test-test-cf-static"`). **Fix**: always run JSON-specific updates AFTER generic text replacement.
+
+### Test 5: Environment Variable Pre-Check
+
+Verify that one-click.sh correctly fails when required env vars are missing:
+
+```bash
+# Workers mode: should fail without both CLOUDFLARE_API_TOKEN and TURSO_API_TOKEN
+CLOUDFLARE_API_TOKEN="" TURSO_API_TOKEN="" bash -c 'source .deploy/shared.sh && check_env CLOUDFLARE_API_TOKEN || echo "FAIL"'
+
+# Pages mode: should fail without CLOUDFLARE_API_TOKEN only
+CLOUDFLARE_API_TOKEN="" bash -c 'source .deploy/shared.sh && check_env CLOUDFLARE_API_TOKEN || echo "FAIL"'
+
+# With token set: should pass
+CLOUDFLARE_API_TOKEN="cfat_test" bash -c 'source .deploy/shared.sh && check_env CLOUDFLARE_API_TOKEN && echo "OK"'
+```
+
+### Test 6: Dependency Chain Verification
+
+For each deploy script (00-06), catalog its **inputs** (cred_load calls) and **outputs** (cred_save calls). Verify the chain is complete:
+
+```
+Step 00 → saves: GITHUB_REPO, PROJECT_NAME
+Step 01 → loads: PROJECT_NAME ← 00; saves: TURSO_URL, TURSO_TOKEN, DB_NAME
+Step 02 → saves: ADMIN_TOKEN, RATE_LIMIT_SALT, JWT_SECRET, CREDENTIALS_ENCRYPTION_KEY
+Step 03 → loads: PROJECT_NAME←00, TURSO_URL←01, TURSO_TOKEN←01, secrets←02; saves: WORKER_NAME, BASE_URL
+Step 04 → loads: WORKER_NAME←03; saves: DOMAIN, BASE_URL
+Step 05 → loads: WORKER_NAME←03, DOMAIN←04, TURSO_URL←01; saves: TURNSTILE keys
+Step 06 → loads: everything; saves: (final)
+```
+
+**Verify**: every cred_load in a step has a matching cred_save in an earlier step.
+
+### Test 7: Regression Tests
+
+Run all existing unit tests after deployment-related changes:
+
+```bash
+cd packages/cf-core && npm test              # 81/81
+cd templates/cf-form && npx tsc --noEmit      # no errors
+cd templates/cf-static && node scripts/generate-seo-pages.mjs  # all pages
+bash templates/.deploy/tests/test-shared.sh    # 34/34
+```
+
+### Scaffold Script Bug: Ordering Matters
+
+The most important lesson from static testing: **when a scaffold script does both generic text replacement AND JSON-specific updates, the JSON update MUST run AFTER text replacement**.
+
+```javascript
+// ❌ WRONG — JSON update first, then text replacement overwrites it
+seoConfig.siteName = name;  // "test-cf-static"
+writeFileSync(seoConfigPath, JSON.stringify(seoConfig));
+replaceInDir(outputDir, replacements);  // "cf-static" → "test-cf-static" double-applied
+
+// ✅ RIGHT — text replacement first, then JSON update overwrites any corrupted values
+replaceInDir(outputDir, replacements);
+seoConfig.siteName = name;  // Clean write, no double replacement
+writeFileSync(seoConfigPath, JSON.stringify(seoConfig));
+```
+
+### False Positives to Watch For
+
+During static testing, two types of false positives appeared:
+
+1. **JSONC parse failures**: `JSON.parse()` fails on wrangler.jsonc (which has `//` comments). The file content is correct; the test tool doesn't support JSONC. Strip comments before parsing, or use a JSONC-aware parser.
+
+2. **Residual template names**: `grep "cf-shop"` matches `"test-cf-shop"` (already-replaced values). Use precise search: `grep "\"cf-shop\""` and exclude lines containing the new name.
+
 ## References
 
 - Deploy scripts: `templates/.deploy/` (8 scripts + 3 CI/CD workflows)
+- Deployment test report: `docs/052_部署测试报告_2026-05-30.md` (7-test matrix, 1 bug fix, dependency chain docs)
 - Pitfall record: `docs/049_xshop端到端部署踩坑记录_2026-05-29.md` (15 bugs across 4 rounds, 15 iron rules)
 - Prerequisite skill: `build-deploy-automation` (the scripts being verified)
-- Related skills: `audit-cross-project-consistency` (post-deployment naming audit)
+- Related skills: `audit-cross-project-consistency` (post-deployment naming audit), `seo-geo-hardening` (SEO/GEO readiness)
