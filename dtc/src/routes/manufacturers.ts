@@ -5,14 +5,20 @@
  */
 
 import { Hono } from "hono";
+import type { Context } from "hono";
 import type { AppEnv } from "../bindings";
+import type { Db } from "../services/dtc-service";
 import { ok } from "@eforge/cf-core/http";
 import { listManufacturers } from "../services/dtc-service";
+
+function getDb(c: Context<AppEnv>): Db {
+  return c.get("db") as unknown as Db;
+}
 
 const manufacturersRoute = new Hono<AppEnv>();
 
 manufacturersRoute.get("/", async (c) => {
-  const db = c.get("db");
+  const db = getDb(c);
   const mfrs = await listManufacturers(db);
   return ok(c, { manufacturers: mfrs, total: mfrs.length });
 });

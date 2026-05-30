@@ -2,13 +2,17 @@
  * DTC 故障码查询服务 — 核心业务逻辑
  *
  * 所有数据库操作通过 Drizzle ORM 完成，不写原生 SQL。
- * 包含：单码查询、关键词搜索、批量查询、统计、归一化、从文本提取。
+ * 使用本地 drizzle-orm 类型，通过转型接收 cf-core 的 Db 实例。
  */
 
 import { eq, sql, and, count as drizzleCount, inArray } from "drizzle-orm";
 import { dtcCodes, manufacturers } from "../db/schema";
-import type { DbType } from "../db/database";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import type * as schema from "../db/schema";
 import { config } from "../config";
+
+/** 数据库实例类型 — 使用本地 drizzle-orm 定义（与 cf-core 的 DrizzleInstance 结构一致） */
+export type Db = LibSQLDatabase<typeof schema>;
 
 // ── 类型定义 ──
 
@@ -94,17 +98,11 @@ function toDtcResult(record: typeof dtcCodes.$inferSelect): DtcResult {
 /**
  * 归一化 DTC 代码。
  * 标准化 DTC 格式为 PXXXX（5 字符大写），校验代码是否有效。
- * 示例：P0420 → { normalized: "P0420", systemShort: "P", isValid: true }
- *        p0420 → { normalized: "P0420" }（自动转大写）
- *        12345 → { normalized: "12345", isValid: false }
  */
 export function normalizeCode(input: string): NormalizedCode {
   const raw = input.trim().toUpperCase();
 
-  // 标准 DTC 格式：[P|B|C|U][0-9][0-9A-F]{3}（5 字符）
   const standardPattern = /^([PBCU])(\d)([0-9A-F]{3})$/;
-
-  // 扩展格式：[P|B|C|U][0-9A-F]{4}（5 字符，宽松）
   const extendedPattern = /^([PBCU])([0-9A-F]{4})$/;
 
   let match = standardPattern.exec(raw);
@@ -148,12 +146,10 @@ export function normalizeCode(input: string): NormalizedCode {
 
 /**
  * 查询单个 DTC 码的详细信息。
- * 按 code + manufacturer 精确匹配。
- * manufacturer 可选，默认为 "GENERIC"。
  * 优先查制造商特定码，未命中则 fallback 到 GENERIC。
  */
 export async function lookup(
-  db: DbType,
+  db: Db,
   code: string,
   manufacturer: string = "GENERIC",
 ): Promise<DtcResult | null> {
@@ -163,7 +159,6 @@ export async function lookup(
   const targetCode = normalized.normalized;
   const targetMfr = manufacturer.toUpperCase().trim();
 
-  // 优先查询特定制造商
   let record = await db
     .select()
     .from(dtcCodes)
@@ -171,7 +166,6 @@ export async function lookup(
     .limit(1)
     .then((rows) => rows[0] ?? null);
 
-  // 未找到特定制造商码，fallback 到 GENERIC
   if (!record && targetMfr !== "GENERIC") {
     record = await db
       .select()
@@ -182,19 +176,16 @@ export async function lookup(
   }
 
   if (!record) return null;
-
   return toDtcResult(record);
 }
 
 // ── 关键词搜索 ──
 
 /**
- * 搜索 DTC 码。支持模糊匹配 code、description、manufacturer。
- * 按 code 前缀匹配优先，description 模糊匹配次之。
- * 可选按 manufacturer 或 system 过滤。
+ * 搜索 DTC 码。支持 code 前缀匹配、description 模糊匹配、manufacturer/system 过滤。
  */
 export async function search(
-  db: DbType,
+  db: Db,
   keyword: string,
   options?: {
     manufacturer?: string;
@@ -214,12 +205,10 @@ export async function search(
   const q = kw.toUpperCase();
   const isCode = /^[PBCU][0-9A-F]{0,4}$/i.test(kw);
 
-  // 构建搜索条件：code 前缀匹配 OR description 模糊匹配 OR manufacturer 匹配
   const searchCondition = isCode
     ? sql`(${dtcCodes.code} LIKE ${q + "%"} OR ${dtcCodes.description} LIKE ${"%" + kw + "%"})`
     : sql`(${dtcCodes.description} LIKE ${"%" + kw + "%"} OR ${dtcCodes.manufacturer} LIKE ${q + "%"})`;
 
-  // 额外过滤条件
   const filters: ReturnType<typeof eq>[] = [];
   if (options?.manufacturer) {
     filters.push(eq(dtcCodes.manufacturer, options.manufacturer.toUpperCase()));
@@ -230,14 +219,12 @@ export async function search(
 
   const finalWhere = filters.length > 0 ? and(searchCondition, ...filters) : searchCondition;
 
-  // 查询总条数
   const countResult = await db
     .select({ count: drizzleCount() })
     .from(dtcCodes)
     .where(finalWhere)
     .then((rows) => rows[0]?.count ?? 0);
 
-  // 分页查询
   const records = await db
     .select()
     .from(dtcCodes)
@@ -255,16 +242,14 @@ export async function search(
 // ── 批量查询 ──
 
 /**
- * 批量查询多个 DTC 码。
- * 返回 map[code] → DtcResult，未找到的 code 不包含在结果中。
- * 最大支持 500 个码的批量查询。
+ * 批量查询多个 DTC 码（最多 500 个）。
+ * 返回 map[code] → DtcResult。
  */
 export async function batchLookup(
-  db: DbType,
+  db: Db,
   codes: string[],
   manufacturer: string = "GENERIC",
 ): Promise<Map<string, DtcResult>> {
-  // 去重 + 归一化
   const uniqueCodes: string[] = [];
   const seen = new Set<string>();
   for (const c of codes) {
@@ -281,7 +266,6 @@ export async function batchLookup(
 
   const targetMfr = manufacturer.toUpperCase().trim();
 
-  // 查询该制造商下的码
   const records = await db
     .select()
     .from(dtcCodes)
@@ -289,7 +273,6 @@ export async function batchLookup(
 
   const foundCodes = new Set(records.map((r) => r.code));
 
-  // 对未在特定制造商下找到的码，查询 GENERIC
   const missingCodes = uniqueCodes.filter((c) => !foundCodes.has(c));
   if (missingCodes.length > 0 && targetMfr !== "GENERIC") {
     const genericRecords = await db
@@ -302,7 +285,6 @@ export async function batchLookup(
 
   const map = new Map<string, DtcResult>();
   for (const r of records) {
-    // 优先保留制造商特定码，已有则跳过
     if (!map.has(r.code) || r.manufacturer !== "GENERIC") {
       map.set(r.code, toDtcResult(r));
     }
@@ -312,11 +294,8 @@ export async function batchLookup(
 
 // ── 按制造商查询 ──
 
-/**
- * 查询指定制造商的所有 DTC 码。支持分页。
- */
 export async function lookupByManufacturer(
-  db: DbType,
+  db: Db,
   mfr: string,
   options?: { limit?: number; offset?: number },
 ): Promise<{ results: DtcResult[]; total: number }> {
@@ -346,10 +325,7 @@ export async function lookupByManufacturer(
 
 // ── 统计分析 ──
 
-/**
- * 获取 DTC 数据集的统计信息：总数、制造商数、按系统类型分布、按制造商 Top15。
- */
-export async function getStats(db: DbType): Promise<StatsResult> {
+export async function getStats(db: Db): Promise<StatsResult> {
   const totalCodes = await db
     .select({ count: drizzleCount() })
     .from(dtcCodes)
@@ -360,7 +336,6 @@ export async function getStats(db: DbType): Promise<StatsResult> {
     .from(manufacturers)
     .then((rows) => rows[0]?.count ?? 0);
 
-  // 按系统类型统计（P/B/C/U）
   const bySystemRows = await db
     .select({ systemShort: dtcCodes.systemShort, count: drizzleCount() })
     .from(dtcCodes)
@@ -371,7 +346,6 @@ export async function getStats(db: DbType): Promise<StatsResult> {
     bySystem[r.systemShort] = r.count;
   }
 
-  // 按制造商统计（Top 15）
   const byMfrRows = await db
     .select({ manufacturer: dtcCodes.manufacturer, count: drizzleCount() })
     .from(dtcCodes)
@@ -394,12 +368,7 @@ export async function getStats(db: DbType): Promise<StatsResult> {
 
 // ── 制造商列表 ──
 
-/**
- * 获取所有制造商列表，按 code_count 降序排列。
- */
-export async function listManufacturers(
-  db: DbType,
-): Promise<ManufacturerInfo[]> {
+export async function listManufacturers(db: Db): Promise<ManufacturerInfo[]> {
   const records = await db
     .select()
     .from(manufacturers)
@@ -416,10 +385,6 @@ export async function listManufacturers(
 
 // ── 从文本提取 DTC ──
 
-/**
- * 从文本中提取所有可能的 DTC 代码。
- * 使用正则匹配标准格式 [PBCU][0-9][0-9A-F]{3}，自动去重。
- */
 export function extractFromText(text: string): NormalizedCode[] {
   const pattern = /[PBCU][0-9][0-9A-F]{3}/gi;
   const matches = text.match(pattern);
