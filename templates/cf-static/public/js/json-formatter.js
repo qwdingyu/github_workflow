@@ -21,16 +21,19 @@ function processTool() {
 
 function copyOutput() {
   const output = document.getElementById('output');
-  output.select();
-  document.execCommand('copy');
-  
-  // 显示复制成功提示
-  const btn = event.target;
-  const originalText = btn.textContent;
-  btn.textContent = '✓ 已复制';
-  setTimeout(() => {
-    btn.textContent = originalText;
-  }, 2000);
+  if (!output.value) return;
+
+  navigator.clipboard.writeText(output.value).then(() => {
+    const btn = document.querySelector('.tool-actions .btn-secondary');
+    if (btn) {
+      const originalText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => { btn.textContent = originalText; }, 2000);
+    }
+  }).catch(() => {
+    // 降级方案：选中文本让用户手动复制
+    output.select();
+  });
 }
 
 function clearAll() {

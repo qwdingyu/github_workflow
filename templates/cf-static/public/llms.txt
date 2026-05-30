@@ -4,7 +4,12 @@
 
 ## Tools
 - [Base64 编解码工具](https://YOUR_DOMAIN.example.com/tools/base64-decode.html): 在线解码和编码 Base64 字符串。免费、快速、注重隐私 — 所有操作在浏览器中完成。
+- [HTML 转义工具](https://YOUR_DOMAIN.example.com/tools/html-escape.html): 在线 HTML 转义和反转义工具。防止 XSS 攻击，安全处理 HTML 特殊字符。
 - [JSON 格式化与美化工具](https://YOUR_DOMAIN.example.com/tools/json-formatter.html): 在线格式化、美化和验证 JSON 数据。免费、快速、注重隐私 — 数据不会发送到任何服务器。
+- [MD5 哈希生成器](https://YOUR_DOMAIN.example.com/tools/md5-generator.html): 在线生成文本的 MD5 哈希值。快速、安全，所有计算在浏览器中完成。
+- [正则表达式测试器](https://YOUR_DOMAIN.example.com/tools/regex-tester.html): 在线正则表达式测试工具。实时匹配、高亮显示，支持常用修饰符。
+- [时间戳转换器](https://YOUR_DOMAIN.example.com/tools/timestamp-converter.html): Unix 时间戳与日期时间互转工具。支持秒级和毫秒级时间戳，实时显示当前时间。
+- [URL 编解码工具](https://YOUR_DOMAIN.example.com/tools/url-encode-decode.html): 在线 URL 编码和解码工具。支持 URL 特殊字符的安全转换，适用于 URL 参数处理。
 - [UUID v4 生成器](https://YOUR_DOMAIN.example.com/tools/uuid-generator.html): 即时生成随机 UUID v4 标识符。免费、快速、支持离线使用 — 符合 RFC 4122 标准。
 
 ## Blog

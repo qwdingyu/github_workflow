@@ -3,7 +3,7 @@
   "title": "Base64 编解码工具",
   "description": "在线解码和编码 Base64 字符串。免费、快速、注重隐私 — 所有操作在浏览器中完成。",
   "keywords": ["base64 解码", "base64 编码", "base64 转换器", "在线解码 base64", "base64 转文本"],
-  "category": "encoder",
+  "category": "编解码",
   "icon": "B64",
   "faq": [
     {

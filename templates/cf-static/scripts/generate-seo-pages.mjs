@@ -323,6 +323,180 @@ for (const tool of tools) {
   console.log(`  ✅ tools/${tool.slug}.html`);
 }
 
+// ── 按分类分组工具 ─────────────────────────────────────────────────────────
+const toolsByCategory = {};
+tools.forEach(tool => {
+  const category = tool.category || '其他';
+  if (!toolsByCategory[category]) {
+    toolsByCategory[category] = [];
+  }
+  toolsByCategory[category].push(tool);
+});
+
+const categories = Object.keys(toolsByCategory).sort();
+console.log(`📂 工具分类: ${categories.length} 个分类`);
+
+// ── 生成分类页面 ─────────────────────────────────────────────────────────
+const categoriesOut = join(PUBLIC, 'categories');
+if (!existsSync(categoriesOut)) {
+  mkdirSync(categoriesOut, { recursive: true });
+}
+
+categories.forEach(category => {
+  const categoryTools = toolsByCategory[category];
+  const categorySlug = category.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-');
+  
+  const toolCards = categoryTools.map(tool => `
+    <a href="/tools/${tool.slug}.html" class="tool-card">
+      <div class="tool-icon">${tool.icon}</div>
+      <h3>${tool.title}</h3>
+      <p>${tool.description}</p>
+      <div class="tool-category">${category}</div>
+    </a>
+  `).join('\n');
+
+  const categoryHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${category}工具 - 在线开发工具</title>
+  <meta name="description" content="免费的${category}工具集合，所有操作在浏览器中完成，保护您的隐私。">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="/" class="logo">🛠️ 在线开发工具</a>
+      <div class="nav-links">
+        <a href="/">首页</a>
+        <a href="/categories/">分类</a>
+        <a href="/blog/">博客</a>
+        <a href="/docs/">文档</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <nav class="breadcrumb" aria-label="面包屑导航">
+      <a href="/">首页</a> &gt;
+      <a href="/categories/">分类</a> &gt;
+      <span class="current">${category}</span>
+    </nav>
+
+    <section class="hero">
+      <h1>${category}工具</h1>
+      <p class="hero-description">免费的${category}工具集合，所有操作在浏览器中完成</p>
+    </section>
+
+    <section class="tools-grid">
+      ${toolCards}
+    </section>
+
+    <section class="related-categories">
+      <h2>其他分类</h2>
+      <div class="category-tags">
+        ${categories.map(c => c === category ? 
+          `<span class="category-tag active">${c} (${toolsByCategory[c].length})</span>` :
+          `<a href="/categories/${c.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-')}.html" class="category-tag">${c} (${toolsByCategory[c].length})</a>`
+        ).join('\n        ')}
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 在线开发工具. 保留所有权利.</p>
+    <nav>
+      <a href="/">首页</a>
+      <a href="/blog/">博客</a>
+      <a href="/docs/">文档</a>
+      <a href="/privacy/">隐私政策</a>
+      <a href="/terms/">使用条款</a>
+    </nav>
+  </footer>
+</body>
+</html>`;
+
+  writeFileSync(join(categoriesOut, `${categorySlug}.html`), categoryHtml, 'utf8');
+  console.log(`  ✅ categories/${categorySlug}.html (${categoryTools.length} tools)`);
+});
+
+// ── 生成分类索引页面 ──────────────────────────────────────────────────────
+const categoryCards = categories.map(category => {
+  const categorySlug = category.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-');
+  const count = toolsByCategory[category].length;
+  const previewTools = toolsByCategory[category].slice(0, 3);
+  
+  return `
+    <a href="/categories/${categorySlug}.html" class="category-card">
+      <h3>${category}</h3>
+      <p class="category-count">${count} 个工具</p>
+      <div class="category-preview">
+        ${previewTools.map(t => `<span class="preview-tool">${t.icon} ${t.title}</span>`).join('\n        ')}
+        ${count > 3 ? `<span class="preview-more">+${count - 3} 更多</span>` : ''}
+      </div>
+    </a>
+  `;
+}).join('\n');
+
+const categoriesIndexHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具分类 - 在线开发工具</title>
+  <meta name="description" content="按分类浏览我们的免费开发工具集合">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="navbar">
+      <a href="/" class="logo">🛠️ 在线开发工具</a>
+      <div class="nav-links">
+        <a href="/">首页</a>
+        <a href="/categories/">分类</a>
+        <a href="/blog/">博客</a>
+        <a href="/docs/">文档</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <nav class="breadcrumb" aria-label="面包屑导航">
+      <a href="/">首页</a> &gt;
+      <span class="current">工具分类</span>
+    </nav>
+
+    <section class="hero">
+      <h1>工具分类</h1>
+      <p class="hero-description">按分类浏览我们的免费开发工具集合</p>
+    </section>
+
+    <section class="categories-grid">
+      ${categoryCards}
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 在线开发工具. 保留所有权利.</p>
+    <nav>
+      <a href="/">首页</a>
+      <a href="/blog/">博客</a>
+      <a href="/docs/">文档</a>
+      <a href="/privacy/">隐私政策</a>
+      <a href="/terms/">使用条款</a>
+    </nav>
+  </footer>
+</body>
+</html>`;
+
+writeFileSync(join(categoriesOut, 'index.html'), categoriesIndexHtml, 'utf8');
+console.log(`  ✅ categories/index.html (${categories.length} categories)`);
+
+console.log(`\n✅ 分类系统生成完成: ${categories.length} 个分类, ${tools.length} 个工具\n`);
+
 // ── 读取博客和文档模板 ───────────────────────────────────────────────────────
 const postTemplate = existsSync(join(SRC, "templates", "post.html"))
   ? readFileSync(join(SRC, "templates", "post.html"), "utf-8")
@@ -599,6 +773,13 @@ const indexOgImageUrl = `${siteConfig.siteUrl}/images/index.svg`;
 const indexOgImageSvg = generateOgImageSvg(siteConfig.siteName, siteConfig.siteName, "tool");
 writeFileSync(join(IMAGES_OUT, "index.svg"), indexOgImageSvg, "utf-8");
 
+// 生成分类标签 HTML
+const categoryTagsHtml = categories.map(category => {
+  const categorySlug = category.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-');
+  const count = toolsByCategory[category].length;
+  return `<a href="/categories/${categorySlug}.html" class="category-tag">${category} (${count})</a>`;
+}).join('\n      ');
+
 const indexTools = tools
   .map(
     (t) => `
@@ -606,6 +787,7 @@ const indexTools = tools
       <span class="tool-icon">${t.icon || "🔧"}</span>
       <h3>${t.title}</h3>
       <p>${t.description}</p>
+      <span class="tool-category">${t.category || '其他'}</span>
     </a>`
   )
   .join("\n");
@@ -649,22 +831,32 @@ const indexHtml = `<!DOCTYPE html>
   <header>
     <nav>
       <a href="/" class="logo">${siteConfig.siteName}</a>
+      <div class="nav-links">
+        <a href="/categories/">分类</a>
+        <a href="/blog/">博客</a>
+        <a href="/docs/">文档</a>
+      </div>
     </nav>
   </header>
   <main>
     <section class="hero">
       <h1>${siteConfig.siteName}</h1>
       <p>${siteConfig.description}</p>
+      <div class="category-tags">
+        ${categoryTagsHtml}
+      </div>
     </section>
     <section class="tools-grid">
       ${indexTools}
     </section>
   </main>
   <footer>
-    <p>&copy; ${year} ${siteConfig.siteName}. All rights reserved.</p>
+    <p>&copy; ${year} ${siteConfig.siteName} 版权所有</p>
     <nav>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
+      <a href="/">首页</a>
+      <a href="/categories/">分类</a>
+      <a href="/blog/">博客</a>
+      <a href="/docs/">文档</a>
     </nav>
   </footer>
 </body>

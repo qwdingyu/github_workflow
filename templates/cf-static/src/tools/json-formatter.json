@@ -3,7 +3,7 @@
   "title": "JSON 格式化与美化工具",
   "description": "在线格式化、美化和验证 JSON 数据。免费、快速、注重隐私 — 数据不会发送到任何服务器。",
   "keywords": ["json 格式化", "json 美化", "json 验证", "在线格式化 json", "json 漂亮打印"],
-  "category": "formatter",
+  "category": "格式化",
   "icon": "{ }",
   "faq": [
     {
