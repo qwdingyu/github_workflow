@@ -1,5 +1,5 @@
 /**
- * cf-form-kit — 环境变量与 Hono 变量类型定义
+ * cf-form — 环境变量与 Hono 变量类型定义
  *
  * 扩展 @eforge/cf-core 的 CoreBindings / CoreVariables，
  * 添加表单工具特有的环境变量。
@@ -11,7 +11,7 @@ import type { DbType } from "./db/client";
 /**
  * Cloudflare Workers 环境变量（Secrets + Vars）
  */
-export interface FormKitBindings extends CoreBindings {
+export interface FormBindings extends CoreBindings {
   /** 静态资源 binding（wrangler assets） */
   ASSETS: Fetcher;
 
@@ -25,7 +25,7 @@ export interface FormKitBindings extends CoreBindings {
 /**
  * Hono Variables — 请求生命周期内的中间件注入变量
  */
-export interface FormKitVariables extends CoreVariables {
+export interface FormVariables extends CoreVariables {
   db: DbType;
 }
 
@@ -33,6 +33,6 @@ export interface FormKitVariables extends CoreVariables {
  * Hono 环境类型 — 所有路由和中间件的泛型约束
  */
 export type AppEnv = {
-  Bindings: FormKitBindings;
-  Variables: FormKitVariables;
+  Bindings: FormBindings;
+  Variables: FormVariables;
 };

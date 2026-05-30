@@ -1,5 +1,5 @@
 /**
- * cf-form-kit — Worker 入口
+ * cf-form — Worker 入口
  *
  * 使用 @eforge/cf-core 的 bootstrap() 工厂函数创建应用。
  * 数据库初始化、安全响应头、错误处理由 bootstrap 自动注入。

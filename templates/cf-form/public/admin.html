@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CF Form — 管理后台</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus"></script>
+  <style>
+    body { margin: 0; background: #f5f5f5; font-family: -apple-system, system-ui, sans-serif; }
+    .admin-header { background: #1a1d27; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .admin-header h1 { margin: 0; font-size: 18px; }
+    .admin-header a { color: #818cf8; text-decoration: none; }
+    .admin-body { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+    .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .json-editor { width: 100%; min-height: 300px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; }
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .stat-card .number { font-size: 32px; font-weight: 700; color: #6366f1; }
+    .stat-card .label { color: #666; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="admin-header">
+    <h1>CF Form 管理后台</h1>
+    <a href="/">← 返回首页</a>
+  </div>
+
+  <div class="admin-body">
+    <!-- 统计卡片 -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="number">{{ stats.forms }}</div>
+        <div class="label">表单数量</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">{{ stats.submissions }}</div>
+        <div class="label">提交记录</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">{{ stats.activeForms }}</div>
+        <div class="label">活跃表单</div>
+      </div>
+    </div>
+
+    <!-- Tab 切换 -->
+    <el-tabs v-model="activeTab">
+      <!-- 表单管理 -->
+      <el-tab-pane label="表单管理" name="forms">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+            <h2 style="margin:0">表单列表</h2>
+            <el-button type="primary" @click="showCreateForm">+ 新建表单</el-button>
+          </div>
+          <el-table :data="forms" stripe>
+            <el-table-column prop="title" label="标题" width="200" />
+            <el-table-column prop="slug" label="Slug" width="150" />
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 'active' ? 'success' : row.status === 'draft' ? 'warning' : 'info'">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="sortOrder" label="排序" width="80" />
+            <el-table-column label="字段数" width="80">
+              <template #default="{ row }">{{ row.formSchema.length }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="200">
+              <template #default="{ row }">
+                <el-button size="small" @click="editForm(row)">编辑</el-button>
+                <el-button size="small" type="danger" @click="deleteForm(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-tab-pane>
+
+      <!-- 提交记录 -->
+      <el-tab-pane label="提交记录" name="submissions">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+            <h2 style="margin:0">提交记录</h2>
+            <el-select v-model="filterForm" placeholder="按表单筛选" clearable style="width:200px" @change="loadSubmissions">
+              <el-option v-for="f in forms" :key="f.slug" :label="f.title" :value="f.slug" />
+            </el-select>
+          </div>
+          <el-table :data="submissions" stripe>
+            <el-table-column prop="formSlug" label="表单" width="120" />
+            <el-table-column prop="contact" label="联系方式" width="200" />
+            <el-table-column label="提交数据">
+              <template #default="{ row }">
+                <span style="font-size:12px;color:#666">{{ JSON.stringify(row.payload).slice(0, 100) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 'reviewed' ? 'success' : row.status === 'archived' ? 'info' : 'warning'">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createdAt" label="时间" width="180" />
+          </el-table>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- 表单编辑弹窗 -->
+    <el-dialog v-model="formDialogVisible" :title="editingForm.id ? '编辑表单' : '新建表单'" width="800px">
+      <el-form label-width="100px">
+        <el-form-item label="标题">
+          <el-input v-model="editingForm.title" />
+        </el-form-item>
+        <el-form-item label="Slug">
+          <el-input v-model="editingForm.slug" placeholder="contact" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="editingForm.description" type="textarea" :rows="2" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="editingForm.status">
+            <el-option label="活跃" value="active" />
+            <el-option label="草稿" value="draft" />
+            <el-option label="归档" value="archived" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="表单定义">
+          <textarea class="json-editor" v-model="editingForm.formSchemaJson" placeholder='[{"type":"text","key":"name","label":"姓名","required":true}]'></textarea>
+        </el-form-item>
+        <el-form-item label="表单设置">
+          <textarea class="json-editor" v-model="editingForm.settingsJson" style="min-height:120px" placeholder='{"submitText":"提交","successMessage":"提交成功！"}'></textarea>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="formDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveForm">保存</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted } = Vue;
+
+const app = createApp({
+  setup() {
+    const activeTab = ref("forms");
+    const forms = ref([]);
+    const submissions = ref([]);
+    const stats = ref({ forms: 0, submissions: 0, activeForms: 0 });
+    const filterForm = ref("");
+    const formDialogVisible = ref(false);
+    const editingForm = ref({
+      id: "", title: "", slug: "", description: "", status: "active",
+      formSchemaJson: "[]", settingsJson: "{}"
+    });
+
+    const ADMIN_TOKEN = prompt("请输入 ADMIN_TOKEN:");
+
+    async function api(path, options = {}) {
+      const headers = { "Authorization": `Bearer ${ADMIN_TOKEN}`, "Content-Type": "application/json" };
+      const res = await fetch(`/api${path}`, { ...options, headers: { ...headers, ...options.headers } });
+      return res.json();
+    }
+
+    async function loadForms() {
+      const data = await api("/admin/forms");
+      if (data.ok) {
+        forms.value = data.forms.map(f => ({
+          ...f,
+          formSchemaJson: JSON.stringify(f.formSchema, null, 2),
+          settingsJson: JSON.stringify(f.settings, null, 2)
+        }));
+        stats.value.forms = forms.value.length;
+        stats.value.activeForms = forms.value.filter(f => f.status === "active").length;
+      }
+    }
+
+    async function loadSubmissions() {
+      const query = filterForm.value ? `?form=${filterForm.value}` : "";
+      const data = await api(`/admin/submissions${query}`);
+      if (data.ok) {
+        submissions.value = data.submissions;
+        stats.value.submissions = submissions.value.length;
+      }
+    }
+
+    function showCreateForm() {
+      editingForm.value = {
+        id: "", title: "", slug: "", description: "", status: "active",
+        formSchemaJson: JSON.stringify([
+          { type: "text", key: "name", label: "姓名", placeholder: "请输入姓名", required: true, validation: { min: 2, max: 50 } },
+          { type: "email", key: "email", label: "邮箱", placeholder: "your@email.com", required: true }
+        ], null, 2),
+        settingsJson: JSON.stringify({ submitText: "提交", successMessage: "提交成功！", allowMultipleSubmissions: true }, null, 2)
+      };
+      formDialogVisible.value = true;
+    }
+
+    function editForm(form) {
+      editingForm.value = {
+        ...form,
+        formSchemaJson: JSON.stringify(form.formSchema, null, 2),
+        settingsJson: JSON.stringify(form.settings, null, 2)
+      };
+      formDialogVisible.value = true;
+    }
+
+    async function saveForm() {
+      try {
+        const formSchema = JSON.parse(editingForm.value.formSchemaJson);
+        const settings = JSON.parse(editingForm.value.settingsJson);
+        const body = {
+          title: editingForm.value.title,
+          slug: editingForm.value.slug,
+          description: editingForm.value.description,
+          status: editingForm.value.status,
+          formSchema, settings
+        };
+
+        if (editingForm.value.id) {
+          await api(`/admin/forms/${editingForm.value.id}`, { method: "PUT", body: JSON.stringify(body) });
+        } else {
+          await api("/admin/forms", { method: "POST", body: JSON.stringify(body) });
+        }
+        formDialogVisible.value = false;
+        await loadForms();
+        ElementPlus.ElMessage.success("保存成功");
+      } catch (e) {
+        ElementPlus.ElMessage.error("保存失败: " + e.message);
+      }
+    }
+
+    async function deleteForm(id) {
+      if (!confirm("确定删除此表单？")) return;
+      await api(`/admin/forms/${id}`, { method: "DELETE" });
+      await loadForms();
+      ElementPlus.ElMessage.success("删除成功");
+    }
+
+    onMounted(async () => {
+      await loadForms();
+      await loadSubmissions();
+    });
+
+    return { activeTab, forms, submissions, stats, filterForm, formDialogVisible, editingForm, loadForms, loadSubmissions, showCreateForm, editForm, saveForm, deleteForm };
+  }
+});
+
+app.use(ElementPlus);
+app.mount("#app");
+</script>
+</body>
+</html>

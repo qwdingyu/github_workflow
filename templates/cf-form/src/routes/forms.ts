@@ -1,19 +1,20 @@
 /**
  * 表单提交路由
  *
- * GET  /:slug             — 获取表单定义
+ * GET  /:slug             — 从 DB 获取表单定义
  * POST /:slug/submissions — 提交表单（限流 + Turnstile + 幂等）
  */
 
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { eq } from "drizzle-orm";
 import type { AppEnv } from "../bindings";
-import { getFormDefinition, submissionSchema, validateBusinessFields } from "../config/forms";
+import { submissionSchema, validateBusinessFields } from "../config/forms";
 import { ok, fail } from "@eforge/cf-core/http";
 import { getIpHash, verifyTurnstile } from "@eforge/cf-core/security";
 import { DbRateLimiter } from "@eforge/cf-core/rate-limit";
 import { checkIdempotency, saveIdempotentResponse } from "@eforge/cf-core/idempotency";
-import { rateLimitWindows, submissions, requestLogs } from "../db/schema";
+import { rateLimitWindows, submissions, requestLogs, forms } from "../db/schema";
 
 /** 从请求头提取幂等键 */
 function readIdempotencyKey(c: { req: { header: (name: string) => string | undefined } }): string | undefined {
@@ -41,14 +42,28 @@ async function writeRequestLog(
 
 export const formsRoute = new Hono<AppEnv>();
 
+/** GET /:slug — 从 DB 读取表单定义 */
 formsRoute.get("/:slug", async (c) => {
+  const db = c.get("db");
   const slug = c.req.param("slug");
-  const form = getFormDefinition(slug);
+
+  const rows = await db.select().from(forms).where(eq(forms.slug, slug)).limit(1);
+  const form = rows[0];
   if (!form) return fail(c, "表单不存在", 404);
 
-  return ok(c, { form });
+  return ok(c, {
+    form: {
+      slug: form.slug,
+      title: form.title,
+      description: form.description,
+      formSchema: JSON.parse(form.formSchema),
+      settings: JSON.parse(form.settings),
+      status: form.status,
+    },
+  });
 });
 
+/** POST /:slug/submissions — 提交表单 */
 formsRoute.post(
   "/:slug/submissions",
   zValidator("json", submissionSchema, (result, c) => {
@@ -57,7 +72,10 @@ formsRoute.post(
   async (c) => {
     const db = c.get("db");
     const slug = c.req.param("slug");
-    const form = getFormDefinition(slug);
+
+    // 从 DB 读取表单定义
+    const rows = await db.select().from(forms).where(eq(forms.slug, slug)).limit(1);
+    const form = rows[0];
     if (!form) return fail(c, "表单不存在", 404);
 
     const input = c.req.valid("json");
@@ -89,8 +107,9 @@ formsRoute.post(
       return fail(c, turnstile.message || "安全校验失败", 403);
     }
 
-    // ── 业务字段校验 ──
-    const business = validateBusinessFields(form, input.fields);
+    // ── 业务字段校验（使用 DB 中的 formSchema） ──
+    const formFields = JSON.parse(form.formSchema);
+    const business = validateBusinessFields(formFields, input.fields);
     if (!business.ok) {
       await writeRequestLog(db, { ipHash, action, statusCode: 400, method: c.req.method, path });
       return fail(c, "业务字段校验失败", 400, business.errors);
@@ -123,6 +142,7 @@ formsRoute.post(
 
     await db.insert(submissions).values({
       id: submissionId,
+      formId: form.id,
       formSlug: slug,
       contact: input.contact,
       payloadJson: JSON.stringify(business.cleaned),

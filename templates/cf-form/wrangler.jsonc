@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cf-form-kit",
+  "name": "cf-form",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-24",
   "assets": {
@@ -12,8 +12,8 @@
   //   TURSO_URL    — Turso 数据库 URL（libsql://xxx.turso.io）
   //   TURSO_TOKEN  — Turso 认证 Token
   "vars": {
-    "APP_NAME": "CF Form Kit",
-    "DEFAULT_FORM_SLUG": "lead",
+    "APP_NAME": "CF Form",
+    "DEFAULT_FORM_SLUG": "contact",
     "RATE_LIMIT_SALT": "replace-with-wrangler-secret-in-production"
   }
 }

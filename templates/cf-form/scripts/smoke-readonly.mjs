@@ -2,7 +2,7 @@ import http from "node:http";
 import https from "node:https";
 
 /*
- * CF Form Kit 只读 smoke。
+ * cf-form 只读 smoke。
  *
  * 用途：
  * - 验证 /api/health。
@@ -11,14 +11,14 @@ import https from "node:https";
  *
  * 可选环境变量：
  * - BASE_URL：目标地址，默认 http://127.0.0.1:8787。
- * - FORM_SLUG：表单 slug，默认 lead。
+ * - FORM_SLUG：表单 slug，默认 contact。
  *
  * 常用命令：
- * - BASE_URL="https://example.eforge.xyz" rtk npm run smoke:readonly
+ * - BASE_URL="https://example.eforge.xyz" npm run smoke:readonly
  */
 
 const baseUrl = process.env.BASE_URL || "http://127.0.0.1:8787";
-const formSlug = process.env.FORM_SLUG || "lead";
+const formSlug = process.env.FORM_SLUG || "contact";
 
 async function request(path) {
   const url = new URL(path, baseUrl);
@@ -28,9 +28,7 @@ async function request(path) {
     const req = transport.request(url, (res) => {
       let raw = "";
       res.setEncoding("utf8");
-      res.on("data", (chunk) => {
-        raw += chunk;
-      });
+      res.on("data", (chunk) => { raw += chunk; });
       res.on("end", () => {
         const data = JSON.parse(raw);
         if (res.statusCode < 200 || res.statusCode >= 300) {
@@ -46,13 +44,13 @@ async function request(path) {
 }
 
 const health = await request("/api/health");
-if (!health.ok || health.storage !== "d1") {
+if (!health.ok || health.storage !== "turso") {
   throw new Error(`Unexpected health response: ${JSON.stringify(health)}`);
 }
 
 const form = await request(`/api/forms/${formSlug}`);
-if (!form.ok || !form.form?.fields?.length) {
+if (!form.ok || !form.form?.formSchema?.length) {
   throw new Error(`Unexpected form response: ${JSON.stringify(form)}`);
 }
 
-console.log(`CF Form Kit readonly smoke passed: ${baseUrl} form=${formSlug}`);
+console.log(`cf-form readonly smoke passed: ${baseUrl} form=${formSlug} fields=${form.form.formSchema.length}`);
