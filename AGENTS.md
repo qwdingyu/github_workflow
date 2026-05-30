@@ -65,3 +65,35 @@ node scripts/cloudflare/security_baseline.mjs
 | 11 | 测试脚本要正式化，不要写了删删了写 |
 | 12 | 核心代码、变量、常量、业务流程补充中文注释 |
 | 13 | 能用 ORM 一定不要用 SQL，防止注入和数据库切换 |
+
+---
+
+## 4. 🏛️ 架构铁律（不可违反）
+
+> 详见 `CLAUDE.md`、`CONTEXT.md`、`docs/ARCHITECTURE_ENFORCEMENT.md`
+
+### 铁律 A — cf-core 零业务代码
+`packages/cf-core/src/db/schema.ts` **只允许 5 张基础设施表**：
+`systemConfig` / `adminAuditLogs` / `rateLimitWindows` / `idempotencyKeys` / `apiKeys`
+❌ 严禁添加任何业务表、业务路由、业务服务
+
+### 铁律 B — 业务项目必须从 cf-core 导入公共表
+所有 `templates/*/src/db/schema.ts` 必须包含：
+```typescript
+export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys }
+  from "@eforge/cf-core/db/schema";
+```
+❌ 严禁本地重复定义这 5 张表
+
+### 铁律 C — 安装依赖必须用 pnpm
+✅ `pnpm install`  |  ❌ 禁止 npm / yarn
+
+### 铁律 D — 新产品必须以模板创建
+✅ `node scripts/create-project.mjs <name> --template <tpl>`
+❌ 禁止从零写 schema.ts
+
+## 5. AI 启动自检流程
+
+**每次会话开始**，在写任何代码之前：
+1. ✅ 运行 `node scripts/validate-architecture.mjs`
+2. ✅ 如果验证失败，先修复再动手

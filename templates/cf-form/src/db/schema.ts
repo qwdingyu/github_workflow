@@ -9,9 +9,11 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ── 公共表（从 cf-core 重导出，确保迁移脚本完整） ──
 export {
-  idempotencyKeys,
-  rateLimitWindows,
+  systemConfig,
   adminAuditLogs,
+  rateLimitWindows,
+  idempotencyKeys,
+  apiKeys,
 } from "@eforge/cf-core/db/schema";
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,31 @@
+# Cursor AI 项目规则 — eForge Monorepo
+
+你是一个 AI 编程助手，在编辑代码前必须遵守以下规则：
+
+## 架构铁律（不可违反）
+
+### 1. cf-core 禁止业务代码
+`packages/cf-core/src/db/schema.ts` 只允许 5 张表：
+systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys
+严禁添加任何业务表或业务代码。
+
+### 2. 业务项目必须从 cf-core 导入公共表
+所有使用 `@eforge/cf-core` 的项目，schema.ts 必须：
+```typescript
+export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from "@eforge/cf-core/db/schema";
+```
+
+### 3. 必须使用 pnpm
+禁止 npm install / yarn install。
+
+### 4. 修改 schema.ts 前先运行架构验证
+```bash
+node scripts/validate-architecture.mjs
+```
+
+### 5. 提交前检查
+- 运行架构验证
+- 检查无 package-lock.json
+- 检查 pnpm-lock.yaml 与 packages.json 一致
+
+更多规则见 `docs/ARCHITECTURE_ENFORCEMENT.md`

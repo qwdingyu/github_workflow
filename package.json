@@ -3,20 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "description": "eForge Monorepo — Cloudflare Workers 工具链与模板",
-  "workspaces": [
-    "packages/*",
-    "templates/*",
-    "dtc"
-  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "pnpm -w packages/cf-core run build",
-    "test": "npm -w packages/cf-core run test",
-    "lint": "npm -w packages/cf-core run lint 2>/dev/null || true",
-    "type-check": "npm -w packages/cf-core run type-check",
-    "publish": "npm -w packages/cf-core publish",
-    "clean": "npm -w packages/cf-core run clean 2>/dev/null || true"
+    "test": "pnpm -w packages/cf-core run test",
+    "lint": "pnpm -w packages/cf-core run lint 2>/dev/null || true",
+    "type-check": "pnpm -w packages/cf-core run type-check",
+    "publish": "pnpm -w packages/cf-core publish",
+    "clean": "pnpm -w packages/cf-core run clean 2>/dev/null || true",
+    "validate:arch": "node scripts/validate-architecture.mjs",
+    "validate:arch:fix": "node scripts/validate-architecture.mjs --fix",
+    "hooks:init": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit"
   },
+  "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true",
   "engines": {
     "node": ">=18"
   }

@@ -7,7 +7,7 @@
  *   node scripts/create-project.mjs my-tool --template cf-static --domain my-tool.com
  *
  * 核心目标：将"从模板到新产品"的手动步骤从 15+ 步缩减到 1 条命令。
- * 后续步骤：npm install → 编辑业务配置 → bash .deploy/one-click.sh
+ * 后续步骤：pnpm install → 编辑业务配置 → bash .deploy/one-click.sh
  */
 
 import { createInterface } from "readline";
@@ -310,11 +310,11 @@ async function main() {
 
   console.log(`\n${c.b("下一步：")}\n`);
   console.log(`  ${c.g("1.")} cd ${relative(process.cwd(), outputDir)}`);
-  console.log(`  ${c.g("2.")} npm install`);
+  console.log(`  ${c.g("2.")} pnpm install`);
 
   if (deployMode === "pages") {
     console.log(`  ${c.g("3.")} 编辑 src/seo-config.json（站点信息）`);
-    console.log(`  ${c.g("4.")} npm run build（生成 SEO 页面）`);
+    console.log(`  ${c.g("4.")} pnpm run build（生成 SEO 页面）`);
     console.log(`  ${c.g("5.")} CLOUDFLARE_API_TOKEN="xxx" bash .deploy/one-click.sh`);
   } else {
     console.log(`  ${c.g("3.")} 编辑 src/config.ts（业务配置）`);

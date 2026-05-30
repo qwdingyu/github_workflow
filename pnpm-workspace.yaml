@@ -1,0 +1,6 @@
+# pnpm workspace 配置
+# 定义 monorepo 的工作空间（替换 package.json 中的 workspaces 字段）
+packages:
+  - "packages/*"
+  - "templates/*"
+  - "dtc"

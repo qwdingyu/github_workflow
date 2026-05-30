@@ -7,6 +7,15 @@
 
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+// ═══ 从 cf-core 导入公共表 ═══════════════════════════════════════════════════
+export {
+  systemConfig,
+  adminAuditLogs,
+  rateLimitWindows,
+  idempotencyKeys,
+  apiKeys,
+} from "@eforge/cf-core/db/schema";
+
 // ═══════════════════════════════════════════════════════════════════
 // 1. dtc_codes — DTC 故障码主表（18,805 条）
 // ═══════════════════════════════════════════════════════════════════
