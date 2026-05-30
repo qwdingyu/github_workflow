@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — DTC Code Not Found</title>
+  <meta name="description" content="DTC code not found. Search our database of 21,000+ OBD-II diagnostic trouble codes.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { max-width: 500px; padding: 2rem; text-align: center; }
+    h1 { font-size: 4rem; margin-bottom: 0.5rem; color: #334155; }
+    h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #f1f5f9; }
+    p { color: #94a3b8; margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .search-box { display: flex; gap: 0.5rem; max-width: 400px; margin: 1.5rem auto; }
+    .search-box input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #e2e8f0; font-size: 1rem; outline: none; }
+    .search-box input:focus { border-color: #60a5fa; }
+    .search-box button { padding: 0.75rem 1.5rem; background: #3b82f6; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+    .search-box button:hover { background: #2563eb; }
+    .links { margin-top: 1.5rem; font-size: 0.85rem; }
+    .links a { color: #60a5fa; text-decoration: none; margin: 0 0.5rem; }
+    .links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>404</h1>
+    <h2>DTC Code Not Found</h2>
+    <p>The DTC code or page you're looking for doesn't exist in our database.</p>
+    <p style="font-size:0.8rem;color:#64748b">Search 21,000+ OBD-II codes by code, keyword, or manufacturer</p>
+
+    <form class="search-box" onsubmit="event.preventDefault(); var q=this.q.value.trim(); if(q.length>=2){window.location.href='/search.html?q='+encodeURIComponent(q);}">
+      <input type="text" name="q" placeholder="Search by code or keyword..." autocomplete="off">
+      <button type="submit">Search</button>
+    </form>
+
+    <div class="links">
+      <a href="/">Home</a> ·
+      <a href="/p.html">P Codes</a> ·
+      <a href="/b.html">B Codes</a> ·
+      <a href="/c.html">C Codes</a> ·
+      <a href="/u.html">U Codes</a>
+    </div>
+
+    <script>
+      // 尝试从 URL 中提取可能是 DTC 码的部分，自动填充搜索框
+      (function() {
+        var code = window.location.pathname.match(/([PBCU][0-9A-F]{3,4})/i);
+        if (code) {
+          document.querySelector('input').value = code[0].toUpperCase();
+        }
+      })();
+    </script>
+  </div>
+</body>
+</html>

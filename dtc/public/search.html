@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search DTC Codes — DTC Lookup</title>
+  <meta name="description" content="Search OBD-II diagnostic trouble codes by code, keyword, or manufacturer.">
+  <link rel="canonical" href="https://dtc.eforge.xyz/search.html">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    h1 a { color: #e2e8f0; text-decoration: none; }
+    .search-box { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .search-box input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #e2e8f0; font-size: 1rem; outline: none; }
+    .search-box input:focus { border-color: #60a5fa; }
+    .search-box button { padding: 0.75rem 1.5rem; background: #3b82f6; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+    .search-box button:hover { background: #2563eb; }
+    .search-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 结果统计 */
+    .result-meta { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1e293b; }
+
+    /* 结果卡片 */
+    .result-card { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.75rem; border-bottom: 1px solid #1e293b; text-decoration: none; color: #e2e8f0; transition: background 0.15s; }
+    .result-card:hover { background: #1e293b; }
+    .result-card .code { font-family: 'Courier New', monospace; font-weight: 700; font-size: 1rem; color: #60a5fa; min-width: 80px; }
+    .result-card .mfr { font-size: 0.75rem; color: #94a3b8; min-width: 70px; }
+    .result-card .desc { font-size: 0.85rem; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .result-card .sys-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #334155; color: #94a3b8; min-width: 20px; text-align: center; }
+
+    /* 无结果 */
+    .no-results { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+    .no-results .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    /* 加载 */
+    .loading { text-align: center; padding: 3rem; color: #64748b; }
+
+    /* 错误 */
+    .error { text-align: center; padding: 2rem; color: #f87171; background: #1e293b; border: 1px solid #7f1d1d; border-radius: 8px; margin: 1rem 0; }
+
+    .footer { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #1e293b; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+
+    /* 过滤器行 */
+    .filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .filter-btn { padding: 0.3rem 0.75rem; border: 1px solid #334155; border-radius: 20px; background: transparent; color: #94a3b8; font-size: 0.8rem; cursor: pointer; }
+    .filter-btn:hover { border-color: #60a5fa; color: #60a5fa; }
+    .filter-btn.active { background: #1e3a5f; border-color: #60a5fa; color: #60a5fa; }
+
+    .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+    .pagination a { padding: 0.4rem 1rem; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; text-decoration: none; font-size: 0.85rem; }
+    .pagination a:hover { border-color: #60a5fa; color: #60a5fa; }
+    .pagination .current { border-color: #60a5fa; color: #60a5fa; background: #1e3a5f; }
+    .pagination .disabled { opacity: 0.3; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><a href="/">🔧 DTC Lookup</a> — Search</h1>
+
+    <!-- 搜索框 -->
+    <form class="search-box" id="searchForm">
+      <input type="text" id="searchInput" placeholder="Search by code, keyword, or manufacturer (e.g. P0420, oxygen sensor, BMW)" autocomplete="off">
+      <button type="submit" id="searchBtn">Search</button>
+    </form>
+
+    <!-- 系统过滤 -->
+    <div class="filters" id="filters" style="display:none">
+      <button class="filter-btn active" data-filter="">All Systems</button>
+      <button class="filter-btn" data-filter="P">Powertrain (P)</button>
+      <button class="filter-btn" data-filter="B">Body (B)</button>
+      <button class="filter-btn" data-filter="C">Chassis (C)</button>
+      <button class="filter-btn" data-filter="U">Network (U)</button>
+    </div>
+
+    <!-- 加载中 -->
+    <div class="loading" id="loading" style="display:none">🔍 Searching...</div>
+
+    <!-- 错误 -->
+    <div class="error" id="error" style="display:none"></div>
+
+    <!-- 结果元信息 -->
+    <div class="result-meta" id="resultMeta" style="display:none"></div>
+
+    <!-- 结果列表 -->
+    <div id="results"></div>
+
+    <!-- 分页 -->
+    <div class="pagination" id="pagination" style="display:none"></div>
+
+    <div class="footer">
+      <p><a href="/">Home</a> · <a href="/sitemap.xml">Sitemap</a> · <a href="/p.html">P Codes</a> · <a href="/b.html">B Codes</a> · <a href="/c.html">C Codes</a> · <a href="/u.html">U Codes</a></p>
+    </div>
+  </div>
+
+  <script>
+    // ── 从 URL 读取参数 ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialQuery = urlParams.get('q') || '';
+    const initialFilter = urlParams.get('system') || '';
+    const initialPage = parseInt(urlParams.get('page') || '0');
+
+    const searchInput = document.getElementById('searchInput');
+    const searchForm = document.getElementById('searchForm');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsDiv = document.getElementById('results');
+    const loadingDiv = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const resultMeta = document.getElementById('resultMeta');
+    const filtersDiv = document.getElementById('filters');
+    const paginationDiv = document.getElementById('pagination');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    let currentQuery = initialQuery;
+    let currentFilter = initialFilter;
+    let currentPage = initialPage;
+    let currentTotal = 0;
+    const PAGE_SIZE = 30;
+
+    // 初始化搜索框
+    searchInput.value = initialQuery;
+    if (initialQuery) {
+      doSearch(initialQuery, initialFilter, initialPage);
+    }
+
+    // ── 过滤按钮 ──
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        currentPage = 0;
+        doSearch(currentQuery, currentFilter, 0);
+      });
+    });
+
+    // ── 表单提交 ──
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = searchInput.value.trim();
+      if (!q || q.length < 2) return;
+
+      // 如果是精确 DTC 码格式，直接跳转到静态页
+      const isExactCode = /^[PBCU][0-9][0-9A-F]{3}$/i.test(q);
+      if (isExactCode) {
+        window.location.href = '/dtc/' + q.toUpperCase() + '.html';
+        return;
+      }
+
+      // 更新 URL（不刷新页面）
+      const params = new URLSearchParams();
+      params.set('q', q);
+      window.history.replaceState({}, '', '/search.html?' + params.toString());
+
+      currentQuery = q;
+      currentPage = 0;
+      currentFilter = '';
+      filterBtns.forEach(b => b.classList.remove('active'));
+      filterBtns[0].classList.add('active');
+      doSearch(q, '', 0);
+    });
+
+    // ── 搜索函数 ──
+    async function doSearch(query, system, page) {
+      loadingDiv.style.display = 'block';
+      errorDiv.style.display = 'none';
+      resultsDiv.innerHTML = '';
+      resultMeta.style.display = 'none';
+      paginationDiv.style.display = 'none';
+      filtersDiv.style.display = 'none';
+      searchBtn.disabled = true;
+
+      try {
+        const params = new URLSearchParams();
+        params.set('q', query);
+        if (system) params.set('system', system);
+        params.set('limit', String(PAGE_SIZE));
+        params.set('offset', String(page * PAGE_SIZE));
+
+        const res = await fetch('/api/v1/dtc/search?' + params.toString());
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || 'Search failed (HTTP ' + res.status + ')');
+        }
+
+        const data = await res.json();
+        loadingDiv.style.display = 'none';
+        searchBtn.disabled = false;
+
+        // 如果总结果为空
+        if (data.total === 0) {
+          resultsDiv.innerHTML = `
+            <div class="no-results">
+              <div class="icon">🔍</div>
+              <h2>No results found</h2>
+              <p>No DTC codes matching "<strong>${escapeHtml(query)}</strong>"</p>
+              <p style="margin-top:0.5rem;font-size:0.85rem">Tips:
+                Try a shorter keyword, check the spelling, or browse by system above.</p>
+            </div>`;
+          filtersDiv.style.display = 'block';
+          return;
+        }
+
+        currentTotal = data.total;
+
+        // 显示过滤器
+        filtersDiv.style.display = 'block';
+
+        // 元信息
+        const start = page * PAGE_SIZE + 1;
+        const end = Math.min((page + 1) * PAGE_SIZE, data.total);
+        resultMeta.style.display = 'block';
+        resultMeta.textContent = data.total + ' result' + (data.total > 1 ? 's' : '') +
+          ' for "' + query + '" (showing ' + start + '-' + end + ')';
+
+        // 渲染结果
+        resultsDiv.innerHTML = data.results.map(item => {
+          const sysBadge = item.systemShort || '';
+          return '<a class="result-card" href="/dtc/' + item.code + '.html">' +
+            '<span class="sys-badge">' + sysBadge + '</span>' +
+            '<span class="code">' + item.code + '</span>' +
+            '<span class="mfr">' + item.manufacturer + '</span>' +
+            '<span class="desc">' + escapeHtml(item.description) + '</span>' +
+            '</a>';
+        }).join('');
+
+        // 分页
+        const totalPages = Math.ceil(data.total / PAGE_SIZE);
+        if (totalPages > 1) {
+          paginationDiv.style.display = 'flex';
+          let html = '';
+          const params = new URLSearchParams();
+          params.set('q', query);
+          if (system) params.set('system', system);
+
+          // 上一页
+          if (page > 0) {
+            params.set('page', String(page - 1));
+            html += '<a href="/search.html?' + params.toString() + '">← Previous</a>';
+          } else {
+            html += '<span class="disabled">← Previous</span>';
+          }
+
+          // 页码
+          for (let i = 0; i < totalPages && i < 10; i++) {
+            params.set('page', String(i));
+            if (i === page) {
+              html += '<span class="current">' + (i + 1) + '</span>';
+            } else {
+              html += '<a href="/search.html?' + params.toString() + '">' + (i + 1) + '</a>';
+            }
+          }
+          if (totalPages > 10) html += '<span>...</span>';
+
+          // 下一页
+          if (page < totalPages - 1) {
+            params.set('page', String(page + 1));
+            html += '<a href="/search.html?' + params.toString() + '">Next →</a>';
+          } else {
+            html += '<span class="disabled">Next →</span>';
+          }
+
+          paginationDiv.innerHTML = html;
+        }
+
+      } catch (err) {
+        loadingDiv.style.display = 'none';
+        searchBtn.disabled = false;
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML = '<strong>Error:</strong> ' + escapeHtml(err.message) +
+          '<p style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8">Please try again or <a href="/" style="color:#60a5fa">go back to home</a>.</p>';
+      }
+    }
+
+    // ── 分页点击（SPA 式导航，不走整页刷新） ──
+    paginationDiv.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      e.preventDefault();
+      const href = link.getAttribute('href');
+      const params = new URLSearchParams(href.split('?')[1] || '');
+      const page = parseInt(params.get('page') || '0');
+      const q = params.get('q') || currentQuery;
+      const system = params.get('system') || currentFilter;
+      currentPage = page;
+      window.history.replaceState({}, '', href);
+      doSearch(q, system, page);
+    });
+
+    // ── 辅助函数 ──
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // 输入框支持回车触发搜索（和表单提交相同逻辑）
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchForm.dispatchEvent(new Event('submit'));
+    });
+  </script>
+</body>
+</html>

@@ -38,20 +38,15 @@
   <div class="container">
     <h1>🔧 DTC Lookup</h1>
     <p>Free OBD-II Diagnostic Trouble Code Search</p>
-    <form class="search-box" onsubmit="event.preventDefault(); window.location.href='/dtc/' + this.q.value.toUpperCase() + '.html';">
-      <input type="text" name="q" placeholder="Enter DTC code (e.g. P0420)" autocomplete="off" required minlength="4">
+    <form class="search-box" onsubmit="event.preventDefault(); var q=this.q.value.trim(); if(!q||q.length<2)return; var upper=q.toUpperCase(); if(/^[PBCU][0-9][0-9A-F]{3}$/.test(upper)){window.location.href='/dtc/'+upper+'.html';}else{window.location.href='/search.html?q='+encodeURIComponent(q);}">
+      <input type="text" name="q" placeholder="Enter DTC code or keyword (e.g. P0420, oxygen sensor)" autocomplete="off">
       <button type="submit">Search</button>
     </form>
-    <div class="loading" id="loading">Searching...</div>
+    <div id="tip" style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">Tip: Search by code (P0420) or keyword (oxygen sensor)</div>
     <div class="info">
       <p>18,800+ OBD-II codes · 34 manufacturers · Free</p>
       <p><a href="/p.html">Powertrain (P)</a> · <a href="/b.html">Body (B)</a> · <a href="/c.html">Chassis (C)</a> · <a href="/u.html">Network (U)</a></p>
     </div>
   </div>
-  <script>
-    document.querySelector('input').addEventListener('input', function() {
-      document.getElementById('loading').style.display = this.value.length >= 3 ? 'block' : 'none';
-    });
-  </script>
 </body>
 </html>
