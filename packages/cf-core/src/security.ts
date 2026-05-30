@@ -63,8 +63,9 @@ export function constantTimeEqual(a: string, b: string): boolean {
  * @param c - Hono Context
  * @param salt - 盐值，默认从 env.RATE_LIMIT_SALT 读取
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getIpHash(
-  c: Context<{ Bindings: { RATE_LIMIT_SALT?: string } }>,
+  c: Context<any>,
   salt?: string,
 ): Promise<string> {
   const cfIp = c.req.header("cf-connecting-ip");
@@ -115,8 +116,9 @@ export function getBearerToken(c: Context): string {
  *
  * 来源：eshop（FormData 版）+ vcode（urlencoded 版）合并为 FormData 版（更规范）
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function verifyTurnstile(
-  c: Context<{ Bindings: { TURNSTILE_SECRET_KEY?: string } }>,
+  c: Context<any>,
   token?: string,
 ): Promise<TurnstileResult> {
   const secret = c.env.TURNSTILE_SECRET_KEY;

@@ -30,7 +30,8 @@ export interface BootstrapOptions<TSchema extends Record<string, unknown> = Reco
   securityHeaders?: SecurityHeadersOptions;
 
   /** 注册 API 路由的回调 */
-  registerRoutes: (api: Hono) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerRoutes: (api: Hono<any>) => void;
 
   /**
    * 静态资源路由表 — 页面路径到 HTML 文件的映射
@@ -90,7 +91,8 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
     immutablePrefixes = [],
   } = options;
 
-  const api = new Hono();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const api = new Hono<any>();
 
   // ── DB 初始化中间件 ──
   api.use("*", async (c, next) => {
@@ -99,7 +101,7 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
       const db = initDatabase(c.env.TURSO_URL, c.env.TURSO_TOKEN, schema);
       c.set("db", db);
       if ("executionCtx" in c) {
-        c.set("executionCtx", (c as unknown as { executionCtx: ExecutionContext }).executionCtx);
+        c.set("executionCtx", c.env.executionCtx);
       }
       await next();
     } catch (err) {

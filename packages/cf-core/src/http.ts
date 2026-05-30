@@ -13,8 +13,9 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 /**
  * 成功响应 — 统一格式 { ok: true, ...data }
  */
-export function ok<E extends { Bindings: Record<string, unknown> }>(
-  c: Context<E>,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function ok(
+  c: Context<any>,
   data: Record<string, unknown>,
   status: ContentfulStatusCode = 200,
 ) {
@@ -24,8 +25,9 @@ export function ok<E extends { Bindings: Record<string, unknown> }>(
 /**
  * 失败响应 — 统一格式 { ok: false, error: message }
  */
-export function fail<E extends { Bindings: Record<string, unknown> }>(
-  c: Context<E>,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function fail(
+  c: Context<any>,
   message: string,
   status: ContentfulStatusCode = 400,
   details?: unknown,

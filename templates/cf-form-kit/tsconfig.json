@@ -9,7 +9,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@eforge/cf-core": ["../../packages/cf-core/src/index.ts"],
+      "@eforge/cf-core/*": ["../../packages/cf-core/src/*"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

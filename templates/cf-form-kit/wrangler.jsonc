@@ -7,14 +7,10 @@
     "directory": "./public",
     "binding": "ASSETS"
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "cf-form-kit-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
-      "migrations_dir": "migrations"
-    }
-  ],
+  // Turso 数据库通过环境变量配置（非 D1）
+  // 部署时通过 wrangler secret put 设置：
+  //   TURSO_URL    — Turso 数据库 URL（libsql://xxx.turso.io）
+  //   TURSO_TOKEN  — Turso 认证 Token
   "vars": {
     "APP_NAME": "CF Form Kit",
     "DEFAULT_FORM_SLUG": "lead",

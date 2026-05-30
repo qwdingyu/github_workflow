@@ -40,7 +40,8 @@ export interface AdminAuthOptions {
 export function createAdminAuth(options: AdminAuthOptions = {}) {
   const { mode = "both" } = options;
 
-  return async (c: Context<{ Bindings: { ADMIN_TOKEN?: string }; Variables: Record<string, unknown> }>, next: Next) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (c: Context<any>, next: Next) => {
     const expected = c.env.ADMIN_TOKEN;
     if (!expected) return fail(c, "管理员令牌未配置", 503);
 
