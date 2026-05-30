@@ -1,0 +1,36 @@
+# ── DTC 查询服务 — 安全与缓存响应头 ──
+# 自动用于所有静态资源（Cloudflare Pages / Workers Assets）
+
+# 全局安全头
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# DTC 详情页（SEO 核心页面，短缓存 + 后台重验证）
+/dtc/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+# 系统分类页
+/p.html
+/b.html
+/c.html
+/u.html
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+# 制造商页
+/manufacturers/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+# 首页
+/index.html
+  Cache-Control: public, max-age=1800, stale-while-revalidate=43200
+
+# Sitemap / Robots
+/sitemap.xml
+/robots.txt
+  Cache-Control: public, max-age=43200
+
+# CSS 等静态资源
+/css/*
+  Cache-Control: public, max-age=86400

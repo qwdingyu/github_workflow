@@ -9,7 +9,8 @@
     "dtc"
   ],
   "scripts": {
-    "build": "npm -w packages/cf-core run build",
+    "preinstall": "npx only-allow pnpm",
+    "build": "pnpm -w packages/cf-core run build",
     "test": "npm -w packages/cf-core run test",
     "lint": "npm -w packages/cf-core run lint 2>/dev/null || true",
     "type-check": "npm -w packages/cf-core run type-check",

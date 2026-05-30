@@ -336,8 +336,79 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function escapeJson(text: string): string {
+function escapeJson(text) {
   return text.replace(/"/g, "\\\"").replace(/\n/g, " ").replace(/\r/g, "");
+}
+
+// ── HTML 模板 — 制造商详情页 ──
+
+function generateManufacturerPageHtml(mfr, codes) {
+  const count = codes.length;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(mfr.displayName)} DTC Codes — OBD-II Diagnostic Trouble Codes</title>
+  <meta name="description" content="Complete list of ${escapeHtml(mfr.displayName)} (${mfr.id}) OBD-II diagnostic trouble codes. Browse ${count.toLocaleString()} fault codes specific to ${escapeHtml(mfr.displayName)} vehicles.">
+  <link rel="canonical" href="${SITE_URL}/manufacturers/${mfr.id}.html">
+  <meta property="og:title" content="${escapeHtml(mfr.displayName)} DTC Codes">
+  <meta property="og:description" content="${count.toLocaleString()} diagnostic trouble codes for ${escapeHtml(mfr.displayName)}">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "${escapeHtml(mfr.displayName)} DTC Codes",
+    "description": "${count.toLocaleString()} OBD-II diagnostic trouble codes for ${escapeHtml(mfr.displayName)}"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .subtitle { color: #94a3b8; margin-bottom: 1.5rem; }
+    .back { margin-bottom: 1rem; }
+    .back a { color: #60a5fa; text-decoration: none; font-size: 0.9rem; }
+    .code-table { width: 100%; border-collapse: collapse; }
+    .code-table tr { border-bottom: 1px solid #1e293b; }
+    .code-table td { padding: 0.6rem 0.5rem; font-size: 0.9rem; }
+    .code-table .code { color: #60a5fa; font-weight: 600; text-decoration: none; font-family: 'Courier New', monospace; }
+    .code-table .code:hover { text-decoration: underline; }
+    .code-table .sys { color: #94a3b8; font-size: 0.8rem; }
+    .code-table .desc { color: #cbd5e1; }
+    .stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 0.75rem 1.25rem; }
+    .stat-card .num { font-size: 1.4rem; font-weight: bold; color: #60a5fa; }
+    .stat-card .label { font-size: 0.78rem; color: #94a3b8; }
+    .footer { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="back"><a href="/">← Back to Home</a></div>
+    <h1>🏭 ${escapeHtml(mfr.displayName)} DTC Codes</h1>
+    <p class="subtitle">${mfr.fullName ? escapeHtml(mfr.fullName) + ' — ' : ''}${count.toLocaleString()} diagnostic trouble codes</p>
+    <div class="stats">
+      <div class="stat-card"><div class="num">${count.toLocaleString()}</div><div class="label">Total Codes</div></div>
+      <div class="stat-card"><div class="num">${mfr.country || '—'}</div><div class="label">Country</div></div>
+    </div>
+    <table class="code-table">
+${codes.map((c) => `
+      <tr>
+        <td><a class="code" href="/dtc/${c.code}.html">${c.code}</a></td>
+        <td class="sys">${c.system_short}</td>
+        <td class="desc">${escapeHtml(c.description)}</td>
+      </tr>`).join('\n')}
+    </table>
+    <div class="footer">
+      <p><a href="/sitemap.xml">Sitemap</a> | <a href="/">DTC Lookup — Free OBD-II Service</a></p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 // ── 主函数 ──
@@ -452,7 +523,7 @@ async function main() {
       args: [short],
     });
 
-    const codes = sysRows.rows.map((r: any) => ({
+    const codes = sysRows.rows.map((r) => ({
       code: String(r.code),
       manufacturer: String(r.manufacturer || ""),
       description: String(r.description || ""),
@@ -462,6 +533,37 @@ async function main() {
     writeFileSync(join(OUTPUT_DIR, `${short.toLowerCase()}.html`), sysHtml);
     console.log(`\n  📄 生成 ${short}.html (${codes.length} codes)`);
   }
+
+  // 生成制造商页面
+  console.log("\n  🏭 生成制造商页面...");
+  const mfrRows = await client.execute("SELECT id, display_name, full_name, country, code_count FROM manufacturers ORDER BY code_count DESC");
+  for (const row of mfrRows.rows) {
+    const mfrId = String(row.id);
+    const mfr = {
+      id: mfrId,
+      displayName: String(row.display_name || mfrId),
+      fullName: String(row.full_name || ""),
+      country: String(row.country || ""),
+      codeCount: Number(row.code_count || 0),
+    };
+
+    // 查询该制造商的前 200 条码（太多会导致页面过大）
+    const codeRows = await client.execute({
+      sql: "SELECT code, system_short, description FROM dtc_codes WHERE manufacturer = ? ORDER BY code ASC LIMIT 200",
+      args: [mfrId],
+    });
+
+    const codes = codeRows.rows.map((r) => ({
+      code: String(r.code),
+      system_short: String(r.system_short || ""),
+      description: String(r.description || ""),
+    }));
+
+    const mfrHtml = generateManufacturerPageHtml(mfr, codes);
+    writeFileSync(join(mfrDir, `${mfrId}.html`), mfrHtml);
+    sitemapUrls.push(`${SITE_URL}/manufacturers/${mfrId}.html`);
+  }
+  console.log(`    📄 生成 ${mfrRows.rows.length} 个制造商页面`);
 
   // 生成 sitemap.xml
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
