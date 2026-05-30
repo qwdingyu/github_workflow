@@ -94,6 +94,113 @@ cf_api() {
   echo "$response"
 }
 
+# ── Cloudflare DNS API 封装（双凭证自动选择） ────────────────────────────────
+#
+# ⚠️ 铁律：Cloudflare 有两种凭证，权限面完全不同：
+#
+#   ┌─────────────────────────────────────────────────────────────────────┐
+#   │ 凭证类型            │ 认证方式              │ 典型权限              │
+#   ├─────────────────────┼──────────────────────┼─────────────────────┤
+#   │ API Token (cfat_...) │ Authorization: Bearer │ Account: Pages/     │
+#   │                     │                       │ Workers/Account     │
+#   │                     │                       │ ⚠️ 通常无 Zone DNS  │
+#   ├─────────────────────┼──────────────────────┼─────────────────────┤
+#   │ Global API Key       │ X-Auth-Email +      │ 全部权限，包括       │
+#   │ (cfk_...)           │ X-Auth-Key           │ Zone DNS Read/Edit  │
+#   └─────────────────────────────────────────────────────────────────────┘
+#
+#   环境变量：
+#     CLOUDFLARE_API_TOKEN  — API Token（Pages/Workers 部署用）
+#     CF_AUTH_EMAIL         — Cloudflare 登录邮箱（DNS 用）
+#     CF_GLOBAL_API_KEY     — Global API Key（DNS 用）
+#
+#   cf_dns_api 会自动选择：
+#     1. 如果 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY 已设置 → 用 Global API Key（DNS 一定有权限）
+#     2. 否则回退到 CLOUDFLARE_API_TOKEN（可能 403）
+#
+#   用法与 cf_api 完全相同：
+#     cf_dns_api GET  "/zones/{zone_id}/dns_records"
+#     cf_dns_api POST "/zones/{zone_id}/dns_records" '{"type":"CNAME",...}'
+#
+cf_dns_api() {
+  local method="$1" path="$2" body="${3:-}"
+
+  local curl_args=(
+    -sS -X "$method"
+    "${CF_API_BASE}${path}"
+    -H "Content-Type: application/json"
+  )
+
+  # 优先使用 Global API Key（DNS 操作一定有权限）
+  if [ -n "${CF_AUTH_EMAIL:-}" ] && [ -n "${CF_GLOBAL_API_KEY:-}" ]; then
+    curl_args+=(
+      -H "X-Auth-Email: ${CF_AUTH_EMAIL}"
+      -H "X-Auth-Key: ${CF_GLOBAL_API_KEY}"
+    )
+  elif [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+    curl_args+=(-H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}")
+  else
+    log_error "DNS API 缺少凭证：需要 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY 或 CLOUDFLARE_API_TOKEN"
+    return 1
+  fi
+
+  if [ -n "$body" ]; then
+    curl_args+=(-d "$body")
+  fi
+
+  local response
+  response=$(curl "${curl_args[@]}" 2>/dev/null) || {
+    log_error "Cloudflare DNS API 请求失败: $method $path"
+    return 1
+  }
+
+  local success
+  success=$(echo "$response" | jq -r '.success // false' 2>/dev/null)
+  if [ "$success" != "true" ]; then
+    local errors
+    errors=$(echo "$response" | jq -r '.errors[0].message // "unknown error"' 2>/dev/null)
+    log_error "Cloudflare DNS API $method $path: $errors"
+
+    # 如果是认证错误且用的是 Bearer Token，给出明确提示
+    if echo "$errors" | grep -qi "auth"; then
+      if [ -z "${CF_GLOBAL_API_KEY:-}" ]; then
+        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        log_error "  API Token 无 Zone DNS 权限！"
+        log_error "  请设置 Global API Key 环境变量："
+        log_error ""
+        log_error "    CF_AUTH_EMAIL=\"你的Cloudflare邮箱\""
+        log_error "    CF_GLOBAL_API_KEY=\"cfk_...\""
+        log_error ""
+        log_error "  Global API Key 获取位置："
+        log_error "    https://dash.cloudflare.com/profile/api-tokens"
+        log_error "    → Global API Key（不是 API Token！）"
+        log_error "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      fi
+    fi
+    return 1
+  fi
+
+  echo "$response"
+}
+
+# ── 凭证预检（检查 DNS 权限是否可用） ────────────────────────────────────────
+# 参数：$1 = Zone ID
+# 返回：0 = DNS 可用，1 = DNS 不可用
+cf_check_dns_auth() {
+  local zone_id="${1:-}"
+  if [ -z "$zone_id" ]; then
+    log_error "cf_check_dns_auth: zone_id 不能为空"
+    return 1
+  fi
+
+  local dns_resp
+  dns_resp=$(cf_dns_api GET "/zones/${zone_id}/dns_records?per_page=1" 2>/dev/null) || return 1
+
+  local dns_ok
+  dns_ok=$(echo "$dns_resp" | jq -r '.success // false' 2>/dev/null)
+  [ "$dns_ok" = "true" ]
+}
+
 # ── Cloudflare Account ID 自动推导 ───────────────────────────────────────────
 _cf_account_id=""
 cf_get_account_id() {

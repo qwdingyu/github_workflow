@@ -9,14 +9,17 @@
 #   4. 等待 HTTPS 证书签发
 #
 # 输入：
-#   CLOUDFLARE_API_TOKEN — 必填（需要 Account + Zone DNS 权限）
-#   DOMAIN               — 要绑定的域名（如 shop.eforge.xyz）
-#   WORKER_NAME          — Worker/Pages 项目名称（默认从 .credentials 读取）
+#   CLOUDFLARE_API_TOKEN  — 必填（Pages/Workers 部署用）
+#   CF_AUTH_EMAIL         — 推荐（Cloudflare 登录邮箱，DNS 用）
+#   CF_GLOBAL_API_KEY     — 推荐（Global API Key，DNS 用）
+#   DOMAIN                — 要绑定的域名（如 shop.eforge.xyz）
+#   WORKER_NAME           — Worker/Pages 项目名称（默认从 .credentials 读取）
 #
-# Token 权限要求（https://dash.cloudflare.com/profile/api-tokens）：
-#   - Account > Cloudflare Workers > Edit（Workers 模式）
-#   - Account > Cloudflare Pages > Edit（Pages 模式）
-#   - Zone > DNS > Edit（两种模式都需要，用于创建 CNAME 记录）
+# ⚠️ 凭证分层（铁律，详见 docs/120_CF凭证分层使用手册.md）：
+#   - API Token (cfat_...) 只有 Pages/Workers 权限，通常无 Zone DNS
+#   - Global API Key (cfk_...) 有全部权限，包括 Zone DNS
+#   - 如果只提供 CLOUDFLARE_API_TOKEN，DNS 操作可能 403
+#   - 推荐同时提供 CF_AUTH_EMAIL + CF_GLOBAL_API_KEY
 # ═══════════════════════════════════════════════════════════════════════════════
 source "$(dirname "$0")/shared.sh"
 
@@ -24,6 +27,13 @@ source "$(dirname "$0")/shared.sh"
 FAIL=0
 check_env CLOUDFLARE_API_TOKEN "从 https://dash.cloudflare.com/profile/api-tokens 获取" || FAIL=1
 [ "$FAIL" -eq 1 ] && exit 1
+
+# DNS 凭证检查（警告级别，不阻塞）
+if [ -z "${CF_AUTH_EMAIL:-}" ] || [ -z "${CF_GLOBAL_API_KEY:-}" ]; then
+  log_warn "未设置 CF_AUTH_EMAIL / CF_GLOBAL_API_KEY"
+  log_warn "DNS 操作可能因 API Token 权限不足而失败"
+  log_warn "建议设置：CF_AUTH_EMAIL=\"邮箱\" CF_GLOBAL_API_KEY=\"cfk_...\""
+fi
 
 WORKER_NAME=$(cred_load "WORKER_NAME" 2>/dev/null || echo "")
 DOMAIN="${DOMAIN:-}"
@@ -73,41 +83,33 @@ if [ -z "$ZONE_ID" ]; then
 fi
 log_ok "Zone ID: $ZONE_ID"
 
-# ── Step 3: 验证 Zone DNS 权限 ────────────────────────────────────────────────
-log_step "Step 3/5: 验证 Token Zone DNS 权限"
+# ── Step 3: 验证 DNS 权限 ────────────────────────────────────────────────────
+log_step "Step 3/5: 验证 DNS 权限"
 
-# 尝试读取 Zone DNS 记录（只读操作，验证权限）
-DNS_CHECK=$(curl -sS -w "\n%{http_code}" "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?per_page=1" \
-  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null)
-DNS_HTTP_CODE=$(echo "$DNS_CHECK" | tail -1)
-DNS_BODY=$(echo "$DNS_CHECK" | sed '$d')
-DNS_SUCCESS=$(echo "$DNS_BODY" | jq -r '.success // false' 2>/dev/null)
-
-if [ "$DNS_SUCCESS" != "true" ]; then
-  log_error "API Token 缺少 Zone DNS 权限"
-  log_error "当前 Token 无法管理 Zone '$ZONE_NAME' 的 DNS 记录"
+if cf_check_dns_auth "$ZONE_ID"; then
+  if [ -n "${CF_GLOBAL_API_KEY:-}" ]; then
+    log_ok "DNS 权限验证通过（使用 Global API Key）"
+  else
+    log_ok "DNS 权限验证通过（使用 API Token）"
+  fi
+else
+  log_error "DNS 权限验证失败！"
+  log_error "当前凭证无法管理 Zone '$ZONE_NAME' 的 DNS 记录"
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  解决方案：更新 API Token 权限"
+  echo "  解决方案：提供 Global API Key"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   echo "  1. 打开 https://dash.cloudflare.com/profile/api-tokens"
-  echo "  2. 找到当前使用的 Token，点击右侧 '...' > 'Edit'"
-  echo "  3. 在 Permissions 中添加以下权限："
+  echo "  2. 找到 'Global API Key'（不是 API Token！）"
+  echo "  3. 重新运行时添加环境变量："
   echo ""
-  echo "     ┌────────────────────────────────────────────────┐"
-  echo "     │ Zone → DNS → Edit                             │"
-  echo "     │ Zone → Zone → Read                            │"
-  echo "     │ Account → Cloudflare Workers → Edit (Workers)  │"
-  echo "     │ Account → Cloudflare Pages → Edit (Pages)      │"
-  echo "     └────────────────────────────────────────────────┘"
-  echo ""
-  echo "  4. 保存后重新运行："
-  echo "     CLOUDFLARE_API_TOKEN=\"新token\" DOMAIN=\"$DOMAIN\" bash $(dirname "$0")/04-bind-domain.sh"
+  echo "     CF_AUTH_EMAIL=\"mailforwdy@gmail.com\" \\"
+  echo "     CF_GLOBAL_API_KEY=\"cfk_你的key\" \\"
+  echo "     DOMAIN=\"$DOMAIN\" bash $(dirname "$0")/04-bind-domain.sh"
   echo ""
   exit 1
 fi
-log_ok "Zone DNS 权限验证通过"
 
 # ── Step 4: 根据部署模式绑定域名 ─────────────────────────────────────────────
 MODE=$(detect_deploy_mode)
@@ -139,8 +141,8 @@ if [ "$MODE" = "pages" ]; then
   PAGES_SUBDOMAIN="${WORKER_NAME}.pages.dev"
   log_info "检查 DNS CNAME 记录: ${DNS_NAME}.${ZONE_NAME} → ${PAGES_SUBDOMAIN}"
 
-  # 检查是否已有 CNAME 记录
-  EXISTING_DNS=$(cf_api GET "/zones/${ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}")
+  # 检查是否已有 CNAME 记录（使用 cf_dns_api，不是 cf_api！）
+  EXISTING_DNS=$(cf_dns_api GET "/zones/${ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}")
   EXISTING_DNS_ID=$(echo "$EXISTING_DNS" | jq -r '.result[0].id // empty' 2>/dev/null)
 
   if [ -n "$EXISTING_DNS_ID" ]; then
@@ -149,21 +151,21 @@ if [ "$MODE" = "pages" ]; then
       log_ok "DNS CNAME 记录已存在且正确: ${DOMAIN} → ${PAGES_SUBDOMAIN}"
     else
       log_info "更新现有 CNAME 记录..."
-      cf_api PUT "/zones/${ZONE_ID}/dns_records/${EXISTING_DNS_ID}" \
+      cf_dns_api PUT "/zones/${ZONE_ID}/dns_records/${EXISTING_DNS_ID}" \
         "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":true,\"ttl\":1}" > /dev/null
       log_ok "DNS CNAME 记录已更新"
     fi
   else
     # 检查是否有冲突的 A/AAAA 记录，如有则删除
-    CONFLICT_A=$(cf_api GET "/zones/${ZONE_ID}/dns_records?type=A&name=${DOMAIN}")
+    CONFLICT_A=$(cf_dns_api GET "/zones/${ZONE_ID}/dns_records?type=A&name=${DOMAIN}" 2>/dev/null || echo '{"result":[]}')
     CONFLICT_A_ID=$(echo "$CONFLICT_A" | jq -r '.result[0].id // empty' 2>/dev/null)
     if [ -n "$CONFLICT_A_ID" ]; then
       log_info "删除冲突的 A 记录..."
-      cf_api DELETE "/zones/${ZONE_ID}/dns_records/${CONFLICT_A_ID}" > /dev/null 2>&1
+      cf_dns_api DELETE "/zones/${ZONE_ID}/dns_records/${CONFLICT_A_ID}" > /dev/null 2>&1
     fi
 
     log_info "创建 DNS CNAME 记录: ${DNS_NAME} → ${PAGES_SUBDOMAIN} (proxied)"
-    DNS_CREATE_RESP=$(cf_api POST "/zones/${ZONE_ID}/dns_records" \
+    DNS_CREATE_RESP=$(cf_dns_api POST "/zones/${ZONE_ID}/dns_records" \
       "{\"type\":\"CNAME\",\"name\":\"${DNS_NAME}\",\"content\":\"${PAGES_SUBDOMAIN}\",\"proxied\":true,\"ttl\":1}")
     DNS_RECORD_ID=$(echo "$DNS_CREATE_RESP" | jq -r '.result.id // empty')
     if [ -z "$DNS_RECORD_ID" ]; then
@@ -189,8 +191,13 @@ else
       "{\"service\":\"${WORKER_NAME}\",\"environment\":\"production\"}" > /dev/null
   else
     log_info "创建新绑定..."
-    cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
-      "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}" > /dev/null
+    BIND_RESP=$(cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
+      "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}")
+    BIND_ID=$(echo "$BIND_RESP" | jq -r '.result.id // empty')
+    if [ -z "$BIND_ID" ]; then
+      log_error "Workers 域名绑定失败: $(echo "$BIND_RESP" | jq -r '.errors[0].message // "unknown"')"
+      exit 1
+    fi
   fi
   log_ok "Workers 域名绑定成功: $DOMAIN → $WORKER_NAME"
 fi

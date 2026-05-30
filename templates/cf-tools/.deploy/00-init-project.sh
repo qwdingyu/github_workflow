@@ -51,10 +51,26 @@ else
   log_ok "TURSO_API_TOKEN (pages 模式跳过)"
 fi
 
+# DNS 凭证检查（警告级别，不阻塞）
+# ⚠️ 铁律：API Token (cfat_...) 通常无 Zone DNS 权限
+#    域名绑定需要 Global API Key (cfk_...) + 邮箱
+#    详见 docs/120_CF凭证分层使用手册.md
+if [ -n "${CF_AUTH_EMAIL:-}" ] && [ -n "${CF_GLOBAL_API_KEY:-}" ]; then
+  log_ok "DNS 凭证已设置 (CF_AUTH_EMAIL + CF_GLOBAL_API_KEY)"
+else
+  log_warn "未设置 DNS 凭证 (CF_AUTH_EMAIL / CF_GLOBAL_API_KEY)"
+  log_warn "如果后续需要绑定域名，请提供 Global API Key："
+  log_warn "  CF_AUTH_EMAIL=\"邮箱\" CF_GLOBAL_API_KEY=\"cfk_...\""
+  log_warn "  获取位置: https://dash.cloudflare.com/profile/api-tokens → Global API Key"
+fi
+
 if [ "$FAIL" -eq 1 ]; then
   echo ""
   echo "用法:"
   echo "  CLOUDFLARE_API_TOKEN=\"cfat_xxx\" TURSO_API_TOKEN=\"turso_xxx\" bash one-click.sh"
+  echo ""
+  echo "可选（域名绑定需要）:"
+  echo "  CF_AUTH_EMAIL=\"邮箱\" CF_GLOBAL_API_KEY=\"cfk_...\""
   exit 1
 fi
 
