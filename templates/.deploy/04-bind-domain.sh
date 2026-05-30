@@ -67,23 +67,44 @@ if [ -z "$ZONE_ID" ]; then
 fi
 log_ok "Zone ID: $ZONE_ID"
 
-# ── Step 3: 绑定 Workers Custom Domain ───────────────────────────────────────
-log_step "Step 3/4: 绑定 Workers Custom Domain"
+# ── Step 3: 根据部署模式绑定域名 ─────────────────────────────────────────────
+MODE=$(detect_deploy_mode)
 
-# 检查是否已绑定
-EXISTING=$(cf_api GET "/accounts/${ACCOUNT_ID}/workers/domains" 2>/dev/null || echo '{"result":[]}')
-EXISTING_ID=$(echo "$EXISTING" | jq -r ".result[] | select(.hostname==\"${DOMAIN}\") | .id" 2>/dev/null)
+if [ "$MODE" = "pages" ]; then
+  # ── Pages 模式：使用 Pages Custom Domain API ──
+  log_step "Step 3/4: 绑定 Pages 自定义域名"
 
-if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
-  log_ok "域名已绑定 ($EXISTING_ID)，更新绑定..."
-  cf_api PUT "/accounts/${ACCOUNT_ID}/workers/domains/${EXISTING_ID}" \
-    "{\"service\":\"${WORKER_NAME}\",\"environment\":\"production\"}" > /dev/null
+  # 检查是否已绑定
+  EXISTING=$(cf_api GET "/accounts/${ACCOUNT_ID}/pages/projects/${WORKER_NAME}/domains" 2>/dev/null || echo '{"result":[]}')
+  EXISTING_ID=$(echo "$EXISTING" | jq -r ".result[] | select(.name==\"${DOMAIN}\") | .id" 2>/dev/null)
+
+  if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+    log_ok "域名已绑定 ($EXISTING_ID)"
+  else
+    log_info "创建 Pages 自定义域名..."
+    cf_api POST "/accounts/${ACCOUNT_ID}/pages/projects/${WORKER_NAME}/domains" \
+      "{\"name\":\"${DOMAIN}\"}" > /dev/null
+  fi
+  log_ok "Pages 域名绑定成功: $DOMAIN → $WORKER_NAME"
 else
-  log_info "创建新绑定..."
-  cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
-    "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}" > /dev/null
+  # ── Workers 模式：使用 Workers Custom Domain API ──
+  log_step "Step 3/4: 绑定 Workers Custom Domain"
+
+  # 检查是否已绑定
+  EXISTING=$(cf_api GET "/accounts/${ACCOUNT_ID}/workers/domains" 2>/dev/null || echo '{"result":[]}')
+  EXISTING_ID=$(echo "$EXISTING" | jq -r ".result[] | select(.hostname==\"${DOMAIN}\") | .id" 2>/dev/null)
+
+  if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
+    log_ok "域名已绑定 ($EXISTING_ID)，更新绑定..."
+    cf_api PUT "/accounts/${ACCOUNT_ID}/workers/domains/${EXISTING_ID}" \
+      "{\"service\":\"${WORKER_NAME}\",\"environment\":\"production\"}" > /dev/null
+  else
+    log_info "创建新绑定..."
+    cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
+      "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}" > /dev/null
+  fi
+  log_ok "Workers 域名绑定成功: $DOMAIN → $WORKER_NAME"
 fi
-log_ok "域名绑定成功: $DOMAIN → $WORKER_NAME"
 
 # ── Step 4: 等待 HTTPS 可用 ──────────────────────────────────────────────────
 log_step "Step 4/4: 等待 HTTPS 证书签发"
