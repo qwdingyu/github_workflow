@@ -220,7 +220,12 @@ async function main() {
     );
   }
 
-  // seo-config.json 特殊处理（cf-static）
+  // 先做文本替换（seo-config.json 在后面单独处理，避免双重替换）
+  const textExts = [".json", ".jsonc", ".ts", ".js", ".mjs", ".html", ".md", ".yml", ".yaml", ".sh", ".css", ".txt", ".sql"];
+  const count = replaceInDir(outputDir, replacements, textExts);
+  console.log(`  ${c.g("✅")} 替换了 ${count} 个文件`);
+
+  // seo-config.json 特殊处理（cf-static）—— 必须在文本替换之后，覆盖可能被误替换的值
   const seoConfigPath = join(outputDir, "src", "seo-config.json");
   if (existsSync(seoConfigPath)) {
     const seoConfig = JSON.parse(readFileSync(seoConfigPath, "utf-8"));
@@ -231,10 +236,6 @@ async function main() {
     writeFileSync(seoConfigPath, JSON.stringify(seoConfig, null, 2) + "\n", "utf-8");
     console.log(`  ${c.g("✅")} seo-config.json 已更新`);
   }
-
-  const textExts = [".json", ".jsonc", ".ts", ".js", ".mjs", ".html", ".md", ".yml", ".yaml", ".sh", ".css", ".txt", ".sql"];
-  const count = replaceInDir(outputDir, replacements, textExts);
-  console.log(`  ${c.g("✅")} 替换了 ${count} 个文件`);
 
   // ── Step 3: 清理示例数据 ──────────────────────────────────────────────────
   console.log(`${c.b("Step 3/4")} 清理与准备...`);
