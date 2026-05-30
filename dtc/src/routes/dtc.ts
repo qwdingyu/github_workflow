@@ -16,6 +16,8 @@ import type { Context } from "hono";
 import type { AppEnv } from "../bindings";
 import type { Db } from "../services/dtc-service";
 import { ok, fail } from "@eforge/cf-core/http";
+import { getIpHash } from "@eforge/cf-core/security";
+import { MemoryRateLimiter } from "@eforge/cf-core/rate-limit";
 import {
   lookup,
   search,
@@ -26,10 +28,20 @@ import {
   extractFromText,
 } from "../services/dtc-service";
 
+/** 安全解析整数查询参数：无效值回退到 fallback */
+function safeInt(val: string | undefined, fallback: number, min = 0, max = Infinity): number {
+  const n = parseInt(val || String(fallback));
+  if (isNaN(n)) return fallback;
+  return Math.min(Math.max(n, min), max);
+}
+
 /** 从 Hono Context 获取类型安全的 Db 实例 */
 function getDb(c: Context<AppEnv>): Db {
   return c.get("db") as unknown as Db;
 }
+
+/** 内存限流器：搜索端点每 IP 每分钟 60 次 */
+const searchLimiter = new MemoryRateLimiter();
 
 const dtc = new Hono<AppEnv>();
 
@@ -50,9 +62,16 @@ dtc.get("/search", async (c) => {
   const q = c.req.query("q") || "";
   if (q.length < 2) return fail(c, "关键词至少 2 个字符", 400);
 
+  // 速率限制：每 IP 每分钟最多 60 次搜索
+  const ipHash = await getIpHash(c);
+  const limitCheck = await searchLimiter.check(`search:${ipHash}`, 60, 60_000);
+  if (!limitCheck.ok) {
+    return fail(c, limitCheck.message || "请求过于频繁", 429);
+  }
+
   const db = getDb(c);
-  const limit = Math.min(parseInt(c.req.query("limit") || "20"), 100);
-  const offset = parseInt(c.req.query("offset") || "0");
+  const limit = safeInt(c.req.query("limit"), 20, 1, 100);
+  const offset = safeInt(c.req.query("offset"), 0, 0);
 
   const result = await search(db, q, {
     manufacturer: c.req.query("manufacturer"),
@@ -97,8 +116,8 @@ dtc.get("/stats", async (c) => {
 dtc.get("/by-manufacturer/:manufacturer", async (c) => {
   const mfr = c.req.param("manufacturer");
   const db = getDb(c);
-  const limit = Math.min(parseInt(c.req.query("limit") || "20"), 100);
-  const offset = parseInt(c.req.query("offset") || "0");
+  const limit = safeInt(c.req.query("limit"), 20, 1, 100);
+  const offset = safeInt(c.req.query("offset"), 0, 0);
 
   const result = await lookupByManufacturer(db, mfr, { limit, offset });
   return ok(c, {
