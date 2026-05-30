@@ -1,6 +1,98 @@
-# DTC Lookup — 汽车故障码查询服务
+# DTC Lookup — 汽车 DTC 故障码查询服务
+
+> 部署模式：**workers**（Cloudflare Workers + Static Assets）
+> 集成 `@eforge/cf-core` 共享内核，复制后改配置即可上线。
+> 数据来源：Wal33D/dtc-database（MIT License）+ wzr1337/dtcmapping → 21,360 条 / 34 制造商
 
 基于 Cloudflare Workers + Turso + Drizzle ORM 的 OBD-II DTC 故障码查询服务。
+
+## 快速开始
+
+```bash
+cd dtc && npm install
+npm run dev                    # http://localhost:8780
+npm test                       # 43 个单元测试
+```
+
+一键部署：
+
+```bash
+CLOUDFLARE_API_TOKEN="cfat_xxx" TURSO_API_TOKEN="turso_xxx" \
+  bash .deploy/one-click.sh
+```
+
+## 数据结构
+
+| 维度 | 数值 |
+|------|------|
+| DTC 故障码 | 21,360 条（汽车 OBD-II） |
+| 制造商 | 34 个 |
+| 系统类型 | P=15,463 / B=2,612 / C=1,453 / U=1,832 |
+| 通用码 (GENERIC) | 11,970 条 |
+| 数据来源 | wal33d/dtc-database + wzr1337/dtcmapping |
+
+## API 接口
+
+**公共**：`GET /api/health`
+
+**v1 查询**：`GET /api/v1/dtc/{code}`（单码·支持 `?manufacturer=`） · `GET /api/v1/dtc/search`（搜索·支持 `?q=&manufacturer=&system=&limit=&offset=`）
+`POST /api/v1/dtc/batch`（批量·最多 500） · `GET /api/v1/dtc/stats`
+`GET /api/v1/dtc/by-manufacturer/{mfr}` · `POST /api/v1/dtc/extract`
+`GET /api/v1/dtc/normalize/{code}` · `GET /api/v1/manufacturers`
+
+## 项目结构
+
+```
+dtc/
+├── src/
+│   ├── index.ts              # Worker 入口（bootstrap 工厂）
+│   ├── bindings.ts           # 环境变量类型（extends CoreBindings）
+│   ├── config.ts             # 业务配置
+│   ├── db/schema.ts          # 数据库 Schema（2 张业务表）
+│   ├── routes/
+│   │   ├── health.ts         # 健康检查
+│   │   ├── dtc.ts            # DTC 查询 API 路由（7 端点）
+│   │   └── manufacturers.ts  # 制造商列表路由
+│   └── services/
+│       └── dtc-service.ts    # 核心业务逻辑（lookup/search/batch/stats...）
+├── public/                   # 静态资源 + 生成的 SEO 页面
+│   ├── index.html            # 首页（搜索入口）
+│   ├── search.html           # API 驱动的搜索结果页
+│   ├── 404.html              # 友好错误页
+│   ├── _headers              # 安全与缓存响应头
+│   ├── css/style.css         # 暗色主题样式
+│   ├── dtc/{code}.html       # 自动生成：19,000+ SEO 详情页
+│   ├── p/b/c/u.html          # 自动生成：系统分类页
+│   └── manufacturers/*.html  # 自动生成：34 个制造商页
+├── scripts/
+│   ├── import-data.mjs       # DTC 数据导入 Turso
+│   ├── generate-pages.mjs    # SEO 页面生成器（19K+ 页 + sitemap + robots）
+│   ├── migrate.mjs           # 数据库迁移
+│   └── smoke-readonly.mjs    # API 冒烟测试（9 个断言）
+├── migrations/0001_init.sql  # 初始化 SQL
+├── .deploy/                  # one-click 部署体系（8 脚本 + 2 定时任务）
+├── .github/workflows/        # CI/CD 部署流水线
+├── .deploy-mode              # "workers"
+├── .dev.vars.example         # 本地开发环境变量模板
+├── package.json / wrangler.jsonc / tsconfig.json / vitest.config.ts
+└── README.md
+```
+
+## 环境变量
+
+| 变量 | 必须 | 说明 |
+|------|:----:|------|
+| `TURSO_URL` | ✅ | Turso 数据库 URL |
+| `TURSO_TOKEN` | ✅ | Turso 认证 Token |
+| `ADMIN_TOKEN` | ✅ | 管理端 API 认证 Token |
+| `APP_ORIGIN` | 可选 | 站点域名（SEO canonical） |
+| `RATE_LIMIT_SALT` | 可选 | 限流盐值 |
+
+## 冒烟测试
+
+```bash
+BASE_URL=https://dtc.eforge.xyz node scripts/smoke-readonly.mjs
+```
 
 ## 技术栈
 
@@ -11,81 +103,4 @@
 | 数据库 | Turso (libSQL) | SQLite 兼容，Free 9GB |
 | ORM | Drizzle ORM | 类型安全，防 SQL 注入 |
 | 共享内核 | @eforge/cf-core | 认证/安全/限流/缓存/日志 |
-| 静态页面 | Cloudflare Pages | 18,000+ SEO 页面 |
-
-## 数据结构
-
-- **18,805** DTC 故障码（含汽车 + 工业）
-- **34** 个汽车制造商
-- 数据来源：Wal33D/dtc-database（MIT License）+ wzr1337/dtcmapping
-
-## API 接口
-
-```
-GET  /api/v1/dtc/{code}                    — 单码查询
-GET  /api/v1/dtc/search?q=keyword          — 关键词搜索
-POST /api/v1/dtc/batch                     — 批量查询
-GET  /api/v1/dtc/stats                     — 统计信息
-GET  /api/v1/dtc/by-manufacturer/{mfr}     — 按制造商查询
-POST /api/v1/dtc/extract                   — 从文本提取 DTC
-GET  /api/v1/dtc/normalize/{code}          — 归一化 DTC 码
-GET  /api/v1/manufacturers                 — 制造商列表
-GET  /api/health                           — 健康检查
-```
-
-## 使用方式
-
-```bash
-# 安装依赖
-cd dtc && npm install
-
-# 本地开发
-npm run dev
-
-# 运行测试
-npm test
-
-# 迁移数据库
-TURSO_URL=libsql://xxx.turso.io TURSO_TOKEN=xxx npm run db:migrate
-
-# 导入 DTC 数据
-TURSO_URL=libsql://xxx.turso.io TURSO_TOKEN=xxx npm run import:data
-
-# 生成 SEO 页面
-TURSO_URL=libsql://xxx.turso.io TURSO_TOKEN=xxx SITE_URL=https://dtc.eforge.xyz npm run generate:pages
-
-# 部署
-npm run deploy
-```
-
-## 环境变量
-
-| 变量 | 必须 | 说明 |
-|------|:----:|------|
-| TURSO_URL | ✅ | Turso 数据库 URL |
-| TURSO_TOKEN | ✅ | Turso 认证 Token |
-| APP_ORIGIN | ✅ | 站点域名 |
-| ADMIN_TOKEN | 可选 | 管理端认证 Token |
-| RATE_LIMIT_SALT | 可选 | 限流盐值 |
-
-## 项目结构
-
-```
-dtc/
-├── src/
-│   ├── index.ts                 # Worker 入口（bootstrap）
-│   ├── bindings.ts              # 环境变量类型
-│   ├── config.ts                # 业务配置
-│   ├── db/schema.ts             # 数据库 Schema
-│   ├── routes/health.ts         # 健康检查
-│   ├── routes/dtc.ts            # DTC 查询 API 路由
-│   └── services/dtc-service.ts  # 核心业务逻辑
-├── scripts/
-│   ├── import-data.mjs          # 数据导入
-│   ├── generate-pages.mjs       # SEO 页面生成
-│   └── migrate.mjs              # 数据库迁移
-├── public/                      # 静态资源 + 生成的 SEO 页面
-├── migrations/                  # SQL 迁移文件
-├── package.json / wrangler.jsonc
-└── vitest.config.ts
-```
+| 静态页面 | Workers Assets | 自动生成 19,000+ SEO 页 |

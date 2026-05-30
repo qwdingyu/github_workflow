@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "db:migrate": "node scripts/migrate.mjs",
     "import:data": "node scripts/import-data.mjs",
-    "generate:pages": "node scripts/generate-pages.mjs"
+    "generate:pages": "node scripts/generate-pages.mjs",
+    "smoke": "BASE_URL=http://localhost:8780 node scripts/smoke-readonly.mjs"
   },
   "dependencies": {
     "@eforge/cf-core": "file:../packages/cf-core",
