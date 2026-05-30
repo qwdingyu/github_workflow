@@ -288,9 +288,26 @@ DOMAIN="shop.eforge.xyz" bash .deploy/04-bind-domain.sh
 ### 04-bind-domain.sh
 
 - Auto-derive Account ID + Zone ID from domain
-- POST Workers Custom Domain binding via CF API
-- Poll HTTPS availability (up to 24 × 5s)
+- **Mode-aware binding** — detect deploy mode and use the correct API:
+  - **Workers mode**: `POST /accounts/{id}/workers/domains` (Workers Custom Domain API) — auto-creates DNS CNAME record
+  - **Pages mode**: `POST /accounts/{id}/pages/projects/{name}/domains` (Pages Custom Domain API) — requires manual DNS CNAME creation
+- Poll HTTPS availability (up to 24 × 5s for Workers, 30 × 10s for Pages)
 - Save DOMAIN to credentials
+
+```bash
+MODE=$(detect_deploy_mode)
+if [ "$MODE" = "pages" ]; then
+  cf_api POST "/accounts/${ACCOUNT_ID}/pages/projects/${WORKER_NAME}/domains" \
+    "{\"name\":\"${DOMAIN}\"}"
+else
+  cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
+    "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}"
+fi
+```
+
+**Critical Pages pitfall**: Pages Custom Domain API returns `"verification_data": {"error_message": "CNAME record not set"}` until a DNS CNAME record pointing to `{project}.pages.dev` is created. Workers mode auto-creates this; Pages mode does NOT. Either:
+1. Add the CNAME record via DNS API (`POST /zones/{zone_id}/dns_records`) — requires Zone DNS Edit permission on the API token
+2. Manually add it in the Cloudflare Dashboard under DNS → Records
 
 ### 05-setup-turnstile.sh
 
