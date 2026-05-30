@@ -9,6 +9,7 @@
 
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { RateLimitResult } from "./types";
 
 /**
  * 成功响应 — 统一格式 { ok: true, ...data }
@@ -35,6 +36,44 @@ export function fail(
   return c.json(
     { ok: false, error: message, ...(details ? { details } : {}) } as Record<string, unknown>,
     status,
+  );
+}
+
+/**
+ * 限流失败响应 — 429 + 标准 RateLimit 头
+ *
+ * 返回标准 HTTP 429 响应，包含以下头信息：
+ * - Retry-After: 秒数（建议客户端等待时间）
+ * - X-RateLimit-Limit: 窗口内允许的最大请求数
+ * - X-RateLimit-Remaining: 窗口内剩余请求数（0）
+ * - X-RateLimit-Reset: 窗口重置的 Unix 时间戳
+ *
+ * @example
+ * ```ts
+ * const result = await rateLimiter.check(key, limit, windowMs);
+ * if (!result.ok) {
+ *   return failRateLimit(c, result, limit);
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function failRateLimit(
+  c: Context<any>,
+  result: RateLimitResult,
+  limit: number,
+) {
+  const retryAfterSeconds = Math.ceil((result.resetMs || 0) / 1000);
+  const resetTimestamp = Math.ceil((Date.now() + (result.resetMs || 0)) / 1000);
+
+  return c.json(
+    { ok: false, error: result.message || "请求过于频繁，请稍后再试" },
+    429,
+    {
+      "Retry-After": String(retryAfterSeconds),
+      "X-RateLimit-Limit": String(limit),
+      "X-RateLimit-Remaining": "0",
+      "X-RateLimit-Reset": String(resetTimestamp),
+    },
   );
 }
 

@@ -26,8 +26,32 @@ export interface BootstrapOptions<TSchema extends Record<string, unknown> = Reco
   /** 请求体大小限制（字节），默认 100KB */
   maxBodySize?: number;
 
+  /**
+   * 请求级超时（毫秒），默认 25000（25 秒）。
+   * Cloudflare Workers 硬限制 30 秒，留 5 秒余量给 CF 运行时。
+   * 超时后请求会被中止并返回 504 Gateway Timeout。
+   */
+  requestTimeoutMs?: number;
+
   /** 安全响应头配置 */
   securityHeaders?: SecurityHeadersOptions;
+
+  /**
+   * 错误告警回调 — 生产环境错误通知。
+   * 当请求处理过程中发生未捕获错误时调用，可用于发送到外部告警系统
+   * （如 Slack webhook、邮件、PagerDuty 等）。
+   *
+   * @example
+   * ```ts
+   * onErrorAlert: async (error, context) => {
+   *   await fetch("https://hooks.slack.com/...", {
+   *     method: "POST",
+   *     body: JSON.stringify({ text: `[ERROR] ${error.message}` }),
+   *   });
+   * }
+   * ```
+   */
+  onErrorAlert?: (error: Error, context: { path: string; method: string; ip?: string }) => void | Promise<void>;
 
   /** 注册 API 路由的回调 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,7 +136,9 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
     schema,
     apiPrefix = "/api",
     maxBodySize = 1024 * 100,
+    requestTimeoutMs = 25_000,
     securityHeaders: secOpts = {},
+    onErrorAlert,
     registerRoutes,
     pageRoutes = {},
     spaRoutes,
@@ -121,6 +147,32 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const api = new Hono<any>();
+
+  // ── 请求级超时中间件（防止慢请求耗尽 Workers CPU） ──
+  api.use("*", async (c, next) => {
+    // /health 不受超时限制（用于监控探活）
+    if (c.req.path === "/health") {
+      await next();
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+
+    try {
+      // 将 signal 传递给下游（路由可选择性使用）
+      c.set("abortSignal", controller.signal);
+      await next();
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        console.error(`[bootstrap:timeout] 请求超时 ${requestTimeoutMs}ms: ${c.req.method} ${c.req.path}`);
+        return fail(c, "请求处理超时", 504);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  });
 
   // ── DB 初始化中间件（带连接验证 + 重试） ──
   api.use("*", async (c, next) => {
@@ -163,6 +215,20 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
   });
   api.onError((error, c) => {
     console.error("[bootstrap:onError]", error?.constructor?.name, error?.message, error?.stack);
+
+    // 触发告警回调（如果配置了）
+    if (onErrorAlert) {
+      const ip = c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
+      // 异步发送告警，不阻塞响应
+      Promise.resolve(onErrorAlert(error as Error, {
+        path: c.req.path,
+        method: c.req.method,
+        ip,
+      })).catch((alertErr) => {
+        console.error("[bootstrap:onErrorAlert] 告警发送失败:", alertErr);
+      });
+    }
+
     const accept = c.req.header("accept") || "";
     if (accept.includes("text/html")) {
       return c.html(errorPageHtml(500, "服务暂时不可用"), 500);

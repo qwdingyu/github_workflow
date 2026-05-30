@@ -12,7 +12,7 @@
  */
 
 // ── HTTP 工具 ──
-export { ok, fail, getOrigin, safeJsonBody, maskContact, normalizeCode, csvEscape, toCsv } from "./http";
+export { ok, fail, failRateLimit, getOrigin, safeJsonBody, maskContact, normalizeCode, csvEscape, toCsv } from "./http";
 
 // ── 安全工具 ──
 export {
