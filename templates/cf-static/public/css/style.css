@@ -42,6 +42,17 @@ body {
 }
 
 /* ── Header ── */
+.navbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
 header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -81,6 +92,14 @@ main {
 }
 
 /* ── Hero ── */
+.hero-description {
+  color: var(--text2);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  margin-top: 0.8rem;
+}
+
 .hero {
   text-align: center;
   padding: 3rem 0;
@@ -155,6 +174,20 @@ main {
   font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   font-size: 0.9rem;
   resize: vertical;
+}
+
+.tool-input,
+.tool-output {
+  margin-bottom: 1rem;
+}
+
+.tool-input textarea {
+  min-height: 150px;
+}
+
+.tool-output textarea {
+  min-height: 150px;
+  background: var(--bg);
 }
 
 .tool-actions {
