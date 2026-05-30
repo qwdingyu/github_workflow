@@ -14,7 +14,8 @@
     "noEmit": true,
     "paths": {
       "@eforge/cf-core": ["../../packages/cf-core/src/index.ts"],
-      "@eforge/cf-core/*": ["../../packages/cf-core/src/*"]
+      "@eforge/cf-core/*": ["../../packages/cf-core/src/*"],
+      "@eforge/cf-core/features/*": ["../../packages/cf-core/features/*"]
     }
   },
   "include": ["src/**/*.ts"],

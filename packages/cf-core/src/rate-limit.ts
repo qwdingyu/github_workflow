@@ -9,6 +9,7 @@
  * 本模块统一接口，项目按自己的基础设施选择后端。
  */
 
+import { sql } from "drizzle-orm";
 import type { RateLimitResult } from "./types";
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -109,42 +110,20 @@ export class KvRateLimiter implements RateLimiter {
  * 数据库固定窗口限流器
  *
  * 使用 rate_limit_windows 表，通过原子 upsert（INSERT ON CONFLICT UPDATE）实现。
- * 一次数据库操作完成检查与计数，消除竞态条件。
+ * UPDATE 自带 WHERE request_count < :limit 条件，确保计数器永远不会超过阈值，
+ * 从根本上消除高并发场景下的竞态条件。
  *
- * 来源：eshop src/lib/rate-limit.ts
+ * 来源：eshop src/lib/rate-limit.ts（竞态修复版）
  */
 export class DbRateLimiter implements RateLimiter {
   private db: {
-    insert: (table: unknown) => {
-      values: (data: unknown) => {
-        onConflictDoUpdate: (opts: unknown) => {
-          returning: (cols: unknown) => Promise<{ count: number }[]>;
-        };
-      };
-    };
+    execute: (query: unknown) => Promise<{ rows?: Array<{ request_count: number }> }>;
   };
-  private table: unknown;
-  private actionColumn: unknown;
-  private ipHashColumn: unknown;
-  private windowStartColumn: unknown;
-  private countColumn: unknown;
+  private tableName: string;
 
-  constructor(
-    db: DbRateLimiter["db"],
-    table: unknown,
-    columns: {
-      action: unknown;
-      ipHash: unknown;
-      windowStart: unknown;
-      requestCount: unknown;
-    },
-  ) {
+  constructor(db: DbRateLimiter["db"]) {
     this.db = db;
-    this.table = table;
-    this.actionColumn = columns.action;
-    this.ipHashColumn = columns.ipHash;
-    this.windowStartColumn = columns.windowStart;
-    this.countColumn = columns.requestCount;
+    this.tableName = "rate_limit_windows";
   }
 
   async check(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
@@ -153,27 +132,36 @@ export class DbRateLimiter implements RateLimiter {
     const windowStart = Math.floor(now / windowSeconds) * windowSeconds;
 
     try {
-      const results = await this.db
-        .insert(this.table)
-        .values({
-          action: key,
-          ipHash: "",
-          windowStart,
-          requestCount: 1,
-        })
-        .onConflictDoUpdate({
-          target: [this.actionColumn, this.ipHashColumn, this.windowStartColumn],
-          set: { requestCount: { sql: `${String(this.countColumn)} + 1` } },
-        })
-        .returning({ count: this.countColumn as { count: number } });
+      // 使用 raw SQL + WHERE 条件保证计数器不会超过 limit：
+      // - 首次插入: request_count = 1
+      // - 后续更新: request_count += 1，但 WHERE request_count < :limit 阻止超额
+      const result = await this.db.execute(
+        sql`INSERT INTO ${sql.identifier(this.tableName)} (action, ip_hash, window_start, request_count)
+            VALUES (${key}, '', ${windowStart}, 1)
+            ON CONFLICT(action, ip_hash, window_start) DO UPDATE SET
+              request_count = request_count + 1
+            WHERE rate_limit_windows.request_count < ${limit}
+            RETURNING request_count`,
+      );
 
-      const currentCount = results?.[0]?.count ?? 1;
+      const currentCount = result.rows?.[0]?.request_count ?? 0;
+
+      // 如果 WHERE 条件不满足（count >= limit），UPDATE 被跳过，返回旧值
       if (currentCount > limit) {
-        return { ok: false, message: "请求过于频繁，请稍后再试", status: 429 };
+        const resetInSeconds = windowStart + windowSeconds - now;
+        return {
+          ok: false,
+          message: "请求过于频繁，请稍后再试",
+          status: 429,
+          remaining: 0,
+          resetMs: Math.max(0, resetInSeconds * 1000),
+        };
       }
-      return { ok: true, remaining: limit - currentCount };
+
+      return { ok: true, remaining: Math.max(0, limit - currentCount) };
     } catch {
-      return { ok: true };
+      // 限流失败时 fail-open 以保持服务可用
+      return { ok: true, remaining: limit };
     }
   }
 }

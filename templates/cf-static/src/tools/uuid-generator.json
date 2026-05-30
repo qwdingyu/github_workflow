@@ -1,22 +1,22 @@
 {
   "slug": "uuid-generator",
-  "title": "UUID v4 Generator",
-  "description": "Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.",
-  "keywords": ["uuid generator", "uuid v4", "random uuid", "generate uuid online", "uuid creator"],
+  "title": "UUID v4 生成器",
+  "description": "即时生成随机 UUID v4 标识符。免费、快速、支持离线使用 — 符合 RFC 4122 标准。",
+  "keywords": ["uuid 生成器", "uuid v4", "随机 uuid", "在线生成 uuid", "uuid 创建器"],
   "category": "generator",
   "icon": "ID",
   "faq": [
     {
-      "q": "What is a UUID?",
-      "a": "A UUID (Universally Unique Identifier) is a 128-bit identifier that is unique across space and time. UUID v4 is randomly generated."
+      "q": "什么是 UUID？",
+      "a": "UUID（通用唯一标识符）是一个 128 位标识符，在空间和时间上都是唯一的。UUID v4 是随机生成的。"
     },
     {
-      "q": "Is UUID v4 truly unique?",
-      "a": "The probability of generating two identical UUID v4 values is astronomically low — approximately 1 in 2^122."
+      "q": "UUID v4 真的唯一吗？",
+      "a": "生成两个相同 UUID v4 值的概率极低 — 大约为 2^122 分之一。"
     },
     {
-      "q": "Can I use UUIDs as database primary keys?",
-      "a": "Yes, UUIDs are commonly used as primary keys in distributed systems where auto-incrementing IDs are not practical."
+      "q": "可以用 UUID 作为数据库主键吗？",
+      "a": "可以，UUID 常用于分布式系统的主键，在不适合使用自增 ID 的场景下特别有用。"
     }
   ]
 }

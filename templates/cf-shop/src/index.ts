@@ -11,6 +11,7 @@ import { healthRoutes } from "./routes/health";
 import { productRoutes } from "./routes/products";
 import { orderRoutes } from "./routes/orders";
 import { adminRoutes } from "./routes/admin";
+import { voucherRoutes } from "./routes/vouchers";
 
 /**
  * 导出 Worker 应用
@@ -50,6 +51,7 @@ export default bootstrap({
     api.route("/products", productRoutes);
     api.route("/orders", orderRoutes);
     api.route("/admin", adminRoutes);
+    api.route("/", voucherRoutes);
   },
 
   // 页面路由（精确匹配 → HTML 文件）

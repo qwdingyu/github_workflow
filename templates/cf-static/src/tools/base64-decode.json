@@ -1,22 +1,22 @@
 {
   "slug": "base64-decode",
-  "title": "Base64 Decoder & Encoder",
-  "description": "Decode and encode Base64 strings online. Free, fast, and privacy-friendly — all processing in your browser.",
-  "keywords": ["base64 decode", "base64 encode", "base64 converter", "decode base64 online", "base64 to text"],
+  "title": "Base64 编解码工具",
+  "description": "在线解码和编码 Base64 字符串。免费、快速、注重隐私 — 所有操作在浏览器中完成。",
+  "keywords": ["base64 解码", "base64 编码", "base64 转换器", "在线解码 base64", "base64 转文本"],
   "category": "encoder",
   "icon": "B64",
   "faq": [
     {
-      "q": "What is Base64?",
-      "a": "Base64 is an encoding scheme that represents binary data in an ASCII string format. It is commonly used for encoding data in URLs, email attachments, and data URIs."
+      "q": "什么是 Base64？",
+      "a": "Base64 是一种编码方案，用 ASCII 字符串格式表示二进制数据。它常用于在 URL、电子邮件附件和数据 URI 中编码数据。"
     },
     {
-      "q": "Is my data safe?",
-      "a": "Yes. All encoding and decoding happens entirely in your browser. No data is sent to any server."
+      "q": "我的数据安全吗？",
+      "a": "是的。所有编码和解码操作完全在您的浏览器中进行，不会向任何服务器发送数据。"
     },
     {
-      "q": "Can I encode files?",
-      "a": "Yes, you can paste file contents or drag-and-drop small files for encoding."
+      "q": "可以编码文件吗？",
+      "a": "可以，您可以粘贴文件内容或拖放小文件进行编码。"
     }
   ]
 }

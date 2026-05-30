@@ -1,11 +1,20 @@
 {
   "name": "@eforge/cf-core",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.0",
   "description": "Cloudflare Workers 共享内核 — Hono + Turso + Drizzle 标准化基础设施",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/src",
+    "dist/features",
+    "src",
+    "features",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types.ts",
@@ -33,9 +42,12 @@
     "./features/telegram-miniapp": "./features/telegram-miniapp/index.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run type-check && npm test",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

@@ -1,0 +1,22 @@
+{
+  "name": "@eforge/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "eForge Monorepo — Cloudflare Workers 工具链与模板",
+  "workspaces": [
+    "packages/*",
+    "templates/*",
+    "dtc"
+  ],
+  "scripts": {
+    "build": "npm -w packages/cf-core run build",
+    "test": "npm -w packages/cf-core run test",
+    "lint": "npm -w packages/cf-core run lint 2>/dev/null || true",
+    "type-check": "npm -w packages/cf-core run type-check",
+    "publish": "npm -w packages/cf-core publish",
+    "clean": "npm -w packages/cf-core run clean 2>/dev/null || true"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

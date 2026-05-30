@@ -32,6 +32,27 @@ export const PAYMENT_METHODS = [
     enabled: true,
     description: "线下转账，管理员手动确认",
   },
+  {
+    id: "stripe",
+    name: "Stripe",
+    icon: "stripe",
+    enabled: true,
+    description: "国际信用卡/借记卡（Visa/Mastercard）",
+  },
+  {
+    id: "balance",
+    name: "余额支付",
+    icon: "wallet",
+    enabled: true,
+    description: "使用账户余额支付（需先兑换充值码）",
+  },
+  {
+    id: "usdt_trc20",
+    name: "USDT (TRC20)",
+    icon: "crypto",
+    enabled: true,
+    description: "泰达币 TRC20 转账支付",
+  },
 ] as const;
 
 /**

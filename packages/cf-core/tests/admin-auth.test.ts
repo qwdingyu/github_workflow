@@ -23,7 +23,7 @@ describe("未配置 ADMIN_TOKEN", () => {
     const app = createApp();
     const res = await app.fetch(req("https://x.com/test"), {}, ctx);
     expect(res.status).toBe(503);
-    const body = await res.json();
+    const body = (await res.json()) as { error?: string };
     expect(body.error).toContain("令牌未配置");
   });
 });
@@ -60,7 +60,7 @@ describe("默认 Token 安全检查", () => {
       ctx,
     );
     expect(res.status).toBe(503);
-    const body = await res.json();
+    const body = (await res.json()) as { error?: string };
     expect(body.error).toContain("生产环境");
   });
 });

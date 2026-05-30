@@ -29,6 +29,17 @@ export interface ShopBindings extends CoreBindings {
   /** 支付宝回调地址（可选，默认使用 APP_ORIGIN + /api/orders/alipay/notify） */
   ALIPAY_NOTIFY_URL?: string;
 
+  /** Stripe 密钥（从 Stripe Dashboard 获取） */
+  STRIPE_SECRET_KEY?: string;
+  /** Stripe Webhook 签名密钥（用于验证回调） */
+  STRIPE_WEBHOOK_SECRET?: string;
+
+  // ── TRC20/USDT 加密货币支付（零资质全球收款）──
+  /** TRC20 收款地址（如 TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t） */
+  TRC20_WALLET_ADDRESS?: string;
+  /** TronGrid API Key（免费注册获取） */
+  TRONGRID_API_KEY?: string;
+
   // ── 邮件配置（wrangler secret put）──
   /** Resend API Key（用于发送订单通知邮件） */
   RESEND_API_KEY?: string;

@@ -232,7 +232,7 @@ function generateRelatedToolsHtml(currentSlug, tools) {
 
 // ── 生成 FAQ HTML ─────────────────────────────────────────────────────────────
 function generateFaqHtml(faq) {
-  if (!faq || faq.length === 0) return "<p>No FAQs yet.</p>";
+  if (!faq || faq.length === 0) return "<p>暂无常见问题。</p>";
   return faq
     .map(
       (item) => `
@@ -256,15 +256,15 @@ function generateToolContent(tool) {
   return `
     <div class="tool-container" id="tool-${tool.slug}">
       <div class="tool-input">
-        <textarea id="input" placeholder="Paste your input here..." rows="10"></textarea>
+        <textarea id="input" placeholder="在此粘贴输入内容..." rows="10"></textarea>
       </div>
       <div class="tool-actions">
-        <button onclick="processTool('${tool.slug}')" class="btn-primary">Process</button>
-        <button onclick="copyOutput()" class="btn-secondary">Copy Output</button>
-        <button onclick="clearAll()" class="btn-secondary">Clear</button>
+        <button onclick="processTool('${tool.slug}')" class="btn-primary">处理</button>
+        <button onclick="copyOutput()" class="btn-secondary">复制输出</button>
+        <button onclick="clearAll()" class="btn-secondary">清空</button>
       </div>
       <div class="tool-output">
-        <textarea id="output" placeholder="Output will appear here..." rows="10" readonly></textarea>
+        <textarea id="output" placeholder="输出结果将显示在此处..." rows="10" readonly></textarea>
       </div>
     </div>
     <script src="/js/${tool.slug}.js"></script>`;

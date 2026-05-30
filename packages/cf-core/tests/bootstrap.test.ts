@@ -52,13 +52,13 @@ describe("API 路由分流", () => {
   it("GET /api/test → 200 JSON", async () => {
     const res = await app.fetch(new Request("https://x.com/api/test"), env, mockCtx);
     expect(res.status).toBe(200);
-    expect((await res.json()).ok).toBe(true);
+    expect((await res.json() as { ok: boolean }).ok).toBe(true);
   });
 
   it("GET /api/unknown → 404 JSON（无 Accept: text/html）", async () => {
     const res = await app.fetch(new Request("https://x.com/api/nope"), env, mockCtx);
     expect(res.status).toBe(404);
-    const body = await res.json();
+    const body = await res.json() as { error?: string };
     expect(body.error).toContain("not found");
   });
 
@@ -83,7 +83,7 @@ describe("全局错误处理", () => {
   it("API 抛错 → 500 JSON", async () => {
     const res = await app.fetch(new Request("https://x.com/api/error"), env, mockCtx);
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = await res.json() as { error?: string };
     expect(body.error).toContain("暂时不可用");
   });
 
@@ -149,7 +149,7 @@ describe("静态资源路由", () => {
   it("无 ASSETS binding → 500", async () => {
     const res = await app.fetch(new Request("https://x.com/"), { TURSO_URL: "x" }, mockCtx);
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = await res.json() as { error?: string };
     expect(body.error).toContain("ASSETS");
   });
 
@@ -257,7 +257,7 @@ describe("DB 初始化失败降级", () => {
 
     const res = await app.fetch(new Request("https://x.com/api/health"), env, mockCtx);
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await res.json() as { db?: string };
     expect(body.db).toBe("disconnected");
   });
 });

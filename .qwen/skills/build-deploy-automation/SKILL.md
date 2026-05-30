@@ -285,29 +285,124 @@ DOMAIN="shop.eforge.xyz" bash .deploy/04-bind-domain.sh
 - Run smoke tests
 - **Note**: `workers.dev` domains may be unreliable from China — custom domain binding (Step 04) recommended for production
 
-### 04-bind-domain.sh
+### 04-bind-domain.sh (5 Steps, Dual-Auth)
 
-- Auto-derive Account ID + Zone ID from domain
-- **Mode-aware binding** — detect deploy mode and use the correct API:
-  - **Workers mode**: `POST /accounts/{id}/workers/domains` (Workers Custom Domain API) — auto-creates DNS CNAME record
-  - **Pages mode**: `POST /accounts/{id}/pages/projects/{name}/domains` (Pages Custom Domain API) — requires manual DNS CNAME creation
-- Poll HTTPS availability (up to 24 × 5s for Workers, 30 × 10s for Pages)
-- Save DOMAIN to credentials
+This is the most complex step script. It has **5 sub-steps** and supports **two auth modes**:
+
+```
+Step 1/5: Get Cloudflare Account ID
+Step 2/5: Derive Zone ID from domain
+Step 3/5: Verify Token has Zone DNS permission (CRITICAL — fail early with clear guidance)
+Step 4/5: Bind domain (mode-aware: Workers API vs Pages API + Zone DNS CNAME)
+Step 5/5: Wait for HTTPS certificate + DNS propagation
+```
+
+#### Cloudflare Dual-Auth Pattern (Critical Discovery)
+
+The `CLOUDFLARE_API_TOKEN` (`cfat_...`) typically has Account-level permissions (Workers/Pages Edit) but **does NOT have Zone DNS Edit permission**. A separate `cfk_...` Global API Key is needed for DNS operations.
+
+| Credential | Format | Auth Headers | Permissions | Use For |
+|---|---|---|---|---|
+| API Token | `cfat_...` | `Authorization: Bearer` | Account: Workers/Pages Edit | Pages project, Workers deploy, Custom Domain registration |
+| Global API Key | `cfk_...` | `X-Auth-Email` + `X-Auth-Key` | Zone: DNS Read/Edit, Zone: Zone Read | DNS CNAME creation, DNS record management |
+
+The script must accept **both** credentials and use the right one for each API call:
+
+```bash
+# Pages/Workers API — uses Bearer token
+curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+  "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/pages/projects/..."
+
+# Zone DNS API — uses Global API Key (if Bearer token lacks DNS permission)
+curl -sS -H "X-Auth-Email: ${CF_AUTH_EMAIL}" -H "X-Auth-Key: ${CF_GLOBAL_API_KEY}" \
+  "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+```
+
+The existing `scripts/cloudflare/pages_github_domain_workflow.mjs` implements this dual-auth pattern with variables:
+- `CF_API_TOKEN` — for Pages/Workers operations
+- `CF_DNS_AUTH_EMAIL` + `CF_DNS_GLOBAL_API_KEY` — for DNS operations (fallback when token lacks DNS permission)
+
+#### Step 3/5: Token Permission Pre-Check
+
+Before attempting any DNS operation, verify the token has Zone DNS permission:
+
+```bash
+DNS_CHECK=$(curl -sS -w "\n%{http_code}" \
+  "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?per_page=1" \
+  -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" 2>/dev/null)
+DNS_HTTP_CODE=$(echo "$DNS_CHECK" | tail -1)
+DNS_BODY=$(echo "$DNS_CHECK" | sed '$d')
+DNS_SUCCESS=$(echo "$DNS_BODY" | jq -r '.success // false' 2>/dev/null)
+
+if [ "$DNS_SUCCESS" != "true" ]; then
+  log_error "API Token 缺少 Zone DNS 权限"
+  echo "  解决方案：更新 API Token 添加 Zone → DNS → Edit 权限"
+  echo "  或提供 Global API Key: CF_AUTH_EMAIL + CF_GLOBAL_API_KEY"
+  exit 1
+fi
+```
+
+#### Step 4/5: Mode-Aware Domain Binding
 
 ```bash
 MODE=$(detect_deploy_mode)
+
 if [ "$MODE" = "pages" ]; then
+  # Pages mode: TWO separate API calls needed
+  # 1. Register domain with Pages project (Bearer token)
   cf_api POST "/accounts/${ACCOUNT_ID}/pages/projects/${WORKER_NAME}/domains" \
     "{\"name\":\"${DOMAIN}\"}"
+
+  # 2. Create DNS CNAME record (Global API Key if Bearer lacks DNS permission)
+  #    Target: {project}.pages.dev, proxied=true
+  DNS_API_CMD="curl -sS -X POST .../zones/${ZONE_ID}/dns_records"
+  # Try Bearer first, fall back to Global API Key
+  # Auto-delete conflicting A records before creating CNAME
+
 else
+  # Workers mode: single API call, auto-creates DNS
   cf_api POST "/accounts/${ACCOUNT_ID}/workers/domains" \
     "{\"service\":\"${WORKER_NAME}\",\"hostname\":\"${DOMAIN}\",\"zone_id\":\"${ZONE_ID}\",\"environment\":\"production\"}"
 fi
 ```
 
-**Critical Pages pitfall**: Pages Custom Domain API returns `"verification_data": {"error_message": "CNAME record not set"}` until a DNS CNAME record pointing to `{project}.pages.dev` is created. Workers mode auto-creates this; Pages mode does NOT. Either:
-1. Add the CNAME record via DNS API (`POST /zones/{zone_id}/dns_records`) — requires Zone DNS Edit permission on the API token
-2. Manually add it in the Cloudflare Dashboard under DNS → Records
+**Critical Pages pitfall**: Pages Custom Domain API only registers the domain with the project — it does NOT create a DNS CNAME record. You must separately call the Zone DNS API to create `CNAME {subdomain} → {project}.pages.dev`. Workers mode auto-creates DNS; Pages mode does NOT.
+
+#### Step 5/5: HTTPS Wait (Extended for Pages)
+
+Pages DNS + SSL propagation takes longer than Workers. Use 36 × 5s (180 seconds) instead of 24 × 5s:
+
+```bash
+for i in $(seq 1 36); do
+  STATUS=$(curl -sS -o /dev/null -w "%{http_code}" "https://${DOMAIN}/" 2>/dev/null || echo "000")
+  if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "304" ]; then
+    log_ok "HTTPS 已就绪"
+    break
+  fi
+  # 502/503/521/522/000 = DNS or SSL still propagating
+  sleep 5
+done
+```
+
+#### Script Sync Rule (Iron Rule)
+
+After ANY modification to `04-bind-domain.sh`, sync to ALL copies and verify with MD5:
+
+```bash
+SRC="templates/.deploy/04-bind-domain.sh"
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  cp "$SRC" "templates/$t/.deploy/04-bind-domain.sh"
+done
+# Also sync to any active projects
+cp "$SRC" /path/to/active-project/.deploy/04-bind-domain.sh
+
+# Verify all copies are identical
+md5 -q templates/.deploy/04-bind-domain.sh
+for t in cf-shop cf-api cf-tools cf-static cf-form; do
+  md5 -q "templates/$t/.deploy/04-bind-domain.sh"
+done
+# All MD5 values must match
+```
 
 ### 05-setup-turnstile.sh
 
@@ -419,6 +514,9 @@ done
 | **Full-width CJK brackets next to `$VAR`** | `）` (U+FF09) next to `$GROUP_NAME` → bash treats `GROUP_NAME）` as variable name → unbound error. Always use `${VAR}` or half-width brackets |
 | **APP_ORIGIN hardcoded to wrong URL** | Read from `.credentials/BASE_URL` (Step 03 saved actual URL with account subdomain), not hardcoded `${WORKER_NAME}.workers.dev` |
 | **CI `tsc --noEmit` blocks deployment** | Set `continue-on-error: true` for type-check step; wrangler handles compilation independently |
+| **`cfat_...` Token lacks Zone DNS permission** | Use dual-auth: `cfat_...` for Pages/Workers API, `cfk_...` Global API Key for Zone DNS API. Pre-check Token DNS permission in Step 3/5 before any DNS operation |
+| **Pages Custom Domain API doesn't create DNS CNAME** | Pages API only registers domain with project. Must separately create CNAME via Zone DNS API (`POST /zones/{zone_id}/dns_records`). Workers mode auto-creates DNS; Pages mode does NOT |
+| **Deploy script fix not synced to all copies** | After ANY `.deploy/` script change, copy to all 5 templates + active projects, verify with MD5. Total 7+ copies must be byte-identical |
 
 ## Validation Checklist
 

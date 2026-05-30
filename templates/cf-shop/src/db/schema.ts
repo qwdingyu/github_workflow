@@ -127,6 +127,8 @@ export const orders = sqliteTable("orders", {
   paymentMethod: text("payment_method").default("").notNull(),
   /** 支付流水号（第三方支付单号） */
   paymentTradeNo: text("payment_trade_no").default("").notNull(),
+  /** 支付时间（ISO 8601，回调确认时设置） */
+  paidAt: text("paid_at"),
   /** 使用的优惠码 */
   couponCode: text("coupon_code").default("").notNull(),
   /** 订单过期时间（ISO 8601） */
@@ -219,4 +221,46 @@ export const cardLogs = sqliteTable("card_logs", {
   detail: text("detail").default("").notNull(),
   /** 创建时间 */
   createdAt: text("created_at").notNull(),
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 充值码表
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const voucherCodes = sqliteTable("voucher_codes", {
+  /** 充值码（大小写不敏感，实际存大写） */
+  code: text("code").primaryKey(),
+  /** 面值（分） */
+  amountCents: integer("amount_cents").default(0).notNull(),
+  /** 状态：active / used / expired / revoked */
+  status: text("status").default("active").notNull(),
+  /** 使用者邮箱 */
+  usedByEmail: text("used_by_email").default("").notNull(),
+  /** 使用时间 */
+  usedAt: text("used_at"),
+  /** 过期时间 */
+  expiresAt: text("expires_at"),
+  /** 批次 ID */
+  batchId: text("batch_id").default("").notNull(),
+  /** 备注 */
+  notes: text("notes").default("").notNull(),
+  /** 创建时间 */
+  createdAt: text("created_at").default("").notNull(),
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 用户余额表（充值码兑换后的余额，按邮箱聚合）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const userBalances = sqliteTable("user_balances", {
+  /** 邮箱（主键） */
+  email: text("email").primaryKey(),
+  /** 当前可用余额（分） */
+  balanceCents: integer("balance_cents").default(0).notNull(),
+  /** 累计充值总额（分） */
+  totalDepositedCents: integer("total_deposited_cents").default(0).notNull(),
+  /** 累计消费总额（分） */
+  totalSpentCents: integer("total_spent_cents").default(0).notNull(),
+  /** 更新时间 */
+  updatedAt: text("updated_at").default("").notNull(),
 });

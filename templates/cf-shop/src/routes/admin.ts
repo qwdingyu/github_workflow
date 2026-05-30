@@ -13,7 +13,7 @@ import { getIpHash } from "@eforge/cf-core/security";
 import { writeAdminAudit } from "@eforge/cf-core/audit";
 import { generateUUID } from "@eforge/cf-core/crypto";
 import type { AppEnv } from "../bindings";
-import { products, cards, cardBatches, orders, orderEvents, coupons } from "../db/schema";
+import { products, cards, cardBatches, orders, orderEvents, coupons, voucherCodes, userBalances } from "../db/schema";
 import { sql, eq, and, desc, like } from "drizzle-orm";
 
 export const adminRoutes = new Hono<AppEnv>();
@@ -578,5 +578,137 @@ adminRoutes.delete("/coupons/:id", async (c) => {
   } catch (err) {
     console.error("[admin:coupons:delete] error:", err);
     return fail(c, "删除优惠码失败", 500);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 充值码管理
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * POST /api/admin/vouchers/generate
+ * 批量生成充值码
+ */
+adminRoutes.post("/vouchers/generate", async (c) => {
+  try {
+    const body = await safeJsonBody(c);
+    if (!body || typeof body !== "object") {
+      return fail(c, "请求体格式错误", 400);
+    }
+
+    const schema = z.object({
+      count: z.number().int().min(1).max(10000, "单次最多生成 10000 张"),
+      amountCents: z.number().int().min(1, "面值至少 1 分"),
+      batchId: z.string().min(1).max(100),
+      expiresAt: z.string().optional(),
+      notes: z.string().optional(),
+    });
+
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return fail(c, parsed.error.errors[0]?.message || "参数错误", 400);
+    }
+
+    const db = c.get("db");
+    const { generateVoucherCodes } = await import("../services/voucher-service");
+    const codes = await generateVoucherCodes(
+      db,
+      parsed.data.count,
+      parsed.data.amountCents,
+      parsed.data.batchId,
+      parsed.data.expiresAt || null,
+      parsed.data.notes,
+    );
+
+    await writeAdminAudit({
+      db: db as any,
+      action: "voucher.generate",
+      targetType: "voucher",
+      metadata: { count: parsed.data.count, batchId: parsed.data.batchId },
+      ipHash: await getIpHash(c),
+    });
+
+    return ok(c, { codes, count: codes.length }, 201);
+  } catch (err) {
+    console.error("[admin:vouchers:generate] error:", err);
+    return fail(c, "生成充值码失败", 500);
+  }
+});
+
+/**
+ * GET /api/admin/vouchers/list
+ * 充值码列表（分页）
+ */
+adminRoutes.get("/vouchers/list", async (c) => {
+  try {
+    const page = parseInt(c.req.query("page") || "1");
+    const pageSize = parseInt(c.req.query("pageSize") || "50");
+    const status = c.req.query("status") || undefined;
+    const batchId = c.req.query("batchId") || undefined;
+    const search = c.req.query("search") || undefined;
+
+    const db = c.get("db");
+    const { listVoucherCodes } = await import("../services/voucher-service");
+    const result = await listVoucherCodes(db, { page, pageSize, status, batchId, search });
+
+    return ok(c, result);
+  } catch (err) {
+    console.error("[admin:vouchers:list] error:", err);
+    return fail(c, "查询充值码列表失败", 500);
+  }
+});
+
+/**
+ * GET /api/admin/vouchers/stats
+ * 充值码统计
+ */
+adminRoutes.get("/vouchers/stats", async (c) => {
+  try {
+    const db = c.get("db");
+    const { getVoucherStats } = await import("../services/voucher-service");
+    const stats = await getVoucherStats(db);
+    return ok(c, stats);
+  } catch (err) {
+    console.error("[admin:vouchers:stats] error:", err);
+    return fail(c, "查询充值码统计失败", 500);
+  }
+});
+
+/**
+ * POST /api/admin/vouchers/revoke
+ * 批量作废充值码
+ */
+adminRoutes.post("/vouchers/revoke", async (c) => {
+  try {
+    const body = await safeJsonBody(c);
+    if (!body || typeof body !== "object") {
+      return fail(c, "请求体格式错误", 400);
+    }
+
+    const schema = z.object({
+      codes: z.array(z.string().min(1)).min(1, "至少需要 1 个充值码").max(500, "单次最多作废 500 个"),
+    });
+
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return fail(c, parsed.error.errors[0]?.message || "参数错误", 400);
+    }
+
+    const db = c.get("db");
+    const { revokeVoucherCodes } = await import("../services/voucher-service");
+    await revokeVoucherCodes(db, parsed.data.codes);
+
+    await writeAdminAudit({
+      db: db as any,
+      action: "voucher.revoke",
+      targetType: "voucher",
+      metadata: { count: parsed.data.codes.length },
+      ipHash: await getIpHash(c),
+    });
+
+    return ok(c, { revoked: parsed.data.codes.length });
+  } catch (err) {
+    console.error("[admin:vouchers:revoke] error:", err);
+    return fail(c, "作废充值码失败", 500);
   }
 });

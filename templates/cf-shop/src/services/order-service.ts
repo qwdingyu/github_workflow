@@ -42,6 +42,7 @@ export async function createOrder(
     buyerEmail: string;
     couponCode?: string;
     buyerIpHash: string;
+    paymentMethod?: string;
   },
 ) {
   // 1. 查询商品
@@ -142,7 +143,7 @@ export async function createOrder(
     buyerEmail: params.buyerEmail,
     buyerIpHash: params.buyerIpHash,
     status: ORDER_STATUS.PENDING,
-    paymentMethod: "pending",
+    paymentMethod: params.paymentMethod || "pending",
     couponCode: params.couponCode || "",
     expiresAt,
     createdAt: now,
@@ -237,6 +238,83 @@ export async function lookupOrder(db: any, orderNo: string, email: string) {
       })),
     },
   };
+}
+
+/**
+ * 确认支付并发卡（用于支付回调、余额支付）。
+ *
+ * 流程：
+ * 1. 原子锁定订单状态（pending → paid）
+ * 2. 查询该订单已锁定的卡密
+ * 3. 发放卡密（locked → issued）
+ * 4. 更新订单状态为 issued
+ *
+ * @param db      - 数据库实例
+ * @param orderId - 订单 ID
+ * @param env     - 环境变量（含邮件配置，可选）
+ * @returns 发卡结果
+ */
+export async function markPaidAndIssue(
+  db: any,
+  orderId: string,
+  paymentTradeNo?: string,
+): Promise<{ ok: boolean; status: number; message: string; alreadyIssued?: boolean }> {
+  const now = new Date().toISOString();
+
+  // 1. 查订单
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  if (!order) return { ok: false, status: 404, message: "订单不存在" };
+  if (order.status === "issued") return { ok: true, status: 200, message: "订单已发放", alreadyIssued: true };
+  if (order.status !== "pending") return { ok: false, status: 409, message: "当前订单状态不可发卡" };
+
+  // 2. 原子锁定：pending → paid
+  const locked = await db
+    .update(orders)
+    .set({
+      status: "paid",
+      paidAt: now,
+      paymentTradeNo: paymentTradeNo || order.paymentTradeNo,
+      updatedAt: now,
+    })
+    .where(and(eq(orders.id, orderId), eq(orders.status, "pending")))
+    .returning({ id: orders.id });
+
+  if (locked.length === 0) return { ok: false, status: 409, message: "订单已被其他操作处理" };
+
+  // 3. 查询已锁定的卡密
+  const lockedCards = await db
+    .select({ id: cards.id })
+    .from(cards)
+    .where(sql`${cards.lockedByOrderId} = ${orderId} AND ${cards.status} = 'locked'`);
+
+  if (lockedCards.length === 0) {
+    return { ok: false, status: 409, message: "未找到已锁定的卡密" };
+  }
+
+  // 4. 发放卡密
+  await issueCards(db, orderId, lockedCards.map((c: any) => c.id));
+
+  // 5. 更新订单为已发卡
+  await db
+    .update(orders)
+    .set({ status: "issued", updatedAt: now })
+    .where(eq(orders.id, orderId));
+
+  // 6. 记录事件
+  await db.insert(orderEvents).values({
+    id: generateUUID(),
+    orderId,
+    eventType: "issued",
+    metadataJson: JSON.stringify({ paymentTradeNo, issuedAt: now }),
+    createdAt: now,
+  });
+
+  return { ok: true, status: 200, message: "发卡成功" };
 }
 
 /**
