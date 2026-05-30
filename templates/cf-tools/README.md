@@ -1,62 +1,23 @@
 # cf-tools — 在线工具集模板
 
-> 基于 Cloudflare Workers + Hono + Turso + Drizzle ORM 的在线工具集模板。
+> 部署模式：**workers**（Cloudflare Workers + Static Assets）
 > 集成 `@eforge/cf-core` 共享内核，复制后改配置即可上线。
+> 详细文档：[产品模板使用指南](../docs/002_产品模板使用指南.md) | [踩坑记录](../docs/003_端到端部署踩坑记录.md) | [深度审计](../docs/004_五大模板深度审计与优化方案.md)
 
-## 快速开始（30 分钟从模板到生产）
-
-### 1. 复制模板
+## 快速开始
 
 ```bash
 cp -r templates/cf-tools your-project-name
 cd your-project-name
-```
-
-### 2. 安装依赖
-
-```bash
 npm install
-```
-
-### 3. 配置环境变量
-
-创建 `.dev.vars` 文件（本地开发）：
-
-```env
-TURSO_URL=libsql://your-db.turso.io
-TURSO_TOKEN=your-turso-token
-JWT_SECRET=your-jwt-secret-at-least-32-chars-long
-ADMIN_TOKEN=your-admin-token
-```
-
-### 4. 初始化数据库
-
-```bash
-# 创建 Turso 数据库（如尚未创建）
-turso db create your-tools-db
-
-# 执行迁移（含管理员用户创建）
 npm run db:migrate
+npm run dev                    # http://localhost:8787
 ```
 
-### 5. 本地开发
+一键部署：
 
 ```bash
-npm run dev
-# 访问 http://localhost:8787
-```
-
-### 6. 部署
-
-```bash
-# 设置 Cloudflare Secrets
-wrangler secret put JWT_SECRET
-wrangler secret put ADMIN_TOKEN
-wrangler secret put TURSO_URL
-wrangler secret put TURSO_TOKEN
-
-# 部署
-npm run deploy
+CLOUDFLARE_API_TOKEN="cfat_xxx" TURSO_API_TOKEN="turso_xxx" bash .deploy/one-click.sh
 ```
 
 ## 项目结构
@@ -65,166 +26,72 @@ npm run deploy
 cf-tools/
 ├── src/
 │   ├── index.ts              # Worker 入口（bootstrap 工厂）
-│   ├── bindings.ts           # 环境变量绑定 & 类型定义
-│   ├── config.ts             # 项目配置（用户主要修改此文件）
-│   ├── db/
-│   │   └── schema.ts         # 数据库 Schema（Drizzle ORM）
-│   ├── routes/
-│   │   ├── health.ts         # 健康检查
-│   │   ├── auth.ts           # 用户认证（注册/登录/JWT）
-│   │   ├── tools.ts          # 工具路由（列表/执行）
-│   │   └── admin.ts          # 管理端 API
+│   ├── bindings.ts           # 环境变量类型（extends CoreBindings）
+│   ├── config.ts             # ★ 业务配置（站点/认证/限流/工具列表）
+│   ├── db/schema.ts          # 数据库 Schema（5 公共表 + 3 业务表）
+│   ├── routes/               # health / auth / tools / admin
 │   └── services/
-│       ├── auth-service.ts   # 认证服务
-│       └── tools/
-│           ├── types.ts      # ToolDriver 接口
-│           ├── registry.ts   # 工具注册表
-│           └── example-tool.ts  # 示例工具（文本哈希）
-├── public/
-│   ├── index.html            # 工具卡片 Hub 首页
-│   ├── admin.html            # 管理后台（Vue 3 + Element Plus）
-│   └── _headers              # 静态资源响应头
-├── migrations/
-│   └── 0001_init.sql         # 初始化迁移
-├── scripts/
-│   ├── deploy.sh             # 一键部署脚本
-│   ├── migrate.mjs           # 数据库迁移脚本
-│   └── smoke-readonly.mjs    # 冒烟测试
-└── wrangler.jsonc            # Cloudflare Workers 配置
+│       ├── auth-service.ts   # JWT 认证
+│       └── tools/            # ToolDriver 接口 + registry + 示例工具
+├── public/                   # index.html（工具卡片 Hub）+ admin.html + _headers
+├── migrations/0001_init.sql
+├── scripts/                  # migrate.mjs + smoke 测试
+├── .deploy/                  # one-click.sh 部署脚本体系（8 个脚本 + 3 个 workflow）
+├── .deploy-mode              # "workers"
+├── package.json / tsconfig.json / wrangler.jsonc
+└── .gitignore
 ```
-
-## 如何添加新工具
-
-添加一个新工具只需 **3 步**：
-
-### 步骤 1：实现 ToolDriver 接口
-
-在 `src/services/tools/` 下创建新文件，例如 `json-formatter.ts`：
-
-```typescript
-import type { ToolDriver, ToolContext } from "./types";
-
-export const jsonFormatter: ToolDriver = {
-  name: "json-formatter", // 必须与数据库 slug 一致
-  description: "JSON 格式化工具",
-
-  async run(input, ctx) {
-    const text = input.text as string;
-    if (!text) throw new Error("请输入 JSON 文本");
-
-    try {
-      const parsed = JSON.parse(text);
-      const formatted = JSON.stringify(parsed, null, 2);
-      return { formatted, valid: true };
-    } catch (err) {
-      throw new Error(`JSON 解析失败: ${(err as Error).message}`);
-    }
-  },
-};
-```
-
-### 步骤 2：在注册表中注册
-
-编辑 `src/services/tools/registry.ts`：
-
-```typescript
-import { jsonFormatter } from "./json-formatter";
-toolRegistry.register(jsonFormatter);
-```
-
-### 步骤 3：添加工具元数据
-
-两种方式任选其一：
-
-**方式 A**：通过管理后台添加（推荐）
-
-访问 `/admin`，在"工具管理"Tab 中点击"创建工具"。
-
-**方式 B**：在迁移 SQL 中添加
-
-```sql
-INSERT INTO tools (id, name, slug, description, icon, category, enabled, sort_order, created_at, updated_at)
-VALUES (
-  '生成一个UUID',
-  'JSON 格式化',
-  'json-formatter',
-  '格式化、压缩、校验 JSON 数据',
-  '{}',
-  '格式化',
-  1,
-  90,
-  datetime('now'),
-  datetime('now')
-);
-```
-
-同时更新 `src/config.ts` 的 `registeredTools` 数组（用于前端展示配置）。
 
 ## API 接口
 
-| 方法 | 路径 | 说明 | 认证 |
-|------|------|------|------|
-| GET | `/api/health` | 健康检查 | 无 |
-| POST | `/api/auth/register` | 用户注册 | 无 |
-| POST | `/api/auth/login` | 用户登录 | 无 |
-| GET | `/api/auth/me` | 获取当前用户 | JWT |
-| GET | `/api/tools` | 工具列表 | 可选 |
-| POST | `/api/tools/:slug/run` | 执行工具 | 可选 |
-| GET | `/api/admin/users` | 用户列表 | ADMIN_TOKEN |
-| PATCH | `/api/admin/users/:id` | 更新用户 | ADMIN_TOKEN |
-| DELETE | `/api/admin/users/:id` | 删除用户 | ADMIN_TOKEN |
-| GET | `/api/admin/tools` | 工具列表（含禁用） | ADMIN_TOKEN |
-| POST | `/api/admin/tools` | 创建工具 | ADMIN_TOKEN |
-| PATCH | `/api/admin/tools/:id` | 更新工具 | ADMIN_TOKEN |
-| GET | `/api/admin/stats` | 统计概览 | ADMIN_TOKEN |
-| GET | `/api/admin/stats/usage` | 使用日志 | ADMIN_TOKEN |
+**公共**：`GET /api/health` · `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me`
 
-## 配置说明
+**工具**：`GET /api/tools` · `POST /api/tools/:slug/run`（可选 JWT 认证）
 
-### 环境变量（Secrets）
+**管理（ADMIN_TOKEN）**：用户管理 · 工具 CRUD · 统计概览 · 使用日志
+
+## 添加新工具（3 步）
+
+```typescript
+// 1. 实现 ToolDriver 接口（src/services/tools/your-tool.ts）
+export const yourTool: ToolDriver = {
+  name: "your-tool",
+  description: "你的工具描述",
+  async run(input, ctx) { /* ... */ return { result: "..." }; }
+};
+
+// 2. 注册到 registry.ts
+import { yourTool } from "./your-tool";
+toolRegistry.register(yourTool);
+
+// 3. 通过管理后台或 SQL 添加工具元数据
+```
+
+## 环境变量
 
 | 变量 | 必须 | 说明 |
-|------|------|------|
-| `TURSO_URL` | 是 | Turso 数据库连接 URL |
-| `TURSO_TOKEN` | 是 | Turso 认证 Token |
-| `JWT_SECRET` | 是 | JWT 签名密钥（至少 32 字符） |
-| `ADMIN_TOKEN` | 是 | 管理端 API 认证 Token |
-| `TURNSTILE_SECRET_KEY` | 否 | Cloudflare Turnstile 人机验证 |
-| `RATE_LIMIT_SALT` | 否 | 限流 IP 哈希盐值 |
-| `APP_ORIGIN` | 否 | 站点域名 |
-| `ENCRYPTION_KEY` | 否 | AES-256-GCM 加密密钥 |
-
-### 项目配置（src/config.ts）
-
-- `siteConfig` — 站点名称、描述、Logo
-- `authConfig` — JWT 过期时间、密码策略、是否开放注册
-- `rateLimitConfig` — 各接口限流策略
-- `registeredTools` — 已注册工具元数据列表
+|------|:----:|------|
+| `TURSO_URL` | ✅ | Turso 数据库 URL |
+| `TURSO_TOKEN` | ✅ | Turso 认证 Token |
+| `JWT_SECRET` | ✅ | JWT 签名密钥（至少 32 字符） |
+| `ADMIN_TOKEN` | ✅ | 管理端 API 认证 Token |
+| `TURNSTILE_SECRET_KEY` | 可选 | Turnstile 人机验证 |
+| `RATE_LIMIT_SALT` | 可选 | 限流盐值 |
+| `ENCRYPTION_KEY` | 可选 | AES-256 加密密钥（64 hex） |
 
 ## 技术栈
 
-- **运行时**: Cloudflare Workers（V8 Isolate）
-- **框架**: Hono（超轻量 Web 框架）
-- **数据库**: Turso（libSQL，SQLite 兼容）
-- **ORM**: Drizzle ORM + drizzle-zod
-- **共享内核**: @eforge/cf-core（认证/安全/限流/缓存/日志）
-- **前端**: 原生 HTML/JS + Vue 3 + Element Plus（管理后台）
-- **部署**: Wrangler + GitHub Actions
+| 组件 | 选型 | 说明 |
+|------|------|------|
+| 运行时 | Cloudflare Workers | 边缘计算，全球低延迟 |
+| 框架 | Hono | 轻量高性能 |
+| 数据库 | Turso (libSQL) | SQLite 兼容，Free 9GB |
+| ORM | Drizzle ORM | 类型安全 |
+| 共享内核 | @eforge/cf-core | 认证/安全/限流/缓存/日志 |
+| 前端 | 原生 HTML/JS（工具卡片）+ Vue 3 + Element Plus（管理后台） | — |
 
-## CI/CD
+## 冒烟测试
 
-推送到 `main` 分支自动部署：
-
+```bash
+BASE_URL=https://your-worker.workers.dev npm run smoke:readonly
 ```
-install → type-check → test → migrate → deploy → smoke
-```
-
-需要配置的 GitHub Secrets：
-- `CLOUDFLARE_API_TOKEN`
-- `TURSO_URL`
-- `TURSO_TOKEN`
-- `WRANGLER_SECRETS_JSON`（可选，批量设置 Secrets）
-
-## 许可证
-
-Private — 内部使用

@@ -1,0 +1,44 @@
+/**
+ * Base64 Decoder/Encoder - Base64 编解码工具
+ */
+
+function processTool() {
+  const input = document.getElementById('input').value;
+  const output = document.getElementById('output');
+  const mode = document.querySelector('input[name="mode"]:checked')?.value || 'decode';
+  
+  try {
+    let result;
+    if (mode === 'decode') {
+      result = decodeURIComponent(escape(atob(input)));
+    } else {
+      result = btoa(unescape(encodeURIComponent(input)));
+    }
+    output.value = result;
+    output.classList.remove('error');
+    output.classList.add('success');
+  } catch (e) {
+    output.value = '❌ ' + (mode === 'decode' ? '解码' : '编码') + '失败: ' + e.message;
+    output.classList.add('error');
+    output.classList.remove('success');
+  }
+}
+
+function copyOutput() {
+  const output = document.getElementById('output');
+  output.select();
+  document.execCommand('copy');
+  
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '✓ 已复制';
+  setTimeout(() => {
+    btn.textContent = originalText;
+  }, 2000);
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').value = '';
+  document.getElementById('output').classList.remove('error', 'success');
+}

@@ -8,7 +8,6 @@
     "dev": "npx serve public -l 8787",
     "build": "node scripts/generate-seo-pages.mjs",
     "generate:seo": "node scripts/generate-seo-pages.mjs",
-    "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "deploy": "npx wrangler pages deploy public/"
   },
   "devDependencies": {
