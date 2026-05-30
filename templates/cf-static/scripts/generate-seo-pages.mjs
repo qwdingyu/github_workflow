@@ -253,6 +253,10 @@ function generateNavLinks(tools) {
 
 // ── 工具内容占位符（每个工具的实际 JS 功能由单独脚本提供） ────────────────────
 function generateToolContent(tool) {
+  // 检查工具是否需要引入 utils.js（财务计算器类工具需要）
+  const needsUtils = tool.category === '财务计算器';
+  const utilsScript = needsUtils ? '\n    <script src="/js/utils.js"></script>' : '';
+  
   return `
     <div class="tool-container" id="tool-${tool.slug}">
       <div class="tool-input">
@@ -267,7 +271,7 @@ function generateToolContent(tool) {
         <textarea id="output" placeholder="输出结果将显示在此处..." rows="10" readonly></textarea>
       </div>
     </div>
-    <script src="/js/${tool.slug}.js"></script>`;
+    <script src="/js/${tool.slug}.js"></script>${utilsScript}`;
 }
 
 // ── 生成 Plausible 分析脚本（如果配置了 plausibleDomain） ─────────────────────
