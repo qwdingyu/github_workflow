@@ -12,7 +12,7 @@
  */
 
 import { Hono } from "hono";
-import { initDatabase, type DrizzleInstance } from "./db/connection";
+import { initDatabaseWithHealthCheck, type DrizzleInstance } from "./db/connection";
 import { fail } from "./http";
 import { buildSecurityHeaders, type SecurityHeadersOptions } from "./security";
 
@@ -77,6 +77,34 @@ export interface BootstrapOptions<TSchema extends Record<string, unknown> = Reco
  * });
  * ```
  */
+/** 生成友好的 HTML 错误页面（内联 CSS，无外部依赖） */
+function errorPageHtml(status: number, message: string): string {
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${status} - ${message}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f0f0f;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.container{text-align:center;max-width:480px}
+.code{font-size:6rem;font-weight:800;background:linear-gradient(135deg,#6c63ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.msg{font-size:1.25rem;color:#888;margin:1rem 0 2rem}
+a{color:#6c63ff;text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="container">
+<p class="code">${status}</p>
+<p class="msg">${message}</p>
+<a href="/">← 返回首页</a>
+</div>
+</body>
+</html>`;
+}
+
 export function bootstrap<TSchema extends Record<string, unknown>>(
   options: BootstrapOptions<TSchema>,
 ) {
@@ -94,11 +122,11 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const api = new Hono<any>();
 
-  // ── DB 初始化中间件 ──
+  // ── DB 初始化中间件（带连接验证 + 重试） ──
   api.use("*", async (c, next) => {
     const isHealth = c.req.path === "/health";
     try {
-      const db = initDatabase(c.env.TURSO_URL, c.env.TURSO_TOKEN, schema);
+      const db = await initDatabaseWithHealthCheck(c.env.TURSO_URL, c.env.TURSO_TOKEN, schema);
       c.set("db", db);
       if ("executionCtx" in c) {
         c.set("executionCtx", c.env.executionCtx);
@@ -125,10 +153,20 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
   // ── 注册业务路由 ──
   registerRoutes(api);
 
-  // ── 404 + 全局错误 ──
-  api.notFound((c) => fail(c, "API not found", 404));
+  // ── 404 + 全局错误（浏览器返回 HTML，API 返回 JSON） ──
+  api.notFound((c) => {
+    const accept = c.req.header("accept") || "";
+    if (accept.includes("text/html")) {
+      return c.html(errorPageHtml(404, "页面未找到"), 404);
+    }
+    return fail(c, "API not found", 404);
+  });
   api.onError((error, c) => {
     console.error("[bootstrap:onError]", error?.constructor?.name, error?.message, error?.stack);
+    const accept = c.req.header("accept") || "";
+    if (accept.includes("text/html")) {
+      return c.html(errorPageHtml(500, "服务暂时不可用"), 500);
+    }
     return fail(c, "服务暂时不可用", 500, { error: error?.message });
   });
 
@@ -201,6 +239,13 @@ export function bootstrap<TSchema extends Record<string, unknown>>(
         return applyHeaders(await assets.fetch(request));
       } catch (err) {
         console.error("[bootstrap:fetch]", err);
+        const accept = request.headers.get("accept") || "";
+        if (accept.includes("text/html")) {
+          return new Response(errorPageHtml(500, "服务暂时不可用"), {
+            status: 500,
+            headers: { "content-type": "text/html; charset=utf-8" },
+          });
+        }
         return new Response(JSON.stringify({ ok: false, error: "服务暂时不可用" }), {
           status: 500,
           headers: { "content-type": "application/json" },

@@ -1,0 +1,17 @@
+# DevTools Online
+
+> Free online developer tools — JSON formatter, Base64 decoder, UUID generator, and more
+
+## Tools
+- [Base64 Decoder & Encoder](https://YOUR_DOMAIN.example.com/tools/base64-decode.html): Decode and encode Base64 strings online. Free, fast, and privacy-friendly — all processing in your browser.
+- [JSON Formatter & Beautifier](https://YOUR_DOMAIN.example.com/tools/json-formatter.html): Format, beautify, and validate JSON data online. Free, fast, and privacy-friendly — no data sent to servers.
+- [UUID v4 Generator](https://YOUR_DOMAIN.example.com/tools/uuid-generator.html): Generate random UUID v4 identifiers instantly. Free, fast, and works offline — RFC 4122 compliant.
+
+## Blog
+- [Getting Started with Our Developer Tools](https://YOUR_DOMAIN.example.com/posts/getting-started.html): A quick guide to getting started with our free online developer tools.
+
+## Documentation
+- [Introduction](https://YOUR_DOMAIN.example.com/docs/introduction.html): Introduction to our developer tools platform.
+
+## Optional
+- [Sitemap](https://YOUR_DOMAIN.example.com/sitemap.xml)

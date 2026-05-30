@@ -51,7 +51,7 @@ export { logger, type LogLevel, type LogEntry } from "./logger";
 export { encrypt, decrypt, isEncryptionAvailable, generateUUID } from "./crypto";
 
 // ── 数据库 ──
-export { initDatabase, getOrCreateClient, createDrizzle, type DrizzleInstance } from "./db/connection";
+export { initDatabase, initDatabaseWithHealthCheck, getOrCreateClient, createDrizzle, type DrizzleInstance } from "./db/connection";
 
 // ── 公共 Schema ──
 export {

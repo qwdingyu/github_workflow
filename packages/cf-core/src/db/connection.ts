@@ -56,13 +56,10 @@ export function createDrizzle<TSchema extends Record<string, unknown>>(
 }
 
 /**
- * 一步到位：初始化数据库（client + drizzle），带 Isolate 级缓存。
+ * 一步到位：初始化数据库（client + drizzle），带 Isolate 级缓存 + 连接验证。
  *
- * 这是最常用的入口函数。在 Hono 中间件中调用：
- * ```ts
- * const db = initDatabase(env.TURSO_URL, env.TURSO_TOKEN, schema);
- * c.set("db", db);
- * ```
+ * 首次连接时执行 `SELECT 1` 验证连通性，失败时自动重试（最多 2 次，指数退避）。
+ * 后续请求复用 Isolate 级缓存的 client，不再探活（节省 CPU 时间）。
  *
  * @param url - Turso URL（libsql://xxx.turso.io）
  * @param authToken - Turso 认证 Token（可选）
@@ -76,6 +73,49 @@ export function initDatabase<TSchema extends Record<string, unknown>>(
   if (!url) throw new Error("TURSO_URL is required");
   const client = getOrCreateClient(url, authToken);
   return createDrizzle(client, schema);
+}
+
+/**
+ * 带连接验证的数据库初始化（用于 bootstrap 中间件）。
+ *
+ * 首次连接时执行 `SELECT 1` 验证连通性，失败时重试。
+ * 后续请求直接返回缓存的 drizzle 实例（零额外开销）。
+ */
+export async function initDatabaseWithHealthCheck<TSchema extends Record<string, unknown>>(
+  url?: string,
+  authToken?: string,
+  schema?: TSchema,
+): Promise<DrizzleInstance<TSchema>> {
+  if (!url) throw new Error("TURSO_URL is required");
+
+  // 如果已有缓存的连接，直接返回（Isolate 复用场景）
+  if (_cachedClient && _cachedUrl === url) {
+    return createDrizzle(_cachedClient, schema);
+  }
+
+  // 首次连接：创建 client 并验证连通性
+  const client = getOrCreateClient(url, authToken);
+  const db = createDrizzle(client, schema);
+
+  // 最多重试 2 次（500ms → 1s），避免 Turso 短暂不可达导致部署失败
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      await client.execute("SELECT 1");
+      return db;
+    } catch (err) {
+      if (attempt >= 2) throw err;
+      const delay = 500 * Math.pow(2, attempt);
+      console.warn(`[db:health-check] 连接失败，${delay}ms 后重试 (${attempt + 1}/2)`);
+      await new Promise((r) => setTimeout(r, delay));
+      // 重建 client（可能连接状态已损坏）
+      _cachedClient = undefined;
+      _cachedUrl = undefined;
+      const newClient = getOrCreateClient(url, authToken);
+      Object.assign(db, createDrizzle(newClient, schema));
+    }
+  }
+
+  return db;
 }
 
 /**

@@ -99,6 +99,22 @@ function generateFaqSchema(faq) {
   return `<script type="application/ld+json">\n  ${JSON.stringify(schema, null, 2)}\n  </script>`;
 }
 
+// ── 生成 BreadcrumbList Schema.org JSON-LD ───────────────────────────────────
+function generateBreadcrumbSchema(siteName, siteUrl, items) {
+  if (!items || items.length === 0) return "";
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      ...(item.url ? { item: `${siteUrl}${item.url}` } : {}),
+    })),
+  };
+  return `<script type="application/ld+json">\n  ${JSON.stringify(schema)}\n  </script>`;
+}
+
 // ── 生成 FAQ HTML ─────────────────────────────────────────────────────────────
 function generateFaqHtml(faq) {
   if (!faq || faq.length === 0) return "<p>No FAQs yet.</p>";
@@ -163,6 +179,11 @@ for (const tool of tools) {
       ? `<meta name="twitter:site" content="${siteConfig.twitterHandle}">`
       : "",
     FAQ_SCHEMA: generateFaqSchema(tool.faq),
+    BREADCRUMB_SCHEMA: generateBreadcrumbSchema(siteConfig.siteName, siteConfig.siteUrl, [
+      { name: siteConfig.siteName, url: "/" },
+      { name: "Tools" },
+      { name: tool.title, url: `/tools/${tool.slug}.html` },
+    ]),
     FAQ_CONTENT: generateFaqHtml(tool.faq),
     NAV_LINKS: navLinks,
     TOOL_CONTENT: generateToolContent(tool),
@@ -523,6 +544,31 @@ Sitemap: ${siteConfig.siteUrl}/sitemap.xml
 
 writeFileSync(join(PUBLIC, "robots.txt"), robots, "utf-8");
 console.log(`  ✅ robots.txt (AI crawlers allowed)`);
+
+// ── 生成 llms.txt（AI 搜索引擎友好描述文件） ──────────────────────────────
+const llmsLines = [
+  `# ${siteConfig.siteName}`,
+  "",
+  `> ${siteConfig.description}`,
+  "",
+  "## Tools",
+  ...tools.map((t) => `- [${t.title}](${siteConfig.siteUrl}/tools/${t.slug}.html): ${t.description}`),
+];
+if (posts.length > 0) {
+  llmsLines.push("", "## Blog");
+  for (const p of posts) {
+    llmsLines.push(`- [${p.title}](${siteConfig.siteUrl}/posts/${p.slug}.html): ${p.description}`);
+  }
+}
+if (docs.length > 0) {
+  llmsLines.push("", "## Documentation");
+  for (const d of docs) {
+    llmsLines.push(`- [${d.title}](${siteConfig.siteUrl}/docs/${d.slug}.html): ${d.description}`);
+  }
+}
+llmsLines.push("", "## Optional", `- [Sitemap](${siteConfig.siteUrl}/sitemap.xml)`, "");
+writeFileSync(join(PUBLIC, "llms.txt"), llmsLines.join("\n"), "utf-8");
+console.log(`  ✅ llms.txt (AI search friendly)`);
 
 const totalTools = tools.length;
 const totalPosts = posts.length;
