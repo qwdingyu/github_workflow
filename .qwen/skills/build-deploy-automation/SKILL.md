@@ -632,7 +632,7 @@ Add Pages support when you need:
 29. **Pages Custom Domains require manual DNS CNAME** — unlike Workers Custom Domains which auto-create DNS records, Pages domains stay in `"pending"` status with `"error_message": "CNAME record not set"` until a CNAME record pointing to `{project}.pages.dev` is manually added. The deploy script must either create it via DNS API or instruct the user to add it in the dashboard.
 30. **API Token needs Zone DNS Edit for programmatic DNS** — creating DNS records via `POST /zones/{zone_id}/dns_records` requires the API token to have "Zone DNS Edit" permission. Account-level tokens (e.g., "Edit Cloudflare Workers") don't include this. If DNS creation fails with `Authentication error`, the token needs additional permissions.
 31. **Pages SSL certificate provisioning takes longer than Workers** — Workers Custom Domain HTTPS is typically ready in 1-2 polling cycles (5-10s). Pages Custom Domains can take 30+ cycles (5+ minutes) because certificate provisioning depends on DNS propagation first, then HTTP validation.
-28. **CI type-check should not block deploy** — `tsc --noEmit` catches TypeScript errors but wrangler/esbuild handles actual compilation; set `continue-on-error: true` so type errors warn but don't stop the pipeline
+32. **CI type-check should not block deploy** — `tsc --noEmit` catches TypeScript errors but wrangler/esbuild handles actual compilation; set `continue-on-error: true` so type errors warn but don't stop the pipeline
 
 ## Multi-Mode Deployment (workers / pages / hybrid)
 

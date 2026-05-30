@@ -24,22 +24,24 @@ The goal is: given two API tokens, the scripts run from Step 00 to Step 06 **wit
 
 ### Validated Through 5 Rounds
 
-This methodology was validated by running 5 complete rounds against real infrastructure (xshop project, Cloudflare Workers + Turso):
+This methodology was validated by running 7 complete rounds against real infrastructure:
 
-| Round | Mode | Steps Run | Bugs Found | Result |
-|-------|------|-----------|-----------|--------|
-| Round 1 | Workers | 00→01→02→03 | 5 bugs | Multiple failures, each fixed individually |
-| Round 2 | Workers | 01→02→03 (partial) | 4 bugs | stdout pollution, Homebrew timeout, SQL comments |
-| Round 3 | Workers | 00→01→02→03→06 (full) | 3 bugs | Full-width brackets, APP_ORIGIN, CI type-check |
-| Round 4 | Workers | 00→01→02→03→06 (full) | 3 bugs | Turso 502 retry, gh_check retry, CI first-run |
-| Round 5 | Workers | 00→01→02→03→06 (zero changes) | 0 bugs | ✅ Zero-touch in 137s |
-| **Round 6** | **Pages** | **00→03 (full)** | **7 bugs** | **Pages mode: cred_save pollution, set -u, wrangler params, stdout leaks, exit code** |
+| Round | Mode | Project | Steps Run | Bugs Found | Result |
+|-------|------|---------|-----------|-----------|--------|
+| Round 1 | Workers | xshop | 00→01→02→03 | 5 bugs | Multiple failures, each fixed individually |
+| Round 2 | Workers | xshop | 01→02→03 (partial) | 4 bugs | stdout pollution, Homebrew timeout, SQL comments |
+| Round 3 | Workers | xshop | 00→01→02→03→06 (full) | 3 bugs | Full-width brackets, APP_ORIGIN, CI type-check |
+| Round 4 | Workers | xshop | 00→01→02→03→06 (full) | 3 bugs | Turso 502 retry, gh_check retry, CI first-run |
+| Round 5 | Workers | xshop | 00→01→02→03→06 (zero changes) | 0 bugs | ✅ Zero-touch in 137s |
+| Round 6 | Pages | xshop-static | 00→03 (full) | 7 bugs | Pages mode: cred_save pollution, set -u, wrangler params, stdout leaks, exit code |
+| **Round 7** | **Pages** | **freelancer-calc** | **00→03→04→06 (full)** | **1 bug** | **04-bind-domain.sh only supported Workers mode, not Pages mode** |
 
-**Total: 22 bugs found across 6 rounds, all fixed. 39/39 script tests + 81/81 cf-core tests passing.**
+**Total: 23 bugs found across 7 rounds, all fixed. 137/137 cf-core tests + 34/34 shared.sh tests passing.**
 
 **Verified URLs**:
 - Workers mode: https://xshop.mailforwdy.workers.dev
 - Pages mode: https://xshop-static.pages.dev
+- Pages mode (custom domain): https://opc.eforge.xyz (freelancer-calc project)
 
 ### What "Zero-Touch" Really Means
 

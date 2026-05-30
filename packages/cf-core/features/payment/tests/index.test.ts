@@ -3,6 +3,10 @@ import {
   createProviderRegistry,
   AlipayProvider,
   alipayFactory,
+  StripeProvider,
+  stripeFactory,
+  Trc20Provider,
+  trc20Factory,
   signRSA2,
   verifyRSA2,
   type ProviderFactory,
@@ -223,5 +227,281 @@ describe("AlipayProvider", () => {
     await expect(
       provider.verifyCallback({ sign: "invalid", app_id: "test-app", trade_status: "TRADE_SUCCESS" }),
     ).rejects.toThrow();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+describe("stripeFactory", () => {
+  it("env 有全部配置 → isAvailable = true", () => {
+    const env = { STRIPE_SECRET_KEY: "sk_test", STRIPE_WEBHOOK_SECRET: "whsec_test" };
+    expect(stripeFactory.isAvailable(env)).toBe(true);
+  });
+
+  it("env 缺少 STRIPE_SECRET_KEY → isAvailable = false", () => {
+    expect(stripeFactory.isAvailable({ STRIPE_WEBHOOK_SECRET: "whsec" })).toBe(false);
+  });
+
+  it("env 缺少 STRIPE_WEBHOOK_SECRET → isAvailable = false", () => {
+    expect(stripeFactory.isAvailable({ STRIPE_SECRET_KEY: "sk" })).toBe(false);
+  });
+
+  it("create 返回 StripeProvider 实例", () => {
+    const env = { STRIPE_SECRET_KEY: "sk_test", STRIPE_WEBHOOK_SECRET: "whsec_test" };
+    const provider = stripeFactory.create(env);
+    expect(provider).toBeInstanceOf(StripeProvider);
+    expect(provider.name).toBe("stripe");
+    expect(provider.supportedCurrencies).toContain("USD");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+describe("StripeProvider", () => {
+  it("属性正确", () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    expect(provider.name).toBe("stripe");
+    expect(provider.displayName).toBe("Stripe");
+    expect(provider.supportedCurrencies).toEqual(["USD", "EUR", "GBP", "CAD", "AUD", "JPY"]);
+  });
+
+  it("createPayment 构建正确的 URLSearchParams 并调用 Stripe API", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "cs_test_123", url: "https://checkout.stripe.com/c/test_123" }),
+    });
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    const result = await provider.createPayment({
+      orderNo: "ORD001",
+      amountCents: 2999,
+      currency: "USD",
+      notifyUrl: "https://example.com/pay/callback",
+    });
+
+    expect(result.redirectUrl).toBe("https://checkout.stripe.com/c/test_123");
+    expect(result.providerTradeNo).toBe("cs_test_123");
+
+    // 验证 fetch 调用参数
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const callArgs = mockFetch.mock.calls[0];
+    expect(callArgs[0]).toBe("https://api.stripe.com/v1/checkout/sessions");
+    expect(callArgs[1].method).toBe("POST");
+    expect(callArgs[1].headers["Authorization"]).toBe("Bearer sk_test");
+    expect(callArgs[1].body).toContain("ORD001");
+  });
+
+  it("createPayment API 错误时抛错", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => "Unauthorized",
+    }) as unknown as typeof fetch;
+
+    await expect(
+      provider.createPayment({
+        orderNo: "ORD001",
+        amountCents: 2999,
+        currency: "USD",
+        notifyUrl: "https://example.com/pay/callback",
+      }),
+    ).rejects.toThrow("Stripe API error: 401");
+  });
+
+  it("createPayment 无返回 URL 时抛错", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: "cs_test_123" }), // 无 url 字段
+    }) as unknown as typeof fetch;
+
+    await expect(
+      provider.createPayment({
+        orderNo: "ORD001",
+        amountCents: 2999,
+        currency: "USD",
+        notifyUrl: "https://example.com/pay/callback",
+      }),
+    ).rejects.toThrow("Stripe returned no checkout URL");
+  });
+
+  it("verifyCallback 验证签名并通过", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    const validPayload = JSON.stringify({
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          metadata: { order_no: "ORD001" },
+          amount_total: 2999,
+          currency: "usd",
+          payment_intent: "pi_test_123",
+          id: "cs_test_123",
+        },
+      },
+    });
+
+    // 构建合法的 Stripe-Signature: t=<timestamp>,v1=<hmac>
+    const webhookSecret = "whsec_test";
+    const timestamp = Math.floor(Date.now() / 1000);
+    const encoder = new TextEncoder();
+    const signedPayload = `${timestamp}.${validPayload}`;
+    const key = await crypto.subtle.importKey("raw", encoder.encode(webhookSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(signedPayload));
+    const hexSig = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    const result = await provider.verifyCallback({
+      _raw_body: validPayload,
+      _stripe_signature: `t=${timestamp},v1=${hexSig}`,
+    });
+
+    expect(result.orderNo).toBe("ORD001");
+    expect(result.amountCents).toBe(2999);
+    expect(result.currency).toBe("USD");
+    expect(result.providerTradeNo).toBe("pi_test_123");
+  });
+
+  it("verifyCallback 签名无效时抛错", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    await expect(
+      provider.verifyCallback({
+        _raw_body: JSON.stringify({ type: "checkout.session.completed", data: { object: {} } }),
+        _stripe_signature: "t=1234567890,v1=invalid",
+      }),
+    ).rejects.toThrow("Stripe webhook signature invalid");
+  });
+
+  it("verifyCallback 缺少签名头时抛错", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    await expect(
+      provider.verifyCallback({}),
+    ).rejects.toThrow("Stripe callback missing signature headers");
+  });
+
+  it("verifyCallback 事件类型错误时抛错", async () => {
+    const provider = new StripeProvider("sk_test", "whsec_test");
+    const payload = JSON.stringify({ type: "payment_intent.succeeded", data: { object: {} } });
+    const timestamp = Math.floor(Date.now() / 1000);
+    const encoder = new TextEncoder();
+    const signedPayload = `${timestamp}.${payload}`;
+    const key = await crypto.subtle.importKey("raw", encoder.encode("whsec_test"), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(signedPayload));
+    const hexSig = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+    await expect(
+      provider.verifyCallback({ _raw_body: payload, _stripe_signature: `t=${timestamp},v1=${hexSig}` }),
+    ).rejects.toThrow("Unexpected Stripe event type");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+describe("trc20Factory", () => {
+  it("env 有全部配置 → isAvailable = true", () => {
+    const env = { TRC20_WALLET_ADDRESS: "TXYZ123", TRONGRID_API_KEY: "key123" };
+    expect(trc20Factory.isAvailable(env)).toBe(true);
+  });
+
+  it("env 缺少 TRC20_WALLET_ADDRESS → isAvailable = false", () => {
+    expect(trc20Factory.isAvailable({ TRONGRID_API_KEY: "key" })).toBe(false);
+  });
+
+  it("env 缺少 TRONGRID_API_KEY → isAvailable = false", () => {
+    expect(trc20Factory.isAvailable({ TRC20_WALLET_ADDRESS: "addr" })).toBe(false);
+  });
+
+  it("create 返回 Trc20Provider 实例", () => {
+    const env = { TRC20_WALLET_ADDRESS: "TXYZ123", TRONGRID_API_KEY: "key123" };
+    const provider = trc20Factory.create(env);
+    expect(provider).toBeInstanceOf(Trc20Provider);
+    expect(provider.name).toBe("usdt_trc20");
+    expect(provider.supportedCurrencies).toContain("USDT");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+describe("Trc20Provider", () => {
+  it("属性正确", () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    expect(provider.name).toBe("usdt_trc20");
+    expect(provider.displayName).toBe("USDT (TRC20)");
+    expect(provider.supportedCurrencies).toEqual(["USDT"]);
+  });
+
+  it("createPayment 返回地址、金额和 Memo", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    const result = await provider.createPayment({
+      orderNo: "P1A2B3C4",
+      amountCents: 5000, // $50.00
+      currency: "USDT",
+      notifyUrl: "https://example.com/pay/callback",
+    });
+
+    expect(result.raw).toBeDefined();
+    expect(result.raw!.address).toBe("TXYZ123");
+    expect(result.raw!.amount).toBe("50.000000");
+    // P1A2B3C4 中的数字是 1,2,3,4 → "1234" → padStart 8 → "00001234"
+    expect(result.raw!.memo).toBe("00001234");
+    expect(result.raw!.network).toBe("TRC20");
+    expect(result.raw!.warnings).toHaveLength(3);
+  });
+
+  it("createPayment 从订单号提取数字 Memo", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    // ORD-00001234 → 数字部分 00001234 → 最后8位 "00001234"
+    const result = await provider.createPayment({
+      orderNo: "ORD-00001234",
+      amountCents: 1000,
+      currency: "USDT",
+      notifyUrl: "https://example.com/pay/callback",
+    });
+    expect(result.raw!.memo).toBe("00001234");
+  });
+
+  it("verifyCallback 始终抛错", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    await expect(provider.verifyCallback({})).rejects.toThrow("USDT_TRC20 does not support HTTP callbacks");
+  });
+
+  it("queryStatus 链上无交易时返回 paid=false", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [], total: 0 }),
+    }) as unknown as typeof fetch;
+
+    const result = await provider.queryStatus("ORD-00001234");
+    expect(result.paid).toBe(false);
+  });
+
+  it("queryStatus 链上有匹配交易时返回 paid=true", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [
+          {
+            transaction_id: "txn_abc123",
+            value: "50000000", // 50 USDT (6 decimals)
+            token_info: { symbol: "USDT", decimals: 6 },
+            block_timestamp: Date.now(),
+          },
+        ],
+        total: 1,
+      }),
+    }) as unknown as typeof fetch;
+
+    const result = await provider.queryStatus("ORD-00001234");
+    expect(result.paid).toBe(true);
+    expect(result.providerTradeNo).toBe("txn_abc123");
+  });
+
+  it("queryStatus API 错误时返回 paid=false", async () => {
+    const provider = new Trc20Provider("TXYZ123", "key123");
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429, // rate limit
+    }) as unknown as typeof fetch;
+
+    const result = await provider.queryStatus("ORD-00001234");
+    expect(result.paid).toBe(false);
   });
 });
