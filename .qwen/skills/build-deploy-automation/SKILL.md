@@ -354,7 +354,13 @@ if [ "$MODE" = "pages" ]; then
     "{\"name\":\"${DOMAIN}\"}"
 
   # 2. Create DNS CNAME record (Global API Key if Bearer lacks DNS permission)
-  #    Target: {project}.pages.dev, proxied=true
+  #    Target: {project}.pages.dev, proxied=false (CRITICAL: NOT proxied=true)
+  #
+  # ⚠️ PAGES CNAME PITFALL: Must use proxied=false (grey cloud, DNS only)
+  #    Cloudflare Pages manages its own SSL certificate
+  #    If proxied=true, Cloudflare's proxy layer intercepts and causes SSL handshake failures (ERR_SSL_VERSION_OR_CIPHER_MISMATCH)
+  #    Workers Custom Domains use proxied=true because Workers don't have their own SSL
+  #
   DNS_API_CMD="curl -sS -X POST .../zones/${ZONE_ID}/dns_records"
   # Try Bearer first, fall back to Global API Key
   # Auto-delete conflicting A records before creating CNAME
@@ -516,6 +522,7 @@ done
 | **CI `tsc --noEmit` blocks deployment** | Set `continue-on-error: true` for type-check step; wrangler handles compilation independently |
 | **`cfat_...` Token lacks Zone DNS permission** | Use dual-auth: `cfat_...` for Pages/Workers API, `cfk_...` Global API Key for Zone DNS API. Pre-check Token DNS permission in Step 3/5 before any DNS operation |
 | **Pages Custom Domain API doesn't create DNS CNAME** | Pages API only registers domain with project. Must separately create CNAME via Zone DNS API (`POST /zones/{zone_id}/dns_records`). Workers mode auto-creates DNS; Pages mode does NOT |
+| **Pages CNAME must use `proxied: false`** | When creating DNS CNAME for Pages custom domains, MUST set `"proxied": false` (grey cloud, DNS only). Pages manages its own SSL certificate. If `proxied: true`, Cloudflare's proxy layer intercepts → SSL handshake fails → `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`. Workers Custom Domains use `proxied: true` because Workers don't have their own SSL. |
 | **Deploy script fix not synced to all copies** | After ANY `.deploy/` script change, copy to all 5 templates + active projects, verify with MD5. Total 7+ copies must be byte-identical |
 
 ## Validation Checklist

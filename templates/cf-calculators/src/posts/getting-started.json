@@ -1,0 +1,10 @@
+{
+  "slug": "getting-started",
+  "title": "开发者工具快速入门指南",
+  "description": "快速上手我们的免费在线开发者工具的入门指南。",
+  "keywords": ["快速入门", "开发者工具", "教程"],
+  "category": "tutorial",
+  "date": "2026-05-29",
+  "author": "开发工具团队",
+  "content": "<h2>欢迎使用</h2>\n<p>欢迎使用我们的开发者工具！本指南将帮助您快速上手。</p>\n<h3>可用工具</h3>\n<ul>\n<li><a href=\"/tools/json-formatter.html\"><strong>JSON 格式化工具</strong></a> — 格式化和验证 JSON 数据</li>\n<li><a href=\"/tools/base64-decode.html\"><strong>Base64 编解码工具</strong></a> — 编码和解码 Base64 字符串</li>\n<li><a href=\"/tools/uuid-generator.html\"><strong>UUID 生成器</strong></a> — 生成唯一标识符</li>\n</ul>\n<h3>如何使用</h3>\n<p>只需从首页点击任意工具，粘贴您的输入内容，然后点击处理按钮。所有处理都在您的浏览器中进行 — 不会向任何服务器发送数据。</p>"
+}

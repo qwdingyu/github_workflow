@@ -1,0 +1,26 @@
+{
+  "siteName": "在线计算器",
+  "description": "免费在线计算器集合 — 五险一金、个税、房贷、车贷等实用计算工具",
+  "locale": "zh-CN",
+  "url": "https://calculators.pages.dev",
+  "ogImage": "/og-image.svg",
+  "author": "在线计算器团队",
+  "ga4Id": "",
+  "social": {
+    "twitter": "",
+    "github": "",
+    "weibo": "",
+    "zhihu": "",
+    "juejin": ""
+  },
+  "wechat": {
+    "account": "在线计算器",
+    "qrcode": "/wechat-qrcode.svg"
+  },
+  "footerLinks": [
+    { "label": "隐私政策", "url": "/privacy/" },
+    { "label": "服务条款", "url": "/terms/" },
+    { "label": "关于我们", "url": "/about/" }
+  ],
+  "themeColor": "#e11d48"
+}
