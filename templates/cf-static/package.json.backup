@@ -1,0 +1,20 @@
+{
+  "name": "cf-static",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free online developer tools — SEO-friendly static site powered by Eleventy, deployed on Cloudflare Pages",
+  "type": "module",
+  "scripts": {
+    "dev": "eleventy --serve",
+    "build": "eleventy",
+    "preview": "npx serve _site",
+    "deploy": "wrangler pages deploy _site"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.80.0",
+    "serve": "^14.2.0"
+  }
+}

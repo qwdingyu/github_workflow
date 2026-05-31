@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="{{ config.locale | default('en-US') }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- SEO Meta Tags -->
+  <title>{% if title and title != config.siteName %}{{ title }} — {{ config.siteName }}{% else %}{{ config.siteName }}{% endif %}</title>
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  {% if keywords %}<meta name="keywords" content="{{ keywords }}">{% endif %}
+
+  <!-- Canonical URL -->
+  {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="{{ ogType | default('website') }}">
+  <meta property="og:title" content="{{ title | default(config.siteName) }}">
+  {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
+  {% if canonical %}<meta property="og:url" content="{{ canonical }}">{% endif %}
+  <meta property="og:site_name" content="{{ config.siteName }}">
+  <meta property="og:locale" content="{{ config.locale }}">
+  {% if config.ogImage %}<meta property="og:image" content="{{ config.url }}{{ config.ogImage }}">{% endif %}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title | default(config.siteName) }}">
+  {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
+  {% if config.ogImage %}<meta name="twitter:image" content="{{ config.url }}{{ config.ogImage }}">{% endif %}
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <!-- Critical CSS: Preload stylesheet for faster LCP -->
+  <link rel="preload" href="/assets/styles.css" as="style">
+  <!-- Styles -->
+  <link rel="stylesheet" href="/assets/styles.css">
+
+  <!-- Google Analytics 4 -->
+  {% if config.ga4Id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.ga4Id }}"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ config.ga4Id }}', { send_page_view: true });
+  </script>
+  {% endif %}
+</head>
+<body>
+  <header>
+    <nav class="navbar" aria-label="Main navigation">
+      <a href="/" class="logo">{{ config.siteName }}</a>
+      <div class="nav-links">
+        <a href="/tools-index/">All Tools</a>
+        <a href="/posts/">Blog</a>
+        <a href="/docs/">Docs</a>
+      </div>
+    </nav>
+  </header>
+
+  <main role="main">
+    <!-- Breadcrumb Navigation (hidden on homepage and index pages) -->
+    {% if page.url and page.url != '/' and page.url != '/tools-index/' and page.url != '/posts/' and page.url != '/docs/' %}
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="/">Home</a>
+      {% if '/tools/' in page.url %}
+      › <a href="/tools-index/">Tools</a> › <span>{{ title }}</span>
+      {% elif '/posts/' in page.url %}
+      › <a href="/posts/">Blog</a> › <span>{{ title }}</span>
+      {% elif '/docs/' in page.url %}
+      › <a href="/docs/">Docs</a> › <span>{{ title }}</span>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    {{ content | safe }}
+  </main>
+
+  <footer aria-label="Footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <p>&copy; 2026 {{ config.siteName }}. All rights reserved.</p>
+        <nav aria-label="Footer links" class="footer-nav">
+          {% if config.footerLinks %}
+          {% for link in config.footerLinks %}
+          <a href="{{ link.url }}">{{ link.label }}</a>
+          {% endfor %}
+          {% else %}
+          <a href="/about/">About Us</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/terms/">Terms of Service</a>
+          <a href="/sitemap.xml">Sitemap</a>
+          <a href="/robots.txt">Robots</a>
+          {% endif %}
+        </nav>
+      </div>
+      {% if config.social %}
+      <div class="footer-section footer-social">
+        <span>Social:</span>
+        {% if config.social.github %}<a href="{{ config.social.github }}" target="_blank" rel="noopener noreferrer">GitHub</a>{% endif %}
+        {% if config.social.twitter %}<a href="{{ config.social.twitter }}" target="_blank" rel="noopener noreferrer">Twitter</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </footer>
+
+  <!-- JSON-LD Structured Data -->
+
+  <!-- WebSite Schema (homepage only) -->
+  {% if page.url == '/' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "{{ config.siteName }}",
+    "url": "{{ config.url }}",
+    "description": "{{ config.description }}",
+    "inLanguage": "{{ config.locale }}",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "{{ config.url }}/tools-index/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  {% endif %}
+
+  <!-- Organization Schema (homepage only) -->
+  {% if page.url == '/' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "{{ config.siteName }}",
+    "url": "{{ config.url }}"
+  }
+  </script>
+  {% endif %}
+
+  <!-- BreadcrumbList Schema (non-homepage, exclude index pages) -->
+  {% if page.url and page.url != '/' and page.url != '/tools-index/' and page.url != '/posts/' and page.url != '/docs/' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ config.url }}/"
+      }
+      {% if '/tools/' in page.url %}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Tools",
+        "item": "{{ config.url }}/tools-index/"
+      },{
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ title }}",
+        "item": "{{ canonical | default(config.url ~ page.url) }}"
+      }
+      {% elif '/posts/' in page.url %}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "{{ config.url }}/posts/"
+      },{
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ title }}",
+        "item": "{{ canonical | default(config.url ~ page.url) }}"
+      }
+      {% elif '/docs/' in page.url %}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Docs",
+        "item": "{{ config.url }}/docs/"
+      },{
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ title }}",
+        "item": "{{ canonical | default(config.url ~ page.url) }}"
+      }
+      {% endif %}
+    ]
+  }
+  </script>
+  {% endif %}
+</body>
+</html>

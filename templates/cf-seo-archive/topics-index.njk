@@ -1,0 +1,33 @@
+---
+layout: base.njk
+pagination:
+  data: categories
+  size: 1
+  alias: cat
+permalink: "/topics-{{ cat.slug }}/"
+eleventyComputed:
+  title: "{{ cat.name }} — {{ config.siteName }}"
+  description: "Browse all {{ cat.name }} articles, guides, and resources. Expert-written content covering {{ cat.keywords | join(', ') }}."
+  canonical: "{{ config.url }}/topics-{{ cat.slug }}/"
+---
+
+<section class="category-index">
+  <h1>{{ cat.name }}</h1>
+  <p class="category-description">Browse all {{ cat.name }} articles. Topics include {{ cat.keywords | join(", ") }}.</p>
+
+  {% set catTopics = (categoryIndex[cat.name] or []) | sortBy("dateModified") %}
+  <div class="topic-grid">
+    {% for t in catTopics %}
+    <article class="topic-card">
+      <h3><a href="{{ t.url }}">{{ t.title }}</a></h3>
+      <p>{{ t.description | truncate(120) }}</p>
+      <div class="topic-meta">
+        <span>{{ t.type }}</span>
+        <span>{{ t.readingTime }} min</span>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <p class="article-count">{{ catTopics | length }} articles in {{ cat.name }}</p>
+</section>

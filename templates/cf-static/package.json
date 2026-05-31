@@ -1,5 +1,5 @@
 {
-  "name": "devtools-static",
+  "name": "cf-static",
   "version": "0.1.0",
   "private": true,
   "description": "Free online developer tools — SEO-friendly static site powered by Eleventy, deployed on Cloudflare Pages",
@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "eleventy --serve",
     "build": "eleventy",
+    "pipeline": "node scripts/pipeline.mjs",
+    "pipeline:skip": "node scripts/pipeline.mjs --skip-build",
     "preview": "npx serve _site",
     "deploy": "wrangler pages deploy _site"
   },
