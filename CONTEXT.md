@@ -10,9 +10,9 @@
 │   ├── cf-tools/         ← 在线工具集模板
 │   ├── cf-api/           ← API 中间层模板
 │   ├── cf-form/          ← 动态表单模板
+│   ├── cf-calculators/   ← 计算器工具模板
 │   └── cf-static/        ← SEO 静态站点模板
 ├── dtc/                  ← DTC 故障码查询（独立项目）
-├── eshop/                ← 子模块（旧版商城）
 ├── scripts/              ← 工具脚本
 └── docs/                 ← 文档
 ```
@@ -34,8 +34,7 @@ cf-core 只包含**基础设施**，不含任何业务逻辑：
 所有安装必须使用 `pnpm`，禁止 npm/yarn。
 
 ## 已知遗留问题
-- dtc 项目使用了 cf-core 的 bootstrap 但未导入 5 张公共表（架构偏离）
-- eshop 子模块未拉取代码，待检查 schema.ts 合规性
+无。
 
 ## 关键文档
 - `docs/ARCHITECTURE_ENFORCEMENT.md` — 完整架构规则

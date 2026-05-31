@@ -55,8 +55,7 @@ export {
 ### 铁律 4：新产品必须以模板为基础
 
 - 不允许从零写 schema.ts
-- 必须使用 `pnpm run create-project`（调用 `scripts/create-project.mjs`）
-- schema.ts 自动继承 cf-core 的 5 张公共表
+- 必须使用 `node scripts/create-project.mjs <name> --template <tpl>`
 
 ### 铁律 5：修改 schema.ts 必须经过架构评审
 
@@ -84,18 +83,13 @@ export {
 | `node scripts/validate-architecture.mjs` | 架构验证 |
 | `node scripts/create-project.mjs <name> --template <tpl>` | 创建新产品 |
 | `pnpm -w packages/cf-core run build` | 构建 cf-core |
-| `cd dtc && node scripts/validate-architecture.mjs` | 验证 dtc 合规 |
+| `cd dtc && node scripts/smoke-readonly.mjs` | 验证 dtc 只读接口 |
 
 ---
 
 ## 🚨 发现架构偏离怎么办？
 
-如果发现某项目未从 cf-core 导入公共表，例如 dtc 的问题：
+如果发现某项目未从 cf-core 导入公共表：
 1. 在 `src/db/schema.ts` 中添加：
-   ```typescript
-   export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from "@eforge/cf-core/db/schema";
-   ```
-2. 验证 `pnpm install && tsc --noEmit` 编译通过
-3. 提交修复
 
 完整架构规则详见：`docs/ARCHITECTURE_ENFORCEMENT.md`
