@@ -3,6 +3,7 @@
   "name": "dtc",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-24",
+  "account_id": "f4c2f5b7c4134455ba93f1ebc0233664",
 
   // ═══ 静态资源 ═══
   "assets": {

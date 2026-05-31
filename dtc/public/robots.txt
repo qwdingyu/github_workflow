@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Sitemap: https://dtc.eforge.xyz/sitemap.xml
+
+# AI crawler permission
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /

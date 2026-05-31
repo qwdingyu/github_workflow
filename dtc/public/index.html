@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DTC Lookup — OBD-II Diagnostic Trouble Code Search</title>
-  <meta name="description" content="Free OBD-II Diagnostic Trouble Code lookup service. Search DTC codes by code, manufacturer, or keyword.">
+  <title>DTC Lookup — Free OBD-II Diagnostic Trouble Code Search</title>
+  <meta name="description" content="Free OBD-II Diagnostic Trouble Code (DTC) lookup service. Search 21,360+ DTC codes by code, manufacturer, or keyword. Get detailed fault descriptions, causes, and repair solutions.">
+  <meta name="keywords" content="DTC, OBD-II, diagnostic trouble code, fault code, check engine light, car diagnostic">
   <link rel="canonical" href="https://dtc.eforge.xyz/">
   <meta property="og:title" content="DTC Lookup — Free OBD-II Diagnostic Trouble Code Search">
-  <meta property="og:description" content="Search thousands of DTC codes. Free OBD-II diagnostic trouble code lookup.">
+  <meta property="og:description" content="Search 21,360+ DTC codes. Free OBD-II diagnostic trouble code lookup service.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://dtc.eforge.xyz/">
+  <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -15,37 +19,245 @@
     "name": "DTC Lookup",
     "applicationCategory": "DiagnosticTool",
     "operatingSystem": "All",
-    "description": "Free OBD-II Diagnostic Trouble Code lookup service",
+    "browserRequirements": "Requires JavaScript",
+    "description": "Free OBD-II Diagnostic Trouble Code (DTC) lookup service",
     "url": "https://dtc.eforge.xyz"
   }
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .container { max-width: 600px; padding: 2rem; text-align: center; }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    p { color: #94a3b8; margin-bottom: 1.5rem; }
-    .search-box { display: flex; gap: 0.5rem; max-width: 400px; margin: 0 auto; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+    h1 { font-size: 2rem; text-align: center; margin-bottom: 0.5rem; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { text-align: center; color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+    .search-box { display: flex; gap: 0.5rem; max-width: 500px; margin: 0 auto 2rem; }
     .search-box input { flex: 1; padding: 0.75rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #e2e8f0; font-size: 1rem; outline: none; }
     .search-box input:focus { border-color: #60a5fa; }
     .search-box button { padding: 0.75rem 1.5rem; background: #3b82f6; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; }
-    .info { margin-top: 2rem; font-size: 0.85rem; color: #64748b; }
-    .info a { color: #60a5fa; text-decoration: none; }
-    .loading { margin-top: 1rem; color: #64748b; font-size: 0.85rem; display: none; }
+    .stats { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1rem 1.5rem; text-align: center; min-width: 120px; }
+    .stat-card .num { font-size: 1.8rem; font-weight: bold; color: #60a5fa; }
+    .stat-card .label { font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem; }
+    .system-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .system-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.25rem; text-decoration: none; color: #e2e8f0; }
+    .system-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .system-card .name { font-weight: 600; font-size: 1rem; }
+    .system-card .desc { font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem; }
+    .system-card .count { font-size: 0.8rem; color: #60a5fa; margin-top: 0.5rem; }
+    h2 { font-size: 1.3rem; margin-bottom: 1rem; color: #f1f5f9; }
+    .code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .code-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 0.75rem 1rem; text-decoration: none; color: #e2e8f0; }
+    .code-card .code { font-weight: 600; color: #60a5fa; }
+    .code-card .desc { font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .footer { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #1e293b; }
+    .footer a { color: #60a5fa; text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🔧 DTC Lookup</h1>
-    <p>Free OBD-II Diagnostic Trouble Code Search</p>
-    <form class="search-box" onsubmit="event.preventDefault(); var q=this.q.value.trim(); if(!q||q.length<2)return; var upper=q.toUpperCase(); if(/^[PBCU][0-9][0-9A-F]{3}$/.test(upper)){window.location.href='/dtc/'+upper+'.html';}else{window.location.href='/search.html?q='+encodeURIComponent(q);}">
-      <input type="text" name="q" placeholder="Enter DTC code or keyword (e.g. P0420, oxygen sensor)" autocomplete="off">
+    <p class="subtitle">Free OBD-II Diagnostic Trouble Code Search — 21,360 codes from 34 manufacturers</p>
+
+    <form class="search-box" action="/search" method="get" onsubmit="event.preventDefault(); window.location.href='/dtc/' + this.q.value.toUpperCase() + '.html';">
+      <input type="text" name="q" placeholder="Enter DTC code (e.g. P0420)" autocomplete="off">
       <button type="submit">Search</button>
     </form>
-    <div id="tip" style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">Tip: Search by code (P0420) or keyword (oxygen sensor)</div>
-    <div class="info">
-      <p>18,800+ OBD-II codes · 34 manufacturers · Free</p>
-      <p><a href="/p.html">Powertrain (P)</a> · <a href="/b.html">Body (B)</a> · <a href="/c.html">Chassis (C)</a> · <a href="/u.html">Network (U)</a></p>
+
+    <div class="stats">
+      <div class="stat-card"><div class="num">21,360</div><div class="label">Total DTC Codes</div></div>
+      <div class="stat-card"><div class="num">34</div><div class="label">Manufacturers</div></div>
+      <div class="stat-card"><div class="num">4</div><div class="label">Systems</div></div>
+    </div>
+
+    <h2>Browse by System</h2>
+    <div class="system-grid">
+
+      <a href="/p.html" class="system-card" style="border-left: 3px solid #e74c3c">
+        <div class="icon">⚙️</div>
+        <div class="name">Powertrain (P)</div>
+        <div class="desc">发动机、变速箱、传动系统相关故障码</div>
+        <div class="count">15,463 codes</div>
+      </a>
+
+      <a href="/b.html" class="system-card" style="border-left: 3px solid #3498db">
+        <div class="icon">🚗</div>
+        <div class="name">Body (B)</div>
+        <div class="desc">车身电子、安全气囊、空调系统相关故障码</div>
+        <div class="count">2,612 codes</div>
+      </a>
+
+      <a href="/c.html" class="system-card" style="border-left: 3px solid #2ecc71">
+        <div class="icon">🛞</div>
+        <div class="name">Chassis (C)</div>
+        <div class="desc">底盘、制动、悬挂系统相关故障码</div>
+        <div class="count">1,453 codes</div>
+      </a>
+
+      <a href="/u.html" class="system-card" style="border-left: 3px solid #f39c12">
+        <div class="icon">📡</div>
+        <div class="name">Network (U)</div>
+        <div class="desc">通信网络、控制器局域网相关故障码</div>
+        <div class="count">1,832 codes</div>
+      </a>
+    </div>
+
+    <h2>Popular DTC Codes</h2>
+    <div class="code-grid">
+
+      <a href="/dtc/B0001.html" class="code-card">
+        <div class="code">B0001</div>
+        <div class="desc">Driver Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0002.html" class="code-card">
+        <div class="code">B0002</div>
+        <div class="desc">Driver Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0003.html" class="code-card">
+        <div class="code">B0003</div>
+        <div class="desc">Driver Frontal Stage 3 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0004.html" class="code-card">
+        <div class="code">B0004</div>
+        <div class="desc">Driver Knee Bolster Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0005.html" class="code-card">
+        <div class="code">B0005</div>
+        <div class="desc">Collapsible Steering Column Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0010.html" class="code-card">
+        <div class="code">B0010</div>
+        <div class="desc">Passenger Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0011.html" class="code-card">
+        <div class="code">B0011</div>
+        <div class="desc">Passenger Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0012.html" class="code-card">
+        <div class="code">B0012</div>
+        <div class="desc">Passenger Frontal Stage 3 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0013.html" class="code-card">
+        <div class="code">B0013</div>
+        <div class="desc">Passenger Knee Bolster Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0018.html" class="code-card">
+        <div class="code">B0018</div>
+        <div class="desc">Center Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0019.html" class="code-card">
+        <div class="code">B0019</div>
+        <div class="desc">Center Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B001A.html" class="code-card">
+        <div class="code">B001A</div>
+        <div class="desc">Center Frontal Stage 3 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0020.html" class="code-card">
+        <div class="code">B0020</div>
+        <div class="desc">Left Side Airbag Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0021.html" class="code-card">
+        <div class="code">B0021</div>
+        <div class="desc">Left Curtain Deployment Control 1</div>
+      </a>
+
+      <a href="/dtc/B0022.html" class="code-card">
+        <div class="code">B0022</div>
+        <div class="desc">Left Curtain Deployment Control 2</div>
+      </a>
+
+      <a href="/dtc/B0028.html" class="code-card">
+        <div class="code">B0028</div>
+        <div class="desc">Right Side Airbag Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0029.html" class="code-card">
+        <div class="code">B0029</div>
+        <div class="desc">Right Curtain Deployment Control 1</div>
+      </a>
+
+      <a href="/dtc/B002A.html" class="code-card">
+        <div class="code">B002A</div>
+        <div class="desc">Right Curtain Deployment Control 2</div>
+      </a>
+
+      <a href="/dtc/B0030.html" class="code-card">
+        <div class="code">B0030</div>
+        <div class="desc">Second Row Left Side Airbag Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0031.html" class="code-card">
+        <div class="code">B0031</div>
+        <div class="desc">Second Row Left Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0032.html" class="code-card">
+        <div class="code">B0032</div>
+        <div class="desc">Second Row Left Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0033.html" class="code-card">
+        <div class="code">B0033</div>
+        <div class="desc">Second Row Left Frontal Stage 3 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0038.html" class="code-card">
+        <div class="code">B0038</div>
+        <div class="desc">Second Row Right Side Airbag Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0039.html" class="code-card">
+        <div class="code">B0039</div>
+        <div class="desc">Second Row Right Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B003A.html" class="code-card">
+        <div class="code">B003A</div>
+        <div class="desc">Second Row Right Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B003B.html" class="code-card">
+        <div class="code">B003B</div>
+        <div class="desc">Second Row Right Frontal Stage 3 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0040.html" class="code-card">
+        <div class="code">B0040</div>
+        <div class="desc">Third Row Left Side Airbag Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0041.html" class="code-card">
+        <div class="code">B0041</div>
+        <div class="desc">Third Row Left Frontal Stage 1 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0042.html" class="code-card">
+        <div class="code">B0042</div>
+        <div class="desc">Third Row Left Frontal Stage 2 Deployment Control</div>
+      </a>
+
+      <a href="/dtc/B0043.html" class="code-card">
+        <div class="code">B0043</div>
+        <div class="desc">Third Row Left Frontal Stage 3 Deployment Control</div>
+      </a>
+    </div>
+
+    <div class="footer">
+      <p>DTC Lookup — Free OBD-II Diagnostic Trouble Code Service</p>
+      <p>Data sources: <a href="https://github.com/Wal33D/dtc-database">wal33d/dtc-database</a>, <a href="https://github.com/wzr1337/dtcmapping">wzr1337/dtcmapping</a></p>
     </div>
   </div>
 </body>

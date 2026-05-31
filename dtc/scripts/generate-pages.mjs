@@ -62,7 +62,7 @@ const SITE_URL = process.env.SITE_URL || "https://dtc.eforge.xyz";
 const OUTPUT_DIR = join(process.cwd(), "public");
 
 // 系统类型映射
-const SYSTEM_INFO: Record<string, { name: string; description: string; color: string }> = {
+const SYSTEM_INFO = {
   P: { name: "Powertrain", description: "发动机、变速箱、传动系统相关故障码", color: "#e74c3c" },
   B: { name: "Body", description: "车身电子、安全气囊、空调系统相关故障码", color: "#3498db" },
   C: { name: "Chassis", description: "底盘、制动、悬挂系统相关故障码", color: "#2ecc71" },
@@ -70,7 +70,7 @@ const SYSTEM_INFO: Record<string, { name: string; description: string; color: st
 };
 
 // HTML 模板 — 首页
-function generateIndexHtml(stats: { total: number; bySystem: Record<string, number>; manufacturers: number; topCodes: any[] }) {
+function generateIndexHtml(stats) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -155,7 +155,7 @@ ${Object.entries(SYSTEM_INFO).map(([short, info]) => `
 
     <h2>Popular DTC Codes</h2>
     <div class="code-grid">
-${stats.topCodes.map((c: any) => `
+${stats.topCodes.map((c) => `
       <a href="/dtc/${c.code}.html" class="code-card">
         <div class="code">${c.code}</div>
         <div class="desc">${escapeHtml(c.description)}</div>
@@ -173,7 +173,7 @@ ${stats.topCodes.map((c: any) => `
 
 // ── HTML 模板 — 单码详情页（SEO 核心页面） ──
 
-function generateDtcPageHtml(code: string, record: any, related: any[]) {
+function generateDtcPageHtml(code, record, related) {
   const systemInfo = SYSTEM_INFO[record.system_short] || { name: "Unknown", color: "#666" };
 
   return `<!DOCTYPE html>
@@ -288,7 +288,7 @@ ${related.length > 0 ? `
     <h2>Related DTC Codes</h2>
     <div class="info-card">
       <ul class="related-list">
-${related.map((r: any) => `
+${related.map((r) => `
         <li><a href="/dtc/${r.code}.html">${r.code}</a> — ${escapeHtml(r.description)}</li>`).join('\n')}
       </ul>
     </div>` : ''}
@@ -311,7 +311,7 @@ ${related.map((r: any) => `
 
 // ── HTML 模板 — 按系统页面 ──
 
-function generateSystemPageHtml(systemShort: string, codes: any[]) {
+function generateSystemPageHtml(systemShort, codes) {
   const info = SYSTEM_INFO[systemShort] || { name: "Unknown", description: "", color: "#666" };
   const icon = systemShort === 'P' ? '⚙️' : systemShort === 'B' ? '🚗' : systemShort === 'C' ? '🛞' : '📡';
 
@@ -347,7 +347,7 @@ function generateSystemPageHtml(systemShort: string, codes: any[]) {
     <h1>${icon} ${info.name} (${systemShort}) DTC Codes</h1>
     <p class="subtitle">${codes.length.toLocaleString()} diagnostic trouble codes — ${info.description}</p>
     <table class="code-table">
-${codes.map((c: any) => `
+${codes.map((c) => `
       <tr>
         <td><a class="code" href="/dtc/${c.code}.html">${c.code}</a></td>
         <td class="mfr">${c.manufacturer}</td>
@@ -364,7 +364,7 @@ ${codes.map((c: any) => `
 
 // ── 辅助函数 ──
 
-function escapeHtml(text: string): string {
+function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
