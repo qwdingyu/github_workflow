@@ -1,266 +1,282 @@
-/**
- * 发卡商城数据库 Schema
- *
- * 从 @eforge/cf-core/db/schema 导入公共表，并添加商城业务表：
- * - products: 商品表
- * - cards: 卡密表
- * - card_batches: 卡密批次表
- * - orders: 订单表
- * - order_events: 订单事件日志
- * - coupons: 优惠码表
- * - email_logs: 邮件发送日志
- * - card_logs: 卡密操作日志
- */
-
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { createInsertSchema } from "drizzle-zod";
+import * as z from "zod";
 
-// ── 从 cf-core 导入公共表 ──
-export {
+// ── 从 cf-core 导入 5 张公共基础设施表 ──
+// import + export 确保本地可用（createInsertSchema 需要）且对外导出
+import {
   systemConfig,
   adminAuditLogs,
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
 } from "@eforge/cf-core/db/schema";
+export {
+  systemConfig,
+  adminAuditLogs,
+  rateLimitWindows,
+  idempotencyKeys,
+  apiKeys,
+};
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 商品表
-// ═══════════════════════════════════════════════════════════════════════════════
-
+// ── 商品表 ──
 export const products = sqliteTable("products", {
-  /** 商品 ID（UUID） */
   id: text("id").primaryKey(),
-  /** 商品名称 */
-  name: text("name").notNull(),
-  /** 商品别名（URL 友好，如 "netflix-premium"） */
-  slug: text("slug").notNull().unique(),
-  /** 商品描述（支持 Markdown） */
+  slug: text("slug"),
+  title: text("title").notNull(),
   description: text("description").default("").notNull(),
-  /** 商品分类（对应 PRODUCT_CATEGORIES） */
-  category: text("category").default("card").notNull(),
-  /** 商品单价（分，避免浮点精度问题） */
-  priceCents: integer("price_cents").notNull(),
-  /** 原价（分，用于展示折扣） */
-  originalPriceCents: integer("original_price_cents").default(0).notNull(),
-  /** 商品图片 URL */
-  imageUrl: text("image_url").default("").notNull(),
-  /** 是否上架（0=下架，1=上架） */
-  enabled: integer("enabled").default(1).notNull(),
-  /** 排序权重（越大越靠前） */
-  sortOrder: integer("sort_order").default(0).notNull(),
-  /** 购买说明（支持 HTML） */
-  instructions: text("instructions").default("").notNull(),
-  /** 创建时间（ISO 8601） */
-  createdAt: text("created_at").notNull(),
-  /** 更新时间（ISO 8601） */
-  updatedAt: text("updated_at").notNull(),
+  salesCopy: text("sales_copy").default("").notNull(),
+  coverUrl: text("cover_url").default("").notNull(),
+  tagsJson: text("tags_json").default("[]").notNull(),
+  priceCents: integer("price_cents").default(0).notNull(),
+  currency: text("currency").default("CNY").notNull(),
+  fulfillmentMode: text("fulfillment_mode").default("card").notNull(),
+  issueMode: text("issue_mode").default("direct").notNull(),
+  active: integer("active").default(1).notNull(),
+  sortOrder: integer("sort_order").default(100).notNull(),
+  category: text("category").default("").notNull(),
+  createdAt: text("created_at").default("").notNull(),
+  updatedAt: text("updated_at")
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 卡密批次表
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const cardBatches = sqliteTable("card_batches", {
-  /** 批次 ID（UUID） */
-  id: text("id").primaryKey(),
-  /** 关联商品 ID */
-  productId: text("product_id").notNull(),
-  /** 批次名称（如 "2026年5月采购"） */
-  name: text("name").default("").notNull(),
-  /** 批次备注 */
-  note: text("note").default("").notNull(),
-  /** 采购成本（分，用于利润统计） */
-  costCents: integer("cost_cents").default(0).notNull(),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 卡密表
-// ═══════════════════════════════════════════════════════════════════════════════
-
+// ── 卡密表 ──
 export const cards = sqliteTable("cards", {
-  /** 卡密 ID（UUID） */
   id: text("id").primaryKey(),
-  /** 关联商品 ID */
   productId: text("product_id").notNull(),
-  /** 关联批次 ID（可选） */
   batchId: text("batch_id"),
-  /** 卡密内容（加密存储，如 "账号:密码" 或 "激活码"） */
-  cardData: text("card_data").notNull(),
-  /** 卡密状态：available / locked / issued / returned */
+  accountLabel: text("account_label").notNull(),
+  deliverySecret: text("delivery_secret").notNull(),
+  deliveryNote: text("delivery_note").default("").notNull(),
   status: text("status").default("available").notNull(),
-  /** 锁定订单 ID（发放中时关联的订单） */
-  lockedByOrderId: text("locked_by_order_id"),
-  /** 发放时间 */
+  lockedOrderId: text("locked_order_id"),
+  lockExpiresAt: text("lock_expires_at"),
+  issuedOrderId: text("issued_order_id"),
   issuedAt: text("issued_at"),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
+  disabledReason: text("disabled_reason").default("").notNull(),
+  createdAt: text("created_at").default("").notNull()
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 订单表
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const orders = sqliteTable("orders", {
-  /** 订单 ID（UUID） */
+// ── 卡密批次表 ──
+export const cardBatches = sqliteTable("card_batches", {
   id: text("id").primaryKey(),
-  /** 订单号（用户可见，如 "S20260529ABC123"） */
-  orderNo: text("order_no").notNull().unique(),
-  /** 关联商品 ID */
   productId: text("product_id").notNull(),
-  /** 购买数量 */
-  quantity: integer("quantity").notNull(),
-  /** 订单金额（分） */
-  amountCents: integer("amount_cents").notNull(),
-  /** 优惠金额（分） */
-  discountCents: integer("discount_cents").default(0).notNull(),
-  /** 实付金额（分） */
-  paidCents: integer("paid_cents").default(0).notNull(),
-  /** 买家邮箱（加密存储） */
-  buyerEmail: text("buyer_email").notNull(),
-  /** 买家 IP 哈希（用于防刷） */
-  buyerIpHash: text("buyer_ip_hash").default("").notNull(),
-  /** 订单状态：pending / paid / issued / cancelled / expired */
-  status: text("status").default("pending").notNull(),
-  /** 支付方式（alipay / manual） */
-  paymentMethod: text("payment_method").default("").notNull(),
-  /** 支付流水号（第三方支付单号） */
-  paymentTradeNo: text("payment_trade_no").default("").notNull(),
-  /** 支付时间（ISO 8601，回调确认时设置） */
-  paidAt: text("paid_at"),
-  /** 使用的优惠码 */
-  couponCode: text("coupon_code").default("").notNull(),
-  /** 订单过期时间（ISO 8601） */
-  expiresAt: text("expires_at").notNull(),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-  /** 更新时间 */
-  updatedAt: text("updated_at").notNull(),
+  name: text("name").notNull(),
+  source: text("source").default("").notNull(),
+  totalCount: integer("total_count").default(0).notNull(),
+  createdAt: text("created_at").default("").notNull()
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 订单事件日志（状态变更追踪）
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const orderEvents = sqliteTable("order_events", {
-  /** 事件 ID（UUID） */
+// ── 订单表 ──
+export const orders = sqliteTable("orders", {
   id: text("id").primaryKey(),
-  /** 关联订单 ID */
-  orderId: text("order_id").notNull(),
-  /** 事件类型：created / paid / issued / cancelled / expired / refunded */
-  eventType: text("event_type").notNull(),
-  /** 事件详情（JSON） */
-  metadataJson: text("metadata_json").default("{}").notNull(),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 优惠码表
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const coupons = sqliteTable("coupons", {
-  /** 优惠码 ID（UUID） */
-  id: text("id").primaryKey(),
-  /** 优惠码（用户输入，如 "SAVE20"） */
-  code: text("code").notNull().unique(),
-  /** 优惠类型：percent（百分比）/ fixed（固定金额） */
-  discountType: text("discount_type").default("percent").notNull(),
-  /** 优惠值（百分比时为折扣百分比，固定金额时为分） */
-  discountValue: integer("discount_value").notNull(),
-  /** 最小订单金额（分，0 表示无限制） */
-  minOrderCents: integer("min_order_cents").default(0).notNull(),
-  /** 最大使用次数（0 表示无限） */
-  maxUsage: integer("max_usage").default(0).notNull(),
-  /** 已使用次数 */
-  usedCount: integer("used_count").default(0).notNull(),
-  /** 是否启用 */
-  enabled: integer("enabled").default(1).notNull(),
-  /** 过期时间（可选） */
-  expiresAt: text("expires_at"),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 邮件发送日志
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const emailLogs = sqliteTable("email_logs", {
-  /** 日志 ID（UUID） */
-  id: text("id").primaryKey(),
-  /** 收件人邮箱（脱敏） */
-  toEmail: text("to_email").notNull(),
-  /** 邮件主题 */
-  subject: text("subject").notNull(),
-  /** 发送状态：success / failed */
-  status: text("status").notNull(),
-  /** 错误信息（失败时） */
-  errorMessage: text("error_message").default("").notNull(),
-  /** 关联订单 ID（可选） */
-  orderId: text("order_id"),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 卡密操作日志
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const cardLogs = sqliteTable("card_logs", {
-  /** 日志 ID（UUID） */
-  id: text("id").primaryKey(),
-  /** 关联卡密 ID */
-  cardId: text("card_id").notNull(),
-  /** 操作类型：imported / locked / issued / returned / deleted */
-  action: text("action").notNull(),
-  /** 操作者（admin / system / order_id） */
-  operator: text("operator").default("system").notNull(),
-  /** 操作详情 */
-  detail: text("detail").default("").notNull(),
-  /** 创建时间 */
-  createdAt: text("created_at").notNull(),
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 充值码表
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const voucherCodes = sqliteTable("voucher_codes", {
-  /** 充值码（大小写不敏感，实际存大写） */
-  code: text("code").primaryKey(),
-  /** 面值（分） */
+  orderNo: text("order_no"),
+  productId: text("product_id").notNull(),
+  buyerContact: text("buyer_contact").notNull(),
+  buyerEmail: text("buyer_email").default("").notNull(),
   amountCents: integer("amount_cents").default(0).notNull(),
-  /** 状态：active / used / expired / revoked */
-  status: text("status").default("active").notNull(),
-  /** 使用者邮箱 */
-  usedByEmail: text("used_by_email").default("").notNull(),
-  /** 使用时间 */
-  usedAt: text("used_at"),
-  /** 过期时间 */
+  discountCents: integer("discount_cents").default(0).notNull(),
+  currency: text("currency").default("CNY").notNull(),
+  status: text("status").notNull(),
+  issueMode: text("issue_mode").default("direct").notNull(),
+  paymentMethod: text("payment_method").default("").notNull(),
+  paymentProvider: text("payment_provider").default("").notNull(),
+  paymentRef: text("payment_ref").default("").notNull(),
+  orderTokenHash: text("order_token_hash"),
+  issuedCardId: text("issued_card_id"),
+  campaignCode: text("campaign_code").default("").notNull(),
+  referralCode: text("referral_code").default("").notNull(),
+  couponCode: text("coupon_code").default("").notNull(),
+  ipHash: text("ip_hash").default("").notNull(),
+  userAgent: text("user_agent").default("").notNull(),
+  createdAt: text("created_at").default("").notNull(),
+  paidAt: text("paid_at"),
+  issuedAt: text("issued_at"),
+  expiresAt: text("expires_at")
+});
+
+// ── 订单事件表 ──
+export const orderEvents = sqliteTable("order_events", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id").notNull(),
+  type: text("type").notNull(),
+  message: text("message").default("").notNull(),
+  metadataJson: text("metadata_json").default("{}").notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 营销活动表 ──
+export const campaigns = sqliteTable("campaigns", {
+  code: text("code").primaryKey(),
+  name: text("name").notNull(),
+  active: integer("active").default(1).notNull(),
+  startsAt: text("starts_at"),
+  endsAt: text("ends_at"),
+  metadataJson: text("metadata_json").default("{}").notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 推荐码表 ──
+export const referralCodes = sqliteTable("referral_codes", {
+  code: text("code").primaryKey(),
+  ownerContact: text("owner_contact").notNull(),
+  rewardType: text("reward_type").default("none").notNull(),
+  rewardValue: integer("reward_value").default(0).notNull(),
+  active: integer("active").default(1).notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 推荐事件表 ──
+export const referralEvents = sqliteTable("referral_events", {
+  id: text("id").primaryKey(),
+  referralCode: text("referral_code").notNull(),
+  orderId: text("order_id").notNull(),
+  buyerContact: text("buyer_contact").notNull(),
+  status: text("status").default("created").notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 优惠码表 ──
+export const coupons = sqliteTable("coupons", {
+  code: text("code").primaryKey(),
+  productId: text("product_id").default("").notNull(),
+  discountType: text("discount_type").notNull(),
+  discountValue: integer("discount_value").notNull(),
+  maxUses: integer("max_uses").default(0).notNull(),
+  usedCount: integer("used_count").default(0).notNull(),
+  active: integer("active").default(1).notNull(),
   expiresAt: text("expires_at"),
-  /** 批次 ID */
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 卡密审计日志表 ──
+export const cardLogs = sqliteTable("card_logs", {
+  id: text("id").primaryKey(),
+  cardId: text("card_id").notNull(),
+  action: text("action").notNull(),
+  orderId: text("order_id"),
+  operator: text("operator").default("").notNull(),
+  detail: text("detail").default("").notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 请求日志表（限流统计） ──
+export const requestLogs = sqliteTable("request_logs", {
+  id: text("id").primaryKey(),
+  ipHash: text("ip_hash").notNull(),
+  method: text("method").notNull(),
+  path: text("path").notNull(),
+  action: text("action").notNull(),
+  statusCode: integer("status_code").notNull(),
+  createdAt: text("created_at").default("").notNull()
+});
+
+// ── 幂等键表、管理员审计日志表 ──
+// 已从 @eforge/cf-core/db/schema 导入，不再本地定义
+
+// ── 邮件发送日志表 ──
+export const emailLogs = sqliteTable("email_logs", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id"),
+  toEmail: text("to_email").notNull(),
+  template: text("template").notNull(),
+  status: text("status").default("pending").notNull(),
+  provider: text("provider").default("").notNull(),
+  errorMessage: text("error_message").default("").notNull(),
+  createdAt: text("created_at").default("").notNull(),
+  sentAt: text("sent_at")
+});
+
+// ── 系统配置表 ──
+// 已从 @eforge/cf-core/db/schema 导入，不再本地定义
+
+// ── 充值码表（预付费凭证：在站外收款后生成，用户兑换为余额） ──
+// 充值码 vs 优惠码（coupons）的区别：
+// - 充值码：用户先付款买码，兑换后存入 user_balances 余额，在购买时使用余额支付
+// - 优惠码：商品折扣凭证，下单时直接减免金额
+// 充值码是"预充值"模式，优惠码是"折扣"模式，两者互补。
+export const voucherCodes = sqliteTable("voucher_codes", {
+  code: text("code").primaryKey(),
+  amountCents: integer("amount_cents").default(0).notNull(),
+  status: text("status").default("active").notNull(), // active | used | expired | revoked
+  usedByEmail: text("used_by_email").default("").notNull(),
+  usedAt: text("used_at"),
+  expiresAt: text("expires_at"),
   batchId: text("batch_id").default("").notNull(),
-  /** 备注 */
   notes: text("notes").default("").notNull(),
-  /** 创建时间 */
   createdAt: text("created_at").default("").notNull(),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 用户余额表（充值码兑换后的余额，按邮箱聚合）
-// ═══════════════════════════════════════════════════════════════════════════════
-
+// ── 用户余额表（充值码兑换后的余额，按邮箱聚合） ──
+// 充值码兑换后余额存入此表，下单时可选余额支付。
+// balance_cents 为当前可用余额，total_deposited 为累计充值总额。
 export const userBalances = sqliteTable("user_balances", {
-  /** 邮箱（主键） */
   email: text("email").primaryKey(),
-  /** 当前可用余额（分） */
   balanceCents: integer("balance_cents").default(0).notNull(),
-  /** 累计充值总额（分） */
   totalDepositedCents: integer("total_deposited_cents").default(0).notNull(),
-  /** 累计消费总额（分） */
   totalSpentCents: integer("total_spent_cents").default(0).notNull(),
-  /** 更新时间 */
   updatedAt: text("updated_at").default("").notNull(),
 });
+
+// ── 速率限制窗口表 ──
+// 已从 @eforge/cf-core/db/schema 导入，不再本地定义
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// drizzle-zod 自动生成的 Insert Schema
+// 基于 DB 表结构自动生成，schema 与 DB 永远同步，无需手动维护两套。
+// 路由层在此基础上 extend() 添加业务校验（正则、枚举、长度限制等）。
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const insertProductSchema = createInsertSchema(products);
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+
+export const insertCardSchema = createInsertSchema(cards);
+export type InsertCard = z.infer<typeof insertCardSchema>;
+
+export const insertCardBatchSchema = createInsertSchema(cardBatches);
+export type InsertCardBatch = z.infer<typeof insertCardBatchSchema>;
+
+export const insertOrderSchema = createInsertSchema(orders);
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+
+export const insertOrderEventSchema = createInsertSchema(orderEvents);
+export type InsertOrderEvent = z.infer<typeof insertOrderEventSchema>;
+
+export const insertCampaignSchema = createInsertSchema(campaigns);
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
+
+export const insertReferralCodeSchema = createInsertSchema(referralCodes);
+export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
+
+export const insertReferralEventSchema = createInsertSchema(referralEvents);
+export type InsertReferralEvent = z.infer<typeof insertReferralEventSchema>;
+
+export const insertCouponSchema = createInsertSchema(coupons);
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+
+export const insertCardLogSchema = createInsertSchema(cardLogs);
+export type InsertCardLog = z.infer<typeof insertCardLogSchema>;
+
+export const insertRequestLogSchema = createInsertSchema(requestLogs);
+export type InsertRequestLog = z.infer<typeof insertRequestLogSchema>;
+
+export const insertIdempotencyKeySchema = createInsertSchema(idempotencyKeys);
+export type InsertIdempotencyKey = z.infer<typeof insertIdempotencyKeySchema>;
+
+export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLogs);
+export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
+
+export const insertEmailLogSchema = createInsertSchema(emailLogs);
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+
+export const insertSystemConfigSchema = createInsertSchema(systemConfig);
+export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 充值码 & 用户余额 ORM Insert Schema
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const insertVoucherCodeSchema = createInsertSchema(voucherCodes);
+export type InsertVoucherCode = z.infer<typeof insertVoucherCodeSchema>;
+
+export const insertUserBalanceSchema = createInsertSchema(userBalances);
+export type InsertUserBalance = z.infer<typeof insertUserBalanceSchema>;
