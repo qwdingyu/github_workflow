@@ -10,7 +10,7 @@ bucket = "./_site"
 
 # 构建配置
 [build]
-command = "npm run build"
+command = "pnpm run build"
 output_dir = "_site"
 
 # 环境变量（可选）

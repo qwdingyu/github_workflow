@@ -1,0 +1,26 @@
+{
+  "siteName": "DevTools",
+  "description": "Free online developer tools — JSON formatter, Base64 encoder, UUID generator and more",
+  "locale": "en-US",
+  "url": "https://devtools.pages.dev",
+  "ogImage": "/og-image.svg",
+  "author": "DevTools Team",
+  "ga4Id": "",
+  "social": {
+    "twitter": "",
+    "github": "",
+    "weibo": "",
+    "zhihu": "",
+    "juejin": ""
+  },
+  "wechat": {
+    "account": "DevTools",
+    "qrcode": "/wechat-qrcode.svg"
+  },
+  "footerLinks": [
+    { "label": "Privacy Policy", "url": "/privacy/" },
+    { "label": "Terms of Service", "url": "/terms/" },
+    { "label": "About Us", "url": "/about/" }
+  ],
+  "themeColor": "#2563eb"
+}

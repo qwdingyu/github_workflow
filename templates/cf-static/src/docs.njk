@@ -8,6 +8,7 @@ permalink: "/docs/{{ doc.slug }}/"
 eleventyComputed:
   title: "{{ doc.title }}"
   description: "{{ doc.description }}"
+  canonical: "{{ config.url }}{{ page.url }}"
 ---
 
 <article class="doc">

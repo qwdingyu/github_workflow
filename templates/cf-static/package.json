@@ -1,8 +1,8 @@
 {
-  "name": "cf-static",
+  "name": "devtools-static",
   "version": "0.1.0",
   "private": true,
-  "description": "Cloudflare Pages 纯静态站模板 — SEO 工具站 / 文档站 / 博客 / 落地页（11ty 驱动）",
+  "description": "Free online developer tools — SEO-friendly static site powered by Eleventy, deployed on Cloudflare Pages",
   "type": "module",
   "scripts": {
     "dev": "eleventy --serve",

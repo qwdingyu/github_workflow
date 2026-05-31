@@ -3,6 +3,8 @@ layout: base.njk
 title: 博客文章
 description: 开发工具使用教程和技术文章
 permalink: /posts/index.html
+eleventyComputed:
+  canonical: "{{ config.url }}/posts/"
 ---
 
 <section class="posts-list">
@@ -22,3 +24,24 @@ permalink: /posts/index.html
     {% endfor %}
   </div>
 </section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": "博客文章",
+  "description": "开发工具使用教程和技术文章",
+  "url": "{{ config.url }}/posts/",
+  "blogPost": [
+    {% for post in posts %}
+    {
+      "@type": "BlogPosting",
+      "headline": "{{ post.title }}",
+      "description": "{{ post.description }}",
+      "datePublished": "{{ post.date }}",
+      "url": "{{ config.url }}/posts/{{ post.slug }}/"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>

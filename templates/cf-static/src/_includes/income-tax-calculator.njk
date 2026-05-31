@@ -1,0 +1,49 @@
+<form class="calculator-form" onsubmit="return false;">
+  <div class="form-group">
+    <label for="monthlySalary">税前月薪（元）</label>
+    <input type="number" id="monthlySalary" placeholder="如 20000" min="0" step="100">
+  </div>
+
+  <div class="form-group">
+    <label for="socialInsurance">个人五险一金（元/月）</label>
+    <input type="number" id="socialInsurance" placeholder="如 3000" min="0" step="100">
+    <small class="form-hint">可使用五险一金计算器计算后填入</small>
+  </div>
+
+  <div class="form-group">
+    <label for="bonus">年终奖（元）</label>
+    <input type="number" id="bonus" placeholder="如 30000（无则留空）" min="0" step="100">
+  </div>
+
+  <fieldset class="form-fieldset">
+    <legend>专项附加扣除</legend>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="childrenEducation"> 子女教育（每个子女 ¥2000/月）
+    </label>
+    <div class="children-count-group" style="display:none; margin-top:4px;">
+      <label>子女数量：</label>
+      <input type="number" id="childrenCount" value="1" min="1" max="10" style="width:60px;">
+    </div>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="continuingEducation"> 继续教育（¥400/月）
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="housingLoan"> 住房贷款利息（¥1000/月）
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="housingRent"> 住房租金（¥1500/月）
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" id="elderlyCare"> 赡养老人（¥3000/月）
+    </label>
+  </fieldset>
+
+  <button type="button" id="calculateBtn" class="btn-primary">计算个税</button>
+</form>
+
+<div id="result" style="display:none;" class="calculator-result"></div>
