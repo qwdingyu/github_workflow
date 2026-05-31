@@ -30,12 +30,12 @@ export function ok(
 export function fail(
   c: Context<any>,
   message: string,
-  status: ContentfulStatusCode = 400,
+  status: number = 400,
   details?: unknown,
 ) {
   return c.json(
     { ok: false, error: message, ...(details ? { details } : {}) } as Record<string, unknown>,
-    status,
+    status as ContentfulStatusCode,
   );
 }
 

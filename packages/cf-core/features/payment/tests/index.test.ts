@@ -9,9 +9,8 @@ import {
   trc20Factory,
   signRSA2,
   verifyRSA2,
-  type ProviderFactory,
-  type PaymentProvider,
 } from "../index";
+import type { ProviderFactory, PaymentProvider } from "../index";
 
 // ── 测试用 RSA 密钥对（2048-bit，仅用于测试） ──
 const TEST_PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----
