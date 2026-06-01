@@ -605,7 +605,7 @@ footer nav a:hover { color: var(--accent); }
   main { padding: 0; }
 }
 
-/* ── 分类系统 ── */
+/* ── Category System ── */
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

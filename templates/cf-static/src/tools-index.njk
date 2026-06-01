@@ -1,14 +1,14 @@
 ---
 layout: base.njk
-title: 所有工具
-description: 免费在线开发工具集合
+title: All Tools
+description: Free online developer tools collection
 eleventyComputed:
   canonical: "{{ config.url }}/tools-index/"
 ---
 
 <section class="tools-list">
-  <h1>所有工具</h1>
-  <p class="description">免费在线开发工具集合，所有操作在浏览器中完成</p>
+  <h1>All Tools</h1>
+  <p class="description">Free online developer tools — all operations run in your browser</p>
 
   <div class="tools-grid">
     {% for tool in tools %}
@@ -28,8 +28,8 @@ eleventyComputed:
 {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "所有工具",
-  "description": "免费在线开发工具集合，包含格式化工具、编解码工具、加密工具、文本处理、生成器和财务计算器",
+  "name": "All Tools",
+  "description": "Free online developer tools including formatters, encoders, hash generators, text processors, and utilities",
   "url": "{{ config.url }}/tools-index/",
   "hasPart": [
     {% for tool in tools %}

@@ -1,7 +1,7 @@
 ---
 layout: base.njk
-title: 关于我们
-description: "在线开发工具 — 专注于为开发者和普通用户提供免费、高效的在线工具"
+title: About Us
+description: "DevTools — Free, fast, privacy-focused online developer tools"
 permalink: /about/
 eleventyComputed:
   canonical: "{{ config.url }}/about/"
@@ -10,64 +10,60 @@ eleventyComputed:
 <section class="article-container">
   <article>
     <header class="article-header">
-      <h1>关于我们</h1>
+      <h1>About Us</h1>
     </header>
 
     <div class="article-content">
-      <h2>{{ config.siteName }} 是什么？</h2>
-      <p>{{ config.siteName }} 是一个免费的在线工具平台，致力于为开发者和普通用户提供高效、便捷的在线工具。我们的工具涵盖<strong>代码格式化</strong>、<strong>数据编解码</strong>、<strong>财务计算</strong>等多个领域，所有工具均在浏览器本地运行，无需安装任何软件。</p>
+      <h2>What is {{ config.siteName }}?</h2>
+      <p>{{ config.siteName }} is a free online developer tools platform. Our tools cover <strong>code formatting</strong>, <strong>data encoding/decoding</strong>, <strong>hashing</strong>, <strong>text processing</strong>, and more. All tools run locally in your browser — no installation required.</p>
 
-      <h2>我们的理念</h2>
+      <h2>Our Principles</h2>
 
-      <h3>隐私优先</h3>
-      <p>我们深知数据安全的重要性。所有工具的计算和处理均在您的浏览器中完成，您的数据不会发送到任何服务器。这意味着：</p>
+      <h3>Privacy First</h3>
+      <p>All computations happen in your browser. Your data is never sent to any server. This means:</p>
       <ul>
-        <li>您的代码不会泄露给第三方</li>
-        <li>您的财务数据不会被记录</li>
-        <li>即使网站关闭，您的数据依然安全</li>
+        <li>Your code is never exposed to third parties</li>
+        <li>Your data is never recorded or stored</li>
+        <li>Even if the website goes down, your data remains safe</li>
       </ul>
 
-      <h3>完全免费</h3>
-      <p>我们坚信基础工具应该是每个人都能自由使用的。目前所有工具完全免费开放，无需注册账号，没有使用次数限制。</p>
+      <h3>100% Free</h3>
+      <p>We believe essential developer tools should be freely accessible. All tools are completely free with no registration required and no usage limits.</p>
 
-      <h3>极致性能</h3>
-      <p>基于静态网站技术构建，部署在全球 CDN 上，无论您在哪里访问，都能享受到极快的加载速度和流畅的使用体验。</p>
+      <h3>Lightning Fast</h3>
+      <p>Built as a static site and deployed on a global CDN. Fast load times and smooth experience, no matter where you are.</p>
 
-      <h3>持续更新</h3>
-      <p>我们持续倾听用户反馈，不断添加新工具、优化现有功能。如果您有工具需求或改进建议，欢迎通过以下方式联系我们。</p>
+      <h3>Continuously Improved</h3>
+      <p>We listen to user feedback and constantly add new tools and improve existing ones. If you have suggestions, feel free to contact us.</p>
 
-      <h2>技术架构</h2>
-      <p>本站采用现代化的技术栈构建：</p>
+      <h2>Technology Stack</h2>
+      <p>Built with modern technologies:</p>
       <ul>
-        <li><strong>静态站点生成：</strong>Eleventy（11ty），轻量高效的静态站点生成器。</li>
-        <li><strong>全球部署：</strong>Cloudflare Pages，利用 Cloudflare 全球 CDN 提供快速访问。</li>
-        <li><strong>前端技术：</strong>纯 HTML/CSS/JavaScript，无框架依赖，确保最佳性能。</li>
-        <li><strong>隐私保护：</strong>所有数据处理在浏览器端完成，零后端依赖。</li>
+        <li><strong>Static Site Generator:</strong> Eleventy (11ty), lightweight and efficient.</li>
+        <li><strong>Global Deployment:</strong> Cloudflare Pages with global CDN for fast access worldwide.</li>
+        <li><strong>Frontend:</strong> Pure HTML/CSS/JavaScript, no framework dependencies, optimal performance.</li>
+        <li><strong>Privacy:</strong> All data processing happens client-side, zero backend dependency.</li>
       </ul>
 
-      <h2>现有工具</h2>
-      <p>我们目前提供 {{ tools | length }} 个在线工具，涵盖以下类别：</p>
+      <h2>Available Tools</h2>
+      <p>We currently offer {{ tools | length }} online tools across these categories:</p>
       <ul>
-        <li><strong>格式化工具：</strong>JSON 格式化等，帮助开发者快速美化代码。</li>
-        <li><strong>编解码工具：</strong>Base64、URL 编码解码，满足日常开发需求。</li>
-        <li><strong>加密工具：</strong>MD5 生成，快速生成数据摘要。</li>
-        <li><strong>文本处理：</strong>正则表达式测试，方便调试正则表达式。</li>
-        <li><strong>生成器：</strong>UUID 生成、时间戳转换等实用工具。</li>
-        <li><strong>财务计算器：</strong>个人所得税计算、五险一金计算，帮助您了解收入明细。</li>
+        <li><strong>Formatting:</strong> JSON formatter for quick code beautification.</li>
+        <li><strong>Encoding:</strong> Base64 and URL encoder/decoder for everyday development needs.</li>
+        <li><strong>Hashing:</strong> MD5 generator for quick data checksums.</li>
+        <li><strong>Text Processing:</strong> Regex tester for debugging regular expressions.</li>
+        <li><strong>Generators:</strong> UUID generator, timestamp converter, and other utilities.</li>
+        <li><strong>Security:</strong> HTML escape/unescape for XSS prevention.</li>
       </ul>
-      <p>查看更多工具：<a href="/tools-index/">所有工具 →</a></p>
+      <p>See all tools: <a href="/tools-index/">All Tools →</a></p>
 
-      <h2>联系我们</h2>
-      <p>如果您有任何问题、建议或合作需求，欢迎通过以下方式联系我们：</p>
-      <ul>
-        <li>微信公众号：{{ config.wechat.account }}（扫码关注公众号）</li>
-      </ul>
+      <h2>Contact Us</h2>
+      <p>If you have questions, suggestions, or partnership inquiries, reach out to us at: <a href="mailto:hello@devtools.pages.dev">hello@devtools.pages.dev</a></p>
 
-      <h2>法律声明</h2>
+      <h2>Disclaimer</h2>
       <ul>
-        <li>本站提供的计算结果仅供参考，不构成任何专业建议。</li>
-        <li>财务计算器基于公开政策数据，实际金额以官方部门为准。</li>
-        <li>使用本站服务即表示您同意我们的<a href="/terms/">服务条款</a>和<a href="/privacy/">隐私政策</a>。</li>
+        <li>Results provided by our tools are for reference only and do not constitute professional advice.</li>
+        <li>By using this website, you agree to our <a href="/terms/">Terms of Service</a> and <a href="/privacy/">Privacy Policy</a>.</li>
       </ul>
     </div>
   </article>

@@ -1,8 +1,14 @@
----
-permalink: /robots.txt
-eleventyExcludeFromCollections: true
----
 User-agent: *
+Allow: /
+
+# AI crawlers
+User-agent: GPTBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Googlebot
 Allow: /
 
 Sitemap: {{ config.url }}/sitemap.xml

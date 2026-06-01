@@ -1,16 +1,16 @@
 /**
- * Regex Tester - 正则表达式测试器
+ * Regex Tester - Regular Expression Tester
  */
 
 function processTool() {
   const pattern = document.getElementById('input').value;
-  const testString = document.getElementById('test-string')?.value || '';
+  const testString = document.getElementById('test-string').value;
+  const flags = document.getElementById('flags').value;
   const output = document.getElementById('output');
-  const flags = document.getElementById('flags')?.value || 'g';
 
   try {
     if (!pattern) {
-      throw new Error('请输入正则表达式');
+      throw new Error('Please enter a regular expression');
     }
 
     const regex = new RegExp(pattern, flags);
@@ -18,20 +18,20 @@ function processTool() {
     let match;
 
     if (flags.includes('g')) {
-      // 全局匹配
+      // Global match
       while ((match = regex.exec(testString)) !== null) {
         matches.push({
           value: match[0],
           index: match.index,
           groups: match.slice(1)
         });
-        // 防止零宽度匹配导致无限循环
+        // Prevent infinite loop on zero-width matches
         if (match.index === regex.lastIndex) {
           regex.lastIndex++;
         }
       }
     } else {
-      // 单次匹配
+      // Single match
       match = regex.exec(testString);
       if (match) {
         matches.push({
@@ -43,17 +43,17 @@ function processTool() {
     }
 
     if (matches.length === 0) {
-      output.value = '❌ 未找到匹配项';
+      output.value = '❌ No matches found';
       output.classList.add('error');
       output.classList.remove('success');
     } else {
-      let result = `找到 ${matches.length} 个匹配:\n\n`;
+      let result = `Found ${matches.length} match(es):\n\n`;
       matches.forEach((m, i) => {
-        result += `匹配 ${i + 1}:\n`;
-        result += `  值: "${m.value}"\n`;
-        result += `  位置: ${m.index}\n`;
+        result += `Match ${i + 1}:\n`;
+        result += `  Value: "${m.value}"\n`;
+        result += `  Index: ${m.index}\n`;
         if (m.groups.length > 0) {
-          result += `  捕获组: ${m.groups.map((g, j) => `$${j + 1}="${g}"`).join(', ')}\n`;
+          result += `  Groups: ${m.groups.map((g, j) => `$${j + 1}="${g}"`).join(', ')}\n`;
         }
         result += '\n';
       });
@@ -62,7 +62,7 @@ function processTool() {
       output.classList.add('success');
     }
   } catch (e) {
-    output.value = '❌ 正则表达式错误: ' + e.message;
+    output.value = '❌ Regex error: ' + e.message;
     output.classList.add('error');
     output.classList.remove('success');
   }
@@ -70,24 +70,25 @@ function processTool() {
 
 function copyOutput() {
   const output = document.getElementById('output');
-  if (!output.value) return;
-
-  navigator.clipboard.writeText(output.value).then(() => {
-    const btn = document.querySelector('.tool-actions .btn-secondary');
-    if (btn) {
-      const originalText = btn.textContent;
-      btn.textContent = '✓ 已复制';
-      setTimeout(() => { btn.textContent = originalText; }, 2000);
-    }
-  }).catch(() => {
-    output.select();
-  });
+  if (output && output.value) {
+    navigator.clipboard.writeText(output.value).then(() => {
+      const btn = document.querySelector('.tool-actions .btn-secondary');
+      if (btn) {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      }
+    }).catch(() => {
+      // Fallback: select text for manual copy
+      output.select();
+    });
+  }
 }
 
 function clearAll() {
   document.getElementById('input').value = '';
-  const testString = document.getElementById('test-string');
-  if (testString) testString.value = '';
+  document.getElementById('test-string').value = '';
+  document.getElementById('flags').value = 'g';
   document.getElementById('output').value = '';
   document.getElementById('output').classList.remove('error', 'success');
 }

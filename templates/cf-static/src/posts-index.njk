@@ -1,15 +1,15 @@
 ---
 layout: base.njk
-title: 博客文章
-description: 开发工具使用教程和技术文章
+title: Blog
+description: DevTools tutorials and technical articles
 permalink: /posts/index.html
 eleventyComputed:
   canonical: "{{ config.url }}/posts/"
 ---
 
 <section class="posts-list">
-  <h1>博客文章</h1>
-  <p class="description">开发工具使用教程和技术文章</p>
+  <h1>Blog</h1>
+  <p class="description">DevTools tutorials and technical articles</p>
 
   <div class="posts-grid">
     {% for post in posts %}
@@ -29,8 +29,8 @@ eleventyComputed:
 {
   "@context": "https://schema.org",
   "@type": "Blog",
-  "name": "博客文章",
-  "description": "开发工具使用教程和技术文章",
+  "name": "Blog",
+  "description": "DevTools tutorials and technical articles",
   "url": "{{ config.url }}/posts/",
   "blogPost": [
     {% for post in posts %}

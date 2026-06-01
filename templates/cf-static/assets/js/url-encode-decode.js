@@ -1,5 +1,5 @@
 /**
- * URL Encoder/Decoder - URL 编解码工具
+ * URL Encoder/Decoder
  */
 
 function processTool() {
@@ -18,7 +18,7 @@ function processTool() {
     output.classList.remove('error');
     output.classList.add('success');
   } catch (e) {
-    output.value = '❌ ' + (mode === 'encode' ? '编码' : '解码') + '失败: ' + e.message;
+    output.value = '❌ ' + (mode === 'encode' ? 'Encode' : 'Decode') + ' failed: ' + e.message;
     output.classList.add('error');
     output.classList.remove('success');
   }
@@ -32,11 +32,11 @@ function copyOutput() {
     const btn = document.querySelector('.tool-actions .btn-secondary');
     if (btn) {
       const originalText = btn.textContent;
-      btn.textContent = '✓ 已复制';
+      btn.textContent = '✓ Copied';
       setTimeout(() => { btn.textContent = originalText; }, 2000);
     }
   }).catch(() => {
-    // 降级方案：选中文本让用户手动复制
+    // Fallback: select text for manual copy
     output.select();
   });
 }

@@ -1,5 +1,5 @@
 /**
- * HTML Escape/Unescape - HTML 转义工具
+ * HTML Escape/Unescape
  */
 
 function escapeHtml(str) {
@@ -31,7 +31,7 @@ function processTool() {
 
   try {
     if (!input) {
-      throw new Error('请输入要处理的文本');
+      throw new Error('Please enter text to process');
     }
 
     let result;
@@ -45,7 +45,7 @@ function processTool() {
     output.classList.remove('error');
     output.classList.add('success');
   } catch (e) {
-    output.value = '❌ 处理失败: ' + e.message;
+    output.value = '❌ Processing failed: ' + e.message;
     output.classList.add('error');
     output.classList.remove('success');
   }
@@ -59,7 +59,7 @@ function copyOutput() {
     const btn = document.querySelector('.tool-actions .btn-secondary');
     if (btn) {
       const originalText = btn.textContent;
-      btn.textContent = '✓ 已复制';
+      btn.textContent = '✓ Copied';
       setTimeout(() => { btn.textContent = originalText; }, 2000);
     }
   }).catch(() => {

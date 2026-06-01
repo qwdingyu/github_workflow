@@ -8,14 +8,7 @@
   "ga4Id": "",
   "social": {
     "twitter": "",
-    "github": "",
-    "weibo": "",
-    "zhihu": "",
-    "juejin": ""
-  },
-  "wechat": {
-    "account": "DevTools",
-    "qrcode": "/wechat-qrcode.svg"
+    "github": ""
   },
   "footerLinks": [
     { "label": "Privacy Policy", "url": "/privacy/" },

@@ -1,10 +1,10 @@
 [
   {
     "slug": "getting-started",
-    "title": "快速入门指南",
-    "description": "了解如何使用我们的免费在线开发工具集合，包括 JSON 格式化、Base64 编解码、UUID 生成等。",
+    "title": "Getting Started with DevTools",
+    "description": "Learn how to use our free online developer tools including JSON formatter, Base64 encoder, UUID generator, and more.",
     "date": "2026-05-30",
-    "author": "在线开发工具团队",
-    "content": "<h2>欢迎使用在线开发工具</h2><p>我们提供一系列免费的在线开发工具，所有操作都在您的浏览器中完成，不会向任何服务器发送数据，保护您的隐私。</p><h3>可用工具</h3><ul><li><a href=\"/tools/json-formatter/\">JSON 格式化工具</a> — 格式化、美化和验证 JSON 数据</li><li><a href=\"/tools/base64-decode/\">Base64 编解码工具</a> — 编码和解码 Base64 字符串</li><li><a href=\"/tools/md5-generator/\">MD5 哈希生成器</a> — 生成 MD5 哈希值</li><li><a href=\"/tools/regex-tester/\">正则表达式测试器</a> — 测试和验证实则表达式</li><li><a href=\"/tools/url-encode-decode/\">URL 编解码工具</a> — 编码和解码 URL 字符串</li><li><a href=\"/tools/html-escape/\">HTML 转义工具</a> — 转义和反转义 HTML 特殊字符</li><li><a href=\"/tools/timestamp-converter/\">时间戳转换器</a> — 转换 Unix 时间戳和日期时间</li><li><a href=\"/tools/uuid-generator/\">UUID v4 生成器</a> — 生成随机 UUID v4</li><li><a href=\"/tools/social-insurance-calculator/\">五险一金计算器</a> — 计算五险一金缴费金额</li><li><a href=\"/tools/income-tax-calculator/\">个税计算器</a> — 计算个人所得税</li></ul><h3>隐私保护</h3><p>所有工具完全在您的浏览器中运行，不会向任何服务器发送数据。您的数据始终保留在本地，保护您的隐私。</p><h3>免费使用</h3><p>所有工具完全免费，没有使用限制。您可以随意使用，无需注册或付费。</p>"
+    "author": "DevTools Team",
+    "content": "<h2>Welcome to DevTools</h2><p>We provide a collection of free online developer tools. All operations run in your browser — no data is sent to any server.</p><h3>Available Tools</h3><ul><li><a href=\"/tools/json-formatter/\">JSON Formatter</a> — Format, beautify, and validate JSON data</li><li><a href=\"/tools/base64-decode/\">Base64 Encoder/Decoder</a> — Encode and decode Base64 strings</li><li><a href=\"/tools/md5-generator/\">MD5 Hash Generator</a> — Generate MD5 hash values</li><li><a href=\"/tools/regex-tester/\">Regex Tester</a> — Test and validate regular expressions</li><li><a href=\"/tools/url-encode-decode/\">URL Encoder/Decoder</a> — Encode and decode URL strings</li><li><a href=\"/tools/html-escape/\">HTML Escape/Unescape</a> — Escape and unescape HTML special characters</li><li><a href=\"/tools/timestamp-converter/\">Timestamp Converter</a> — Convert Unix timestamps and dates</li><li><a href=\"/tools/uuid-generator/\">UUID v4 Generator</a> — Generate random UUID v4</li></ul><h3>Privacy</h3><p>All tools run entirely in your browser. No data is ever sent to any server. Your data stays on your device.</p><h3>100% Free</h3><p>All tools are completely free with no usage limits. No registration required.</p>"
   }
 ]

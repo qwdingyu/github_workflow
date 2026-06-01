@@ -1,15 +1,15 @@
 ---
 layout: base.njk
-title: 文档
-description: 在线开发工具使用文档
+title: Documentation
+description: DevTools documentation and guides
 permalink: /docs/index.html
 eleventyComputed:
   canonical: "{{ config.url }}/docs/"
 ---
 
 <section class="docs-list">
-  <h1>文档</h1>
-  <p class="description">在线开发工具使用文档</p>
+  <h1>Documentation</h1>
+  <p class="description">DevTools documentation and guides</p>
 
   <div class="docs-grid">
     {% for doc in docs %}
@@ -25,8 +25,8 @@ eleventyComputed:
 {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "文档",
-  "description": "在线开发工具使用文档",
+  "name": "Documentation",
+  "description": "DevTools documentation and guides",
   "url": "{{ config.url }}/docs/",
   "hasPart": [
     {% for doc in docs %}

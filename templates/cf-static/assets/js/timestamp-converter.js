@@ -1,5 +1,5 @@
 /**
- * Timestamp Converter - 时间戳转换器
+ * Timestamp Converter
  */
 
 function processTool() {
@@ -8,44 +8,44 @@ function processTool() {
 
   try {
     if (!input) {
-      throw new Error('请输入时间戳或日期时间');
+      throw new Error('Please enter a timestamp or date');
     }
 
     let result;
-    // 判断输入是时间戳还是日期字符串
+    // Check if input is a timestamp or date string
     if (/^\d+$/.test(input)) {
-      // 输入是时间戳
+      // Input is a timestamp
       const timestamp = parseInt(input);
-      // 判断是秒级还是毫秒级
+      // Determine seconds vs milliseconds
       const date = new Date(timestamp < 10000000000 ? timestamp * 1000 : timestamp);
-      
+
       if (isNaN(date.getTime())) {
-        throw new Error('无效的时间戳');
+        throw new Error('Invalid timestamp');
       }
 
-      result = `日期时间: ${date.toLocaleString('zh-CN')}\n`;
-      result += `ISO 格式: ${date.toISOString()}\n`;
-      result += `UTC 时间: ${date.toUTCString()}\n`;
-      result += `\n时间戳 (秒): ${Math.floor(date.getTime() / 1000)}\n`;
-      result += `时间戳 (毫秒): ${date.getTime()}`;
+      result = `Date/Time: ${date.toLocaleString('en-US')}\n`;
+      result += `ISO: ${date.toISOString()}\n`;
+      result += `UTC: ${date.toUTCString()}\n`;
+      result += `\nTimestamp (seconds): ${Math.floor(date.getTime() / 1000)}\n`;
+      result += `Timestamp (milliseconds): ${date.getTime()}`;
     } else {
-      // 输入是日期字符串
+      // Input is a date string
       const date = new Date(input);
       if (isNaN(date.getTime())) {
-        throw new Error('无效的日期格式');
+        throw new Error('Invalid date format');
       }
 
-      result = `时间戳 (秒): ${Math.floor(date.getTime() / 1000)}\n`;
-      result += `时间戳 (毫秒): ${date.getTime()}\n`;
-      result += `\nISO 格式: ${date.toISOString()}\n`;
-      result += `UTC 时间: ${date.toUTCString()}`;
+      result = `Timestamp (seconds): ${Math.floor(date.getTime() / 1000)}\n`;
+      result += `Timestamp (milliseconds): ${date.getTime()}\n`;
+      result += `\nISO: ${date.toISOString()}\n`;
+      result += `UTC: ${date.toUTCString()}`;
     }
 
     output.value = result;
     output.classList.remove('error');
     output.classList.add('success');
   } catch (e) {
-    output.value = '❌ 转换失败: ' + e.message;
+    output.value = '❌ Conversion failed: ' + e.message;
     output.classList.add('error');
     output.classList.remove('success');
   }
@@ -59,7 +59,7 @@ function copyOutput() {
     const btn = document.querySelector('.tool-actions .btn-secondary');
     if (btn) {
       const originalText = btn.textContent;
-      btn.textContent = '✓ 已复制';
+      btn.textContent = '✓ Copied';
       setTimeout(() => { btn.textContent = originalText; }, 2000);
     }
   }).catch(() => {
@@ -73,16 +73,16 @@ function clearAll() {
   document.getElementById('output').classList.remove('error', 'success');
 }
 
-// 实时显示当前时间戳
+// Live current timestamp display
 function updateCurrentTimestamp() {
   const now = new Date();
   const el = document.getElementById('current-timestamp');
   if (el) {
-    el.textContent = `当前时间戳: ${Math.floor(now.getTime() / 1000)}`;
+    el.textContent = `Current timestamp: ${Math.floor(now.getTime() / 1000)}`;
   }
 }
 
-// 页面加载时更新
+// Update on page load
 if (document.getElementById('current-timestamp')) {
   updateCurrentTimestamp();
   setInterval(updateCurrentTimestamp, 1000);

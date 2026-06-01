@@ -1,177 +1,177 @@
 [
   {
     "slug": "json-formatter",
-    "title": "JSON 格式化与美化工具",
-    "description": "在线格式化、美化和验证 JSON 数据。免费、快速、注重隐私 — 数据不会发送到任何服务器。",
-    "keywords": ["json 格式化", "json 美化", "json 验证", "在线格式化 json", "json 漂亮打印"],
-    "category": "格式化",
+    "title": "JSON Formatter & Beautifier",
+    "description": "Format, beautify, and validate JSON data online. Free, fast, privacy-focused — no data is sent to any server.",
+    "keywords": ["json formatter", "json beautify", "json validator", "online json formatter", "json pretty print"],
+    "category": "Formatting",
     "icon": "{ }",
     "faq": [
       {
-        "question": "什么是 JSON 格式化工具？",
-        "answer": "JSON 格式化工具是一款免费的在线工具，可以格式化、美化和验证 JSON 数据。它能让原始 JSON 数据变得易于阅读，具有适当的缩进和语法高亮。"
+        "question": "What is a JSON formatter?",
+        "answer": "A JSON formatter is a free online tool that formats, beautifies, and validates JSON data. It makes raw JSON data readable with proper indentation and syntax highlighting."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有格式化操作完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All formatting happens entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "这个工具免费吗？",
-        "answer": "是的，完全免费，没有使用限制。"
+        "question": "Is this tool free?",
+        "answer": "Yes, completely free with no usage limits."
       }
     ]
   },
   {
     "slug": "base64-decode",
-    "title": "Base64 编解码工具",
-    "description": "在线解码和编码 Base64 字符串。免费、快速、注重隐私 — 所有操作在浏览器中完成。",
-    "keywords": ["base64 解码", "base64 编码", "base64 转换器", "在线解码 base64", "base64 转文本"],
-    "category": "编解码",
+    "title": "Base64 Encoder & Decoder",
+    "description": "Encode and decode Base64 strings online. Free, fast, privacy-focused — all operations run in your browser.",
+    "keywords": ["base64 decode", "base64 encode", "base64 converter", "online base64 decoder", "base64 to text"],
+    "category": "Encoding",
     "icon": "B64",
     "faq": [
       {
-        "question": "什么是 Base64？",
-        "answer": "Base64 是一种编码方案，用 ASCII 字符串格式表示二进制数据。它常用于在 URL、电子邮件附件和数据 URI 中编码数据。"
+        "question": "What is Base64?",
+        "answer": "Base64 is an encoding scheme that represents binary data in an ASCII string format. It's commonly used for encoding data in URLs, email attachments, and data URIs."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有编码和解码操作完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All encoding and decoding happens entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "可以编码文件吗？",
-        "answer": "可以，您可以粘贴文件内容或拖放小文件进行编码。"
+        "question": "Can I encode files?",
+        "answer": "Yes, you can paste file contents or drag-and-drop small files for encoding."
       }
     ]
   },
   {
     "slug": "md5-generator",
-    "title": "MD5 哈希生成器",
-    "description": "在线生成文本的 MD5 哈希值。快速、安全，所有计算在浏览器中完成。",
-    "keywords": ["md5 生成", "md5 哈希", "md5 在线", "md5 校验", "哈希计算"],
-    "category": "加密",
+    "title": "MD5 Hash Generator",
+    "description": "Generate MD5 hash values for text online. Fast and secure — all computations run in your browser.",
+    "keywords": ["md5 generator", "md5 hash", "md5 online", "md5 checksum", "hash calculator"],
+    "category": "Hashing",
     "icon": "#",
     "faq": [
       {
-        "question": "什么是 MD5？",
-        "answer": "MD5 是一种广泛使用的哈希函数，可以将任意长度的数据转换为固定长度的 128 位哈希值。"
+        "question": "What is MD5?",
+        "answer": "MD5 is a widely used hash function that converts data of arbitrary length into a fixed-length 128-bit hash value."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有哈希计算完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All hash computations happen entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "MD5 安全吗？",
-        "answer": "MD5 已被证明存在碰撞漏洞，不应用于密码存储等安全敏感场景。建议使用 SHA-256 等更安全的算法。"
+        "question": "Is MD5 secure?",
+        "answer": "MD5 has known collision vulnerabilities and should not be used for security-sensitive purposes like password storage. Consider SHA-256 or stronger algorithms."
       }
     ]
   },
   {
     "slug": "regex-tester",
-    "title": "正则表达式测试器",
-    "description": "在线测试和验证实则表达式。实时匹配、高亮显示、支持多种编程语言语法。",
-    "keywords": ["正则表达式", "regex 测试", "正则在线", "正则验证", "正则匹配"],
-    "category": "文本处理",
+    "title": "Regex Tester",
+    "description": "Test and validate regular expressions online. Real-time matching, highlight display, supports multiple programming language syntaxes.",
+    "keywords": ["regular expression", "regex tester", "regex online", "regex validator", "regex match"],
+    "category": "Text Processing",
     "icon": ".*",
     "faq": [
       {
-        "question": "什么是正则表达式？",
-        "answer": "正则表达式是一种文本模式，用于匹配、搜索和替换字符串中的特定模式。"
+        "question": "What is a regular expression?",
+        "answer": "A regular expression (regex) is a text pattern used for matching, searching, and replacing specific patterns in strings."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有正则匹配完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All regex matching happens entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "支持哪些编程语言的语法？",
-        "answer": "支持 JavaScript、Python、Java、PHP、Ruby 等多种编程语言的正则语法。"
+        "question": "Which programming language syntax is supported?",
+        "answer": "Supports regex syntax for JavaScript, Python, Java, PHP, Ruby, and other popular languages."
       }
     ]
   },
   {
     "slug": "url-encode-decode",
-    "title": "URL 编解码工具",
-    "description": "在线编码和解码 URL 字符串。支持百分号编码和 UTF-8 字符。",
-    "keywords": ["url 编码", "url 解码", "url encode", "url decode", "百分号编码"],
-    "category": "编解码",
+    "title": "URL Encoder & Decoder",
+    "description": "Encode and decode URL strings online. Supports percent-encoding and UTF-8 characters.",
+    "keywords": ["url encode", "url decode", "url encoder", "url decoder", "percent encoding"],
+    "category": "Encoding",
     "icon": "%",
     "faq": [
       {
-        "question": "什么是 URL 编码？",
-        "answer": "URL 编码（也叫百分号编码）是将特殊字符转换为 %XX 格式的过程，用于在 URL 中安全传输特殊字符。"
+        "question": "What is URL encoding?",
+        "answer": "URL encoding (also called percent-encoding) converts special characters into %XX format for safe transmission in URLs."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有编码和解码操作完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All encoding and decoding happens entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "支持中文字符吗？",
-        "answer": "支持，使用 UTF-8 编码，可以正确处理中文和其他 Unicode 字符。"
+        "question": "Does it support non-ASCII characters?",
+        "answer": "Yes, using UTF-8 encoding to correctly handle Chinese, emoji, and other Unicode characters."
       }
     ]
   },
   {
     "slug": "html-escape",
-    "title": "HTML 转义工具",
-    "description": "在线转义和反转义 HTML 特殊字符。防止 XSS 攻击，保护 Web 应用安全。",
-    "keywords": ["html 转义", "html escape", "html 反转义", "xss 防护", "html 特殊字符"],
-    "category": "安全",
+    "title": "HTML Escape & Unescape",
+    "description": "Escape and unescape HTML special characters online. Prevent XSS attacks and protect web application security.",
+    "keywords": ["html escape", "html unescape", "html escape online", "xss prevention", "html special characters"],
+    "category": "Security",
     "icon": "<>",
     "faq": [
       {
-        "question": "什么是 HTML 转义？",
-        "answer": "HTML 转义是将特殊字符（如 <、>、&、\"）转换为 HTML 实体的过程，防止 XSS 攻击。"
+        "question": "What is HTML escaping?",
+        "answer": "HTML escaping converts special characters like <, >, &, and \" into HTML entities to prevent XSS attacks."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有转义操作完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All escaping operations happen entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "支持哪些字符？",
-        "answer": "支持所有 HTML 特殊字符，包括 <、>、&、\"、'、以及 Unicode 字符。"
+        "question": "Which characters are supported?",
+        "answer": "Supports all HTML special characters including <, >, &, \", ', and Unicode characters."
       }
     ]
   },
   {
     "slug": "timestamp-converter",
-    "title": "时间戳转换器",
-    "description": "在线转换 Unix 时间戳和日期时间。支持秒级和毫秒级时间戳，实时显示当前时间。",
-    "keywords": ["时间戳转换", "unix 时间戳", "timestamp", "时间戳在线", "时间戳转换"],
-    "category": "转换",
+    "title": "Timestamp Converter",
+    "description": "Convert Unix timestamps to human-readable dates and vice versa. Supports seconds and milliseconds with live clock display.",
+    "keywords": ["timestamp converter", "unix timestamp", "timestamp", "timestamp online", "epoch converter"],
+    "category": "Conversion",
     "icon": "⏰",
     "faq": [
       {
-        "question": "什么是 Unix 时间戳？",
-        "answer": "Unix 时间戳是从 1970 年 1 月 1 日 00:00:00 UTC 开始计算的秒数。"
+        "question": "What is a Unix timestamp?",
+        "answer": "A Unix timestamp is the number of seconds elapsed since January 1, 1970, 00:00:00 UTC (the Unix epoch)."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有时间转换完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All time conversions happen entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "支持哪些格式？",
-        "answer": "支持 Unix 时间戳（秒和毫秒）、ISO 8601、UTC 时间等多种格式。"
+        "question": "Which formats are supported?",
+        "answer": "Supports Unix timestamps (seconds and milliseconds), ISO 8601, UTC time, and other common formats."
       }
     ]
   },
   {
     "slug": "uuid-generator",
-    "title": "UUID v4 生成器",
-    "description": "在线生成随机 UUID v4。符合 RFC 4122 标准，保证唯一性。",
-    "keywords": ["uuid 生成", "uuid v4", "uuid 在线", "uuid 生成器", "uuid generator"],
-    "category": "生成器",
+    "title": "UUID v4 Generator",
+    "description": "Generate random UUID v4 online. Compliant with RFC 4122 standard, guaranteed uniqueness.",
+    "keywords": ["uuid generator", "uuid v4", "uuid online", "uuid generator tool", "guid generator"],
+    "category": "Generator",
     "icon": "#",
     "faq": [
       {
-        "question": "什么是 UUID？",
-        "answer": "UUID（通用唯一识别码）是一个 128 位的标识符，用于在分布式系统中唯一标识信息。"
+        "question": "What is a UUID?",
+        "answer": "A UUID (Universally Unique Identifier) is a 128-bit identifier used to uniquely identify information in distributed systems."
       },
       {
-        "question": "我的数据安全吗？",
-        "answer": "是的。所有 UUID 生成完全在您的浏览器中进行，不会向任何服务器发送数据。"
+        "question": "Is my data safe?",
+        "answer": "Yes. All UUID generation happens entirely in your browser. No data is sent to any server."
       },
       {
-        "question": "UUID v4 有多安全？",
-        "answer": "UUID v4 使用随机数生成，碰撞概率极低（约 2^-122），适用于大多数场景。"
+        "question": "How secure is UUID v4?",
+        "answer": "UUID v4 uses random number generation with an extremely low collision probability (~2^-122), suitable for most use cases."
       }
     ]
   }

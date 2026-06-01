@@ -19,66 +19,60 @@ eleventyComputed:
       <p class="description">{{ tool.description }}</p>
     </header>
 
-    {% if tool.type == 'calculator' %}
-    {% include tool.slug ~ '.njk' %}
-    <script src="/assets/js/utils.js" defer></script>
-    <script src="/assets/js/{{ tool.slug }}.js" defer></script>
-    {% else %}
     <form class="tool-content tool-form" onsubmit="processTool(); return false;">
       <div class="tool-area">
         <div class="tool-input">
           {% if tool.slug == 'regex-tester' %}
-          <label for="input">正则表达式</label>
-          <input type="text" id="input" placeholder="输入正则表达式，如 \d+">
-          <label for="test-string">测试文本</label>
-          <textarea id="test-string" rows="4" placeholder="输入要测试的文本"></textarea>
-          <label for="flags">标志</label>
-          <input type="text" id="flags" value="g" placeholder="如 g, gi, gm">
+          <label for="input">Regular Expression</label>
+          <input type="text" id="input" placeholder="e.g. \d+">
+          <label for="test-string">Test String</label>
+          <textarea id="test-string" rows="4" placeholder="Enter text to test"></textarea>
+          <label for="flags">Flags</label>
+          <input type="text" id="flags" value="g" placeholder="e.g. g, gi, gm">
           {% elif tool.slug == 'uuid-generator' %}
-          <label for="count">生成数量 (1-100)</label>
+          <label for="count">Count (1-100)</label>
           <input type="number" id="count" value="1" min="1" max="100">
           {% elif tool.slug == 'base64-decode' %}
           <div class="mode-toggle">
-            <label><input type="radio" name="mode" value="encode" checked> Base64 编码</label>
-            <label><input type="radio" name="mode" value="decode"> Base64 解码</label>
+            <label><input type="radio" name="mode" value="encode" checked> Base64 Encode</label>
+            <label><input type="radio" name="mode" value="decode"> Base64 Decode</label>
           </div>
           {% elif tool.slug == 'url-encode-decode' %}
           <div class="mode-toggle">
-            <label><input type="radio" name="mode" value="encode" checked> URL 编码</label>
-            <label><input type="radio" name="mode" value="decode"> URL 解码</label>
+            <label><input type="radio" name="mode" value="encode" checked> URL Encode</label>
+            <label><input type="radio" name="mode" value="decode"> URL Decode</label>
           </div>
           {% elif tool.slug == 'html-escape' %}
           <div class="mode-toggle">
-            <label><input type="radio" name="mode" value="escape" checked> HTML 转义</label>
-            <label><input type="radio" name="mode" value="unescape"> HTML 反转义</label>
+            <label><input type="radio" name="mode" value="escape" checked> HTML Escape</label>
+            <label><input type="radio" name="mode" value="unescape"> HTML Unescape</label>
           </div>
-          <textarea id="input" rows="6" placeholder="输入要转义或反转义的文本..."></textarea>
+          <textarea id="input" rows="6" placeholder="Enter text to escape or unescape..."></textarea>
           {% else %}
-          <textarea id="input" rows="6" placeholder="输入要处理的文本..."></textarea>
+          <textarea id="input" rows="6" placeholder="Enter text to process..."></textarea>
           {% endif %}
         </div>
 
         <div class="tool-actions">
-          <button type="submit" class="btn-primary">处理</button>
-          <button type="button" class="btn-secondary" onclick="copyOutput()">复制结果</button>
-          <button type="button" class="btn-secondary" onclick="clearAll()">清空</button>
+          <button type="submit" class="btn-primary">Process</button>
+          <button type="button" class="btn-secondary" onclick="copyOutput()">Copy</button>
+          <button type="button" class="btn-secondary" onclick="clearAll()">Clear</button>
         </div>
 
         <div class="tool-output">
           {% if tool.slug == 'uuid-generator' %}
-          <textarea id="output" rows="6" readonly placeholder="点击&#x27;处理&#x27;生成 UUID..."></textarea>
+          <textarea id="output" rows="6" readonly placeholder="Click 'Process' to generate UUID..."></textarea>
           {% else %}
-          <textarea id="output" rows="6" readonly placeholder="结果将显示在这里..."></textarea>
+          <textarea id="output" rows="6" readonly placeholder="Result will appear here..."></textarea>
           {% endif %}
         </div>
       </div>
     </form>
     <script src="/assets/js/{{ tool.slug }}.js" defer></script>
-    {% endif %}
 
     {% if tool.faq and tool.faq.length > 0 %}
     <section class="faq">
-      <h2>常见问题</h2>
+      <h2>Frequently Asked Questions</h2>
       {% for item in tool.faq %}
       <details>
         <summary>{{ item.question }}</summary>
@@ -119,13 +113,13 @@ eleventyComputed:
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "CNY"
+        "priceCurrency": "USD"
       }
     }
     </script>
 
     <section class="related-tools">
-      <h2>相关工具</h2>
+      <h2>Related Tools</h2>
       <div class="related-tools-grid">
         {% set related_count = 0 %}
         {% for related in tools %}

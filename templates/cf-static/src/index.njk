@@ -12,7 +12,7 @@ eleventyComputed:
   <p>{{ config.description }}</p>
 </section>
 
-<!-- 精选工具 -->
+<!-- Featured Tools -->
 <section class="tools-grid">
   {% for tool in tools %}
   {% if loop.index0 < 6 %}
@@ -27,27 +27,27 @@ eleventyComputed:
   {% endif %}
   {% endfor %}
 </section>
-<p style="text-align:center;margin-top:1.5rem"><a href="/tools-index/" style="color:var(--accent)">查看全部 {{ tools | length }} 个工具 →</a></p>
+<p style="text-align:center;margin-top:1.5rem"><a href="/tools-index/" style="color:var(--accent)">View all {{ tools | length }} tools →</a></p>
 
-<!-- SEO 内容区块 -->
-<section class="seo-content" aria-label="关于我们">
-  <h2>为什么选择在线开发工具？</h2>
+<!-- SEO Content Section -->
+<section class="seo-content" aria-label="About Us">
+  <h2>Why Choose DevTools?</h2>
   <div class="features">
     <article>
-      <h3>🔒 隐私优先</h3>
-      <p>所有工具完全在您的浏览器中运行，数据不会发送到任何服务器。您的信息始终安全保存在本地设备上，无需担心隐私泄露。</p>
+      <h3>🔒 Privacy First</h3>
+      <p>All tools run entirely in your browser. No data is sent to any server. Your information stays safe on your device — no privacy concerns.</p>
     </article>
     <article>
-      <h3>⚡ 极速体验</h3>
-      <p>基于静态网站技术构建，页面加载速度极快。无需等待后端处理，所有计算即时完成，提供流畅的使用体验。</p>
+      <h3>⚡ Lightning Fast</h3>
+      <p>Built as a static site for blazing-fast page loads. No backend processing to wait for — all computations happen instantly in your browser.</p>
     </article>
     <article>
-      <h3>🆓 完全免费</h3>
-      <p>所有功能完全免费开放，无需注册账号，没有使用限制。无论是个人开发者还是企业团队，都可以自由使用。</p>
+      <h3>🆓 100% Free</h3>
+      <p>All features are completely free with no registration required and no usage limits. Perfect for individual developers and teams alike.</p>
     </article>
     <article>
-      <h3>📱 跨平台支持</h3>
-      <p>响应式设计适配所有设备，无论是桌面电脑、平板电脑还是手机，都能获得一致的优秀体验。</p>
+      <h3>📱 Cross-Platform</h3>
+      <p>Responsive design works on all devices — desktop, tablet, and mobile. Consistent great experience everywhere.</p>
     </article>
   </div>
 </section>
