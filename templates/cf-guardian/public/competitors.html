@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Watch — SEO Guardian</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; color: #f8fafc; }
+    h2 { font-size: 1.3rem; margin-bottom: 12px; color: #f1f5f9; }
+    .subtitle { color: #94a3b8; margin-bottom: 24px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 24px; margin-bottom: 20px; border: 1px solid #334155; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 0.95rem; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    input, select { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; }
+    input:focus, select:focus { outline: none; border-color: #6366f1; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .form-row input { flex: 1; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+    th { color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr:hover { background: #1e293b44; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+    .badge-pass { background: #22c55e22; color: #22c55e; }
+    .badge-warn { background: #fbbf2422; color: #fbbf24; }
+    .badge-fail { background: #ef444422; color: #ef4444; }
+    .score-a { color: #22c55e; } .score-b { color: #38bdf8; } .score-c { color: #fbbf24; } .score-d { color: #f97316; } .score-f { color: #ef4444; }
+    .loading { text-align: center; padding: 40px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #334155; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .vs-card { background: #0f172a; border-radius: 10px; padding: 16px; text-align: center; border: 1px solid #334155; }
+    .vs-score { font-size: 2rem; font-weight: 700; }
+    .vs-label { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+    .your-row { background: #6366f111; }
+    .rank-badge { display: inline-block; width: 28px; height: 28px; line-height: 28px; border-radius: 50%; text-align: center; font-weight: 700; font-size: 0.85rem; }
+    .rank-1 { background: #fbbf24; color: #0f172a; }
+    .rank-2 { background: #94a3b8; color: #0f172a; }
+    .rank-3 { background: #cd7f32; color: #fff; }
+    .rank-other { background: #334155; color: #94a3b8; }
+    .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #33415522; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .form-row { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🆚 Competitor Watch</h1>
+    <p class="subtitle">Add competitor sites and compare SEO + GEO scores in real time</p>
+
+    <!-- Add Competitor -->
+    <div class="card">
+      <h2>Add Competitor</h2>
+      <div class="form-row">
+        <input type="url" id="compUrl" placeholder="https://competitor.com">
+        <input type="text" id="compName" placeholder="Competitor name (optional)" style="max-width:250px;">
+        <button class="btn btn-primary" id="addBtn" onclick="addCompetitor()">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Competitor List -->
+    <div class="card">
+      <h2>Your Competitors</h2>
+      <div id="compList"><p style="color:#94a3b8;">Loading...</p></div>
+    </div>
+
+    <!-- Compare -->
+    <div class="card">
+      <h2>Compare with Your Site</h2>
+      <div class="form-row">
+        <select id="siteSelect" style="flex:1;"><option value="">Select your site...</option></select>
+        <button class="btn btn-primary" id="compareBtn" onclick="runComparison()">Run Comparison →</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="card hidden" id="loadingState">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Crawling and analyzing sites...</p>
+        <p style="color:#94a3b8;font-size:0.85rem;margin-top:8px;">This may take 20-60 seconds</p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="hidden" id="resultsSection">
+      <h2 style="margin-bottom:16px;">Comparison Results</h2>
+
+      <!-- SEO Ranking -->
+      <div class="card">
+        <h2>📊 SEO Ranking</h2>
+        <table>
+          <thead><tr><th>Rank</th><th>Site</th><th>SEO Score</th><th>GEO Score</th><th>Words</th><th>Schema</th><th>Load</th></tr></thead>
+          <tbody id="rankingTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Visual Comparison -->
+      <div class="card">
+        <h2>📈 Score Comparison</h2>
+        <div class="grid-2" id="scoreComparison"></div>
+      </div>
+
+      <!-- Content Comparison -->
+      <div class="card">
+        <h2>📝 Content Quality</h2>
+        <table>
+          <thead><tr><th>Site</th><th>Word Count</th><th>Readability</th><th>Top Keyword</th><th>Text/HTML</th><th>Images</th></tr></thead>
+          <tbody id="contentTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let token = localStorage.getItem('cf_token');
+    let sites = [];
+    let competitors = [];
+
+    async function init() {
+      if (!token) { window.location.href = '/login.html'; return; }
+      await Promise.all([loadSites(), loadCompetitors()]);
+    }
+
+    async function loadSites() {
+      try {
+        const res = await fetch(`${API}/api/sites`, { headers: { 'x-auth-token': token } });
+        if (res.ok) {
+          const data = await res.json();
+          sites = data.sites || [];
+          const sel = document.getElementById('siteSelect');
+          sel.innerHTML = sites.map(s => `<option value="${s.id}">${s.name || s.url}</option>`).join('');
+        }
+      } catch {}
+    }
+
+    async function loadCompetitors() {
+      try {
+        const res = await fetch(`${API}/api/competitors`, { headers: { 'x-auth-token': token } });
+        if (res.ok) {
+          const data = await res.json();
+          competitors = data.competitors || [];
+          renderCompetitors();
+        }
+      } catch {}
+    }
+
+    function renderCompetitors() {
+      const el = document.getElementById('compList');
+      if (competitors.length === 0) {
+        el.innerHTML = '<p style="color:#94a3b8;">No competitors added yet. Add one above to start comparing.</p>';
+        return;
+      }
+      el.innerHTML = competitors.map(c => `
+        <div class="comp-item">
+          <div>
+            <strong>${c.name || c.url}</strong>
+            <div style="color:#94a3b8;font-size:0.85rem;">${c.url}</div>
+          </div>
+          <button class="btn btn-danger" style="padding:6px 12px;font-size:0.85rem;" onclick="removeCompetitor('${c.id}')">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    async function addCompetitor() {
+      const url = document.getElementById('compUrl').value.trim();
+      const name = document.getElementById('compName').value.trim();
+      if (!url) { alert('Please enter a URL'); return; }
+      if (!url.startsWith('http')) { alert('URL must start with http:// or https://'); return; }
+
+      document.getElementById('addBtn').disabled = true;
+      try {
+        const res = await fetch(`${API}/api/competitors/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+          body: JSON.stringify({ url, name }),
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Failed'); }
+        document.getElementById('compUrl').value = '';
+        document.getElementById('compName').value = '';
+        await loadCompetitors();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        document.getElementById('addBtn').disabled = false;
+      }
+    }
+
+    async function removeCompetitor(id) {
+      if (!confirm('Remove this competitor?')) return;
+      await fetch(`${API}/api/competitors/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-auth-token': token },
+      });
+      await loadCompetitors();
+    }
+
+    async function runComparison() {
+      const siteId = document.getElementById('siteSelect').value;
+      if (!siteId) { alert('Select your site first'); return; }
+      if (competitors.length === 0) { alert('Add competitors first'); return; }
+
+      document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('compareBtn').disabled = true;
+
+      try {
+        const res = await fetch(`${API}/api/competitors/${siteId}/compare`, {
+          headers: { 'x-auth-token': token },
+        });
+        if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Comparison failed'); }
+        const data = await res.json();
+        renderComparison(data);
+      } catch (err) {
+        alert('Comparison failed: ' + err.message);
+      } finally {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('compareBtn').disabled = false;
+      }
+    }
+
+    function renderComparison(data) {
+      document.getElementById('resultsSection').classList.remove('hidden');
+
+      // Ranking table
+      const allSites = [
+        { ...data.yourSite, isYours: true },
+        ...data.competitors.map(c => ({ ...c, isYours: false })),
+      ].sort((a, b) => b.seoScore - a.seoScore);
+
+      document.getElementById('rankingTable').innerHTML = allSites.map((s, i) => `
+        <tr class="${s.isYours ? 'your-row' : ''}">
+          <td><span class="rank-badge ${i < 3 ? 'rank-' + (i+1) : 'rank-other'}">${i + 1}</span></td>
+          <td><strong>${s.name}</strong> ${s.isYours ? '<span style="color:#6366f1;font-size:0.8rem;">(You)</span>' : ''}<br><span style="color:#94a3b8;font-size:0.8rem;">${s.url}</span></td>
+          <td><strong class="${getScoreClass(s.seoScore)}">${s.seoScore}</strong></td>
+          <td><strong class="${getScoreClass(s.geoScore)}">${s.geoScore}</strong> ${s.geoBand ? `(${s.geoBand})` : ''}</td>
+          <td>${s.wordCount.toLocaleString()}</td>
+          <td>${s.hasSchema ? '✅' : '❌'}</td>
+          <td>${s.loadTimeMs}ms</td>
+        </tr>
+      `).join('');
+
+      // Score comparison
+      document.getElementById('scoreComparison').innerHTML = allSites.map(s => `
+        <div class="vs-card">
+          <div style="font-size:0.9rem;margin-bottom:8px;">${s.name} ${s.isYours ? '(You)' : ''}</div>
+          <div style="display:flex;gap:20px;justify-content:center;">
+            <div>
+              <div class="vs-score ${getScoreClass(s.seoScore)}">${s.seoScore}</div>
+              <div class="vs-label">SEO</div>
+            </div>
+            <div>
+              <div class="vs-score ${getScoreClass(s.geoScore)}">${s.geoScore}</div>
+              <div class="vs-label">GEO</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Content table
+      document.getElementById('contentTable').innerHTML = allSites.map(s => {
+        const ca = s.contentAnalysis || {};
+        const topKw = ca.topKeywords && ca.topKeywords[0] ? ca.topKeywords[0].word : 'N/A';
+        return `
+          <tr class="${s.isYours ? 'your-row' : ''}">
+            <td><strong>${s.name}</strong> ${s.isYours ? '(You)' : ''}</td>
+            <td>${s.wordCount.toLocaleString()}</td>
+            <td>${ca.readabilityScore || 'N/A'}</td>
+            <td>${topKw}</td>
+            <td>${ca.textToHtmlRatio || 'N/A'}%</td>
+            <td>${ca.hasImages ? '✅' : '❌'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getScoreClass(v) {
+      if (v >= 80) return 'score-a';
+      if (v >= 60) return 'score-b';
+      if (v >= 40) return 'score-c';
+      if (v >= 20) return 'score-d';
+      return 'score-f';
+    }
+
+    init();
+  </script>
+</body>
+</html>

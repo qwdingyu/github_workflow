@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GEO 一键修复 — SEO Guardian</title>
+  <meta name="description" content="一键生成 Schema、llms.txt、robots.txt AI 规则、OG 标签等优化代码，复制粘贴即可使用。">
+  <link rel="icon" href="/favicon.svg">
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --text2: #9ca3af;
+      --accent: #6366f1; --accent-hover: #818cf8;
+      --success: #22c55e; --error: #ef4444; --warning: #f59e0b;
+      --radius: 12px; --max-w: 1000px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; max-width: var(--max-w); margin: 0 auto; }
+    .logo { font-size: 1.3rem; font-weight: 800; }
+    .logo span { color: var(--accent); }
+    .nav-links a { margin-left: 24px; color: var(--text2); font-size: 0.9rem; }
+
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 24px; }
+
+    .page-header { text-align: center; padding: 40px 0 32px; }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text2); font-size: 1.05rem; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; background: var(--surface); border-radius: var(--radius); padding: 4px; margin-bottom: 24px; overflow-x: auto; }
+    .tab-btn { flex: 1; padding: 10px 16px; border: none; background: transparent; color: var(--text2); font-size: 0.85rem; font-weight: 600; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background: var(--accent); color: #fff; }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Form */
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+    .form-card h3 { margin-bottom: 20px; font-size: 1.1rem; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text2); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.95rem; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .btn-generate { background: var(--accent); color: #fff; padding: 12px 28px; border: none; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-generate:hover { background: var(--accent-hover); }
+
+    /* Output */
+    .output-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; display: none; }
+    .output-box.active { display: block; }
+    .output-box pre { white-space: pre-wrap; word-break: break-all; font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 0.85rem; line-height: 1.5; color: var(--text); }
+    .output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .output-header h4 { font-size: 0.9rem; color: var(--text2); }
+    .btn-copy { background: var(--surface); color: var(--text); padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-copy.copied { border-color: var(--success); color: var(--success); }
+
+    /* Dynamic rows */
+    .dynamic-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+    .dynamic-row input { flex: 1; }
+    .btn-remove { background: transparent; color: var(--error); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0; }
+    .btn-add { background: transparent; color: var(--accent); border: 1px dashed var(--border); border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; }
+    .btn-add:hover { border-color: var(--accent); }
+
+    .hint { font-size: 0.8rem; color: var(--text2); margin-top: 4px; }
+
+    footer { text-align: center; padding: 40px 24px; color: var(--text2); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 60px; }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .tabs { flex-wrap: nowrap; }
+      .navbar { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo"><span>🔧</span> GEO 一键修复</div>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/geo-check.html">GEO 体检</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>一键生成优化代码</h1>
+      <p>选择你要生成的优化代码，填写信息，复制粘贴即可使用</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="product">Product Schema</button>
+      <button class="tab-btn" data-tab="faq">FAQ Schema</button>
+      <button class="tab-btn" data-tab="breadcrumb">面包屑 Schema</button>
+      <button class="tab-btn" data-tab="org">Organization</button>
+      <button class="tab-btn" data-tab="howto">HowTo Schema</button>
+      <button class="tab-btn" data-tab="blog">Blog Schema</button>
+      <button class="tab-btn" data-tab="llms">llms.txt</button>
+      <button class="tab-btn" data-tab="robots">robots.txt AI</button>
+      <button class="tab-btn" data-tab="og">OG/Twitter 标签</button>
+    </div>
+
+    <!-- Product Schema -->
+    <div class="tab-panel active" id="tab-product">
+      <div class="form-card">
+        <h3>🛍️ Product Schema 生成器</h3>
+        <div class="form-group">
+          <label>产品名称 *</label>
+          <input type="text" id="p-name" placeholder="iPhone 16 Pro Max">
+        </div>
+        <div class="form-group">
+          <label>产品描述 *</label>
+          <textarea id="p-desc" placeholder="Apple iPhone 16 Pro Max，6.9英寸超视网膜XDR显示屏..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>产品图片 URL *</label>
+            <input type="url" id="p-image" placeholder="https://example.com/product.jpg">
+          </div>
+          <div class="form-group">
+            <label>价格 *</label>
+            <input type="text" id="p-price" placeholder="9999">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>货币</label>
+            <select id="p-currency">
+              <option value="USD">USD ($)</option>
+              <option value="CNY" selected>CNY (¥)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="JPY">JPY (¥)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>品牌</label>
+            <input type="text" id="p-brand" placeholder="Apple">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>SKU</label>
+            <input type="text" id="p-sku" placeholder="IP16PM-256">
+          </div>
+          <div class="form-group">
+            <label>评分 (1-5)</label>
+            <input type="text" id="p-rating" placeholder="4.8">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>评价数量</label>
+          <input type="text" id="p-reviews" placeholder="1250">
+        </div>
+        <button class="btn-generate" onclick="generateProduct()">生成 Product Schema →</button>
+        <div class="output-box" id="out-product">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-product')">复制</button>
+          </div>
+          <pre></pre>
+          <p class="hint">将以上代码粘贴到你的网站 &lt;head&gt; 标签内</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ Schema -->
+    <div class="tab-panel" id="tab-faq">
+      <div class="form-card">
+        <h3>❓ FAQ Schema 生成器</h3>
+        <div id="faq-rows"></div>
+        <button class="btn-add" onclick="addFaqRow()">+ 添加问答</button>
+        <br><br>
+        <button class="btn-generate" onclick="generateFaq()">生成 FAQ Schema →</button>
+        <div class="output-box" id="out-faq">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-faq')">复制</button>
+          </div>
+          <pre></pre>
+          <p class="hint">将以上代码粘贴到你的网站 &lt;head&gt; 标签内</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breadcrumb Schema -->
+    <div class="tab-panel" id="tab-breadcrumb">
+      <div class="form-card">
+        <h3>🧭 面包屑导航 Schema 生成器</h3>
+        <div id="bc-rows"></div>
+        <button class="btn-add" onclick="addBcRow()">+ 添加层级</button>
+        <br><br>
+        <button class="btn-generate" onclick="generateBreadcrumb()">生成 Breadcrumb Schema →</button>
+        <div class="output-box" id="out-breadcrumb">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-breadcrumb')">复制</button>
+          </div>
+          <pre></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organization Schema -->
+    <div class="tab-panel" id="tab-org">
+      <div class="form-card">
+        <h3>🏢 Organization Schema 生成器</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>公司名称 *</label>
+            <input type="text" id="o-name" placeholder="My Company">
+          </div>
+          <div class="form-group">
+            <label>网站 URL *</label>
+            <input type="url" id="o-url" placeholder="https://example.com">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Logo URL</label>
+            <input type="url" id="o-logo" placeholder="https://example.com/logo.png">
+          </div>
+          <div class="form-group">
+            <label>电话</label>
+            <input type="text" id="o-phone" placeholder="+86 1234567890">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>地址</label>
+          <input type="text" id="o-address" placeholder="北京市朝阳区XX路1号">
+        </div>
+        <div class="form-group">
+          <label>社交媒体链接 (每行一个)</label>
+          <textarea id="o-sameas" placeholder="https://weibo.com/mycompany&#10;https://twitter.com/mycompany"></textarea>
+        </div>
+        <button class="btn-generate" onclick="generateOrg()">生成 Organization Schema →</button>
+        <div class="output-box" id="out-org">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-org')">复制</button>
+          </div>
+          <pre></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- HowTo Schema -->
+    <div class="tab-panel" id="tab-howto">
+      <div class="form-card">
+        <h3>📋 HowTo Schema 生成器</h3>
+        <div class="form-group">
+          <label>教程名称 *</label>
+          <input type="text" id="ht-name" placeholder="如何设置 SEO Guardian">
+        </div>
+        <div id="ht-rows"></div>
+        <button class="btn-add" onclick="addHtRow()">+ 添加步骤</button>
+        <br><br>
+        <button class="btn-generate" onclick="generateHowTo()">生成 HowTo Schema →</button>
+        <div class="output-box" id="out-howto">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-howto')">复制</button>
+          </div>
+          <pre></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blog Schema -->
+    <div class="tab-panel" id="tab-blog">
+      <div class="form-card">
+        <h3>📝 BlogPosting Schema 生成器</h3>
+        <div class="form-group">
+          <label>文章标题 *</label>
+          <input type="text" id="b-headline" placeholder="2026年最佳SEO实践指南">
+        </div>
+        <div class="form-group">
+          <label>文章描述</label>
+          <textarea id="b-desc" placeholder="本文介绍了2026年最新的SEO优化技巧..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>发布日期 *</label>
+            <input type="date" id="b-published">
+          </div>
+          <div class="form-group">
+            <label>修改日期</label>
+            <input type="date" id="b-modified">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>作者 *</label>
+            <input type="text" id="b-author" placeholder="张三">
+          </div>
+          <div class="form-group">
+            <label>封面图片 URL *</label>
+            <input type="url" id="b-image" placeholder="https://example.com/cover.jpg">
+          </div>
+        </div>
+        <button class="btn-generate" onclick="generateBlog()">生成 Blog Schema →</button>
+        <div class="output-box" id="out-blog">
+          <div class="output-header">
+            <h4>生成的 JSON-LD 代码</h4>
+            <button class="btn-copy" onclick="copyCode('out-blog')">复制</button>
+          </div>
+          <pre></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- llms.txt -->
+    <div class="tab-panel" id="tab-llms">
+      <div class="form-card">
+        <h3>🤖 llms.txt 生成器</h3>
+        <p class="hint" style="margin-bottom:16px">llms.txt 帮助 AI 搜索引擎（ChatGPT、Claude、Perplexity）更好地理解你的网站</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>网站名称 *</label>
+            <input type="text" id="l-name" placeholder="My Store">
+          </div>
+          <div class="form-group">
+            <label>技术栈</label>
+            <input type="text" id="l-tech" placeholder="Next.js, React, Tailwind CSS">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>网站描述 *</label>
+          <textarea id="l-desc" placeholder="一个专注于环保产品的电商平台..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>版本号</label>
+          <input type="text" id="l-version" placeholder="1.0">
+        </div>
+        <div id="l-sections"></div>
+        <button class="btn-add" onclick="addLlmsSection()">+ 添加内容区块</button>
+        <br><br>
+        <button class="btn-generate" onclick="generateLlms()">生成 llms.txt →</button>
+        <div class="output-box" id="out-llms">
+          <div class="output-header">
+            <h4>生成的 llms.txt 文件内容</h4>
+            <button class="btn-copy" onclick="copyCode('out-llms')">复制</button>
+          </div>
+          <pre></pre>
+          <p class="hint">将以上内容保存为 llms.txt，放在网站根目录（与 robots.txt 同级）</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- robots.txt AI -->
+    <div class="tab-panel" id="tab-robots">
+      <div class="form-card">
+        <h3>🤖 robots.txt AI 爬虫规则生成器</h3>
+        <p class="hint" style="margin-bottom:16px">管理 AI 爬虫的访问权限，确保 ChatGPT、Claude 等能正确抓取你的内容</p>
+        <div class="form-group">
+          <label>允许的 AI 爬虫 (每行一个)</label>
+          <textarea id="r-allowed" rows="4">GPTBot
+OAI-SearchBot
+ClaudeBot
+PerplexityBot
+Google-Extended
+cohere-ai</textarea>
+        </div>
+        <div class="form-group">
+          <label>禁止的 AI 爬虫 (每行一个)</label>
+          <textarea id="r-blocked" rows="3">DeepSeekBot
+GrokBot
+meta-externalagent</textarea>
+        </div>
+        <div class="form-group">
+          <label>Sitemap URL</label>
+          <input type="url" id="r-sitemap" placeholder="https://example.com/sitemap.xml">
+        </div>
+        <button class="btn-generate" onclick="generateRobots()">生成 robots.txt AI 规则 →</button>
+        <div class="output-box" id="out-robots">
+          <div class="output-header">
+            <h4>生成的 robots.txt AI 规则</h4>
+            <button class="btn-copy" onclick="copyCode('out-robots')">复制</button>
+          </div>
+          <pre></pre>
+          <p class="hint">将以上代码追加到你的 robots.txt 文件末尾</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- OG Tags -->
+    <div class="tab-panel" id="tab-og">
+      <div class="form-card">
+        <h3>📱 OG / Twitter Card 标签生成器</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" id="og-title" placeholder="My Awesome Product">
+          </div>
+          <div class="form-group">
+            <label>网站名称</label>
+            <input type="text" id="og-sitename" placeholder="My Store">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>描述 *</label>
+          <textarea id="og-desc" placeholder="Best product for your needs..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>图片 URL *</label>
+            <input type="url" id="og-image" placeholder="https://example.com/og-image.jpg">
+          </div>
+          <div class="form-group">
+            <label>页面 URL *</label>
+            <input type="url" id="og-url" placeholder="https://example.com/product">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>类型 (og:type)</label>
+          <select id="og-type">
+            <option value="website">website</option>
+            <option value="article">article</option>
+            <option value="product">product</option>
+          </select>
+        </div>
+        <button class="btn-generate" onclick="generateOg()">生成 OG/Twitter 标签 →</button>
+        <div class="output-box" id="out-og">
+          <div class="output-header">
+            <h4>生成的 Meta 标签</h4>
+            <button class="btn-copy" onclick="copyCode('out-og')">复制</button>
+          </div>
+          <pre></pre>
+          <p class="hint">将以上代码粘贴到你的网站 &lt;head&gt; 标签内</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 SEO Guardian. Built on Cloudflare. Powered by AI.</p>
+  </footer>
+
+  <script>
+    // ─── Tab switching ────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ─── Copy ─────────────────────────────────────────────────────────────
+    function copyCode(boxId) {
+      const pre = document.querySelector('#' + boxId + ' pre');
+      const btn = document.querySelector('#' + boxId + ' .btn-copy');
+      navigator.clipboard.writeText(pre.textContent).then(() => {
+        btn.textContent = '已复制 ✓';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
+      });
+    }
+
+    function showOutput(boxId, code) {
+      const box = document.getElementById(boxId);
+      box.querySelector('pre').textContent = code;
+      box.classList.add('active');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ─── API calls ────────────────────────────────────────────────────────
+    async function apiCall(path, body) {
+      const res = await fetch('/api/optimize' + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return await res.json();
+    }
+
+    // ─── Product Schema ───────────────────────────────────────────────────
+    function generateProduct() {
+      const body = {
+        name: document.getElementById('p-name').value,
+        description: document.getElementById('p-desc').value,
+        image: document.getElementById('p-image').value,
+        price: document.getElementById('p-price').value,
+        currency: document.getElementById('p-currency').value,
+      };
+      const optional = ['brand', 'sku', 'ratingValue', 'reviewCount'];
+      optional.forEach(f => { const el = document.getElementById('p-' + f); if (el.value) body[f] = el.value; });
+      apiCall('/schema/product', body).then(d => showOutput('out-product', d.code)).catch(e => alert(e.error || '生成失败'));
+    }
+
+    // ─── FAQ Schema ───────────────────────────────────────────────────────
+    function addFaqRow() {
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<input type="text" placeholder="问题" class="faq-q"><input type="text" placeholder="答案" class="faq-a" style="margin-top:4px"><button class="btn-remove" onclick="this.parentElement.remove()">删除</button>`;
+      document.getElementById('faq-rows').appendChild(row);
+    }
+    function generateFaq() {
+      const rows = document.querySelectorAll('#faq-rows .dynamic-row');
+      const questions = [];
+      rows.forEach(r => {
+        const q = r.querySelector('.faq-q').value.trim();
+        const a = r.querySelector('.faq-a').value.trim();
+        if (q && a) questions.push({ question: q, answer: a });
+      });
+      if (!questions.length) { alert('请至少添加一个问答'); return; }
+      apiCall('/schema/faq', { questions }).then(d => showOutput('out-faq', d.code));
+    }
+
+    // ─── Breadcrumb ───────────────────────────────────────────────────────
+    function addBcRow() {
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<input type="text" placeholder="名称" class="bc-name"><input type="url" placeholder="URL" class="bc-url" style="margin-top:4px"><button class="btn-remove" onclick="this.parentElement.remove()">删除</button>`;
+      document.getElementById('bc-rows').appendChild(row);
+    }
+    function generateBreadcrumb() {
+      const rows = document.querySelectorAll('#bc-rows .dynamic-row');
+      const items = [];
+      rows.forEach(r => {
+        const name = r.querySelector('.bc-name').value.trim();
+        const url = r.querySelector('.bc-url').value.trim();
+        if (name && url) items.push({ name, url });
+      });
+      if (!items.length) { alert('请至少添加一个层级'); return; }
+      apiCall('/schema/breadcrumb', { items }).then(d => showOutput('out-breadcrumb', d.code));
+    }
+
+    // ─── Organization ─────────────────────────────────────────────────────
+    function generateOrg() {
+      const body = {
+        name: document.getElementById('o-name').value,
+        url: document.getElementById('o-url').value,
+      };
+      ['logo', 'telephone'].forEach(f => { const el = document.getElementById('o-' + f.replace('telephone', 'phone')); if (el.value) body[f] = el.value; });
+      const addr = document.getElementById('o-address').value; if (addr) body.address = addr;
+      const sameAs = document.getElementById('o-sameas').value.split('\n').filter(s => s.trim()); if (sameAs.length) body.sameAs = sameAs;
+      apiCall('/schema/organization', body).then(d => showOutput('out-org', d.code));
+    }
+
+    // ─── HowTo ────────────────────────────────────────────────────────────
+    function addHtRow() {
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<input type="text" placeholder="步骤标题" class="ht-name"><input type="text" placeholder="步骤描述" class="ht-text" style="margin-top:4px"><button class="btn-remove" onclick="this.parentElement.remove()">删除</button>`;
+      document.getElementById('ht-rows').appendChild(row);
+    }
+    function generateHowTo() {
+      const rows = document.querySelectorAll('#ht-rows .dynamic-row');
+      const steps = [];
+      rows.forEach(r => {
+        const name = r.querySelector('.ht-name').value.trim();
+        const text = r.querySelector('.ht-text').value.trim();
+        if (name && text) steps.push({ name, text });
+      });
+      if (!steps.length) { alert('请至少添加一个步骤'); return; }
+      apiCall('/schema/howto', { name: document.getElementById('ht-name').value, steps }).then(d => showOutput('out-howto', d.code));
+    }
+
+    // ─── Blog ─────────────────────────────────────────────────────────────
+    function generateBlog() {
+      const body = {
+        headline: document.getElementById('b-headline').value,
+        datePublished: document.getElementById('b-published').value,
+        author: document.getElementById('b-author').value,
+        image: document.getElementById('b-image').value,
+      };
+      const desc = document.getElementById('b-desc').value; if (desc) body.description = desc;
+      const modified = document.getElementById('b-modified').value; if (modified) body.dateModified = modified;
+      apiCall('/schema/blogposting', body).then(d => showOutput('out-blog', d.code));
+    }
+
+    // ─── llms.txt ─────────────────────────────────────────────────────────
+    function addLlmsSection() {
+      const row = document.createElement('div');
+      row.className = 'dynamic-row';
+      row.innerHTML = `<input type="text" placeholder="区块标题" class="llms-title"><textarea placeholder="区块内容" class="llms-content" style="margin-top:4px"></textarea><button class="btn-remove" onclick="this.parentElement.remove()">删除</button>`;
+      document.getElementById('l-sections').appendChild(row);
+    }
+    function generateLlms() {
+      const body = {
+        siteName: document.getElementById('l-name').value,
+        description: document.getElementById('l-desc').value,
+      };
+      const tech = document.getElementById('l-tech').value; if (tech) body.techStack = tech;
+      const version = document.getElementById('l-version').value; if (version) body.version = version;
+      const sections = [];
+      document.querySelectorAll('#l-sections .dynamic-row').forEach(r => {
+        const title = r.querySelector('.llms-title').value.trim();
+        const content = r.querySelector('.llms-content').value.trim();
+        if (title && content) sections.push({ title, content });
+      });
+      if (sections.length) body.sections = sections;
+      apiCall('/llms-txt', body).then(d => showOutput('out-llms', d.content));
+    }
+
+    // ─── robots.txt AI ────────────────────────────────────────────────────
+    function generateRobots() {
+      const body = {
+        allowedBots: document.getElementById('r-allowed').value.split('\n').filter(s => s.trim()).map(s => s.trim()),
+        blockedBots: document.getElementById('r-blocked').value.split('\n').filter(s => s.trim()).map(s => s.trim()),
+      };
+      const sitemap = document.getElementById('r-sitemap').value; if (sitemap) body.sitemapUrl = sitemap;
+      apiCall('/robots-ai', body).then(d => showOutput('out-robots', d.content));
+    }
+
+    // ─── OG Tags ──────────────────────────────────────────────────────────
+    function generateOg() {
+      const body = {
+        title: document.getElementById('og-title').value,
+        description: document.getElementById('og-desc').value,
+        image: document.getElementById('og-image').value,
+        url: document.getElementById('og-url').value,
+      };
+      const siteName = document.getElementById('og-sitename').value; if (siteName) body.siteName = siteName;
+      const type = document.getElementById('og-type').value; if (type) body.type = type;
+      apiCall('/og-tags', body).then(d => showOutput('out-og', d.code));
+    }
+
+    // Init with one FAQ, breadcrumb, howto row
+    addFaqRow(); addBcRow(); addHtRow();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "cf-guardian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SEO Guardian — AI-powered continuous SEO monitoring platform",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "migrate": "node scripts/migrate.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/zod-validator": "^0.4.0",
+    "zod": "^3.23.0",
+    "@eforge/cf-core": "workspace:*",
+    "@libsql/client": "^0.14.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260530.1",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.95.0"
+  }
+}

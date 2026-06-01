@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Guardian — AI-Powered SEO Monitoring</title>
+  <meta name="description" content="Monitor your website's SEO health 24/7 with AI-powered insights. Daily scans, instant alerts, weekly reports. Free 7-day trial.">
+  <link rel="icon" href="/favicon.svg">
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e4e4e7; --text2: #9ca3af;
+      --accent: #6366f1; --accent-hover: #818cf8;
+      --success: #22c55e; --error: #ef4444; --warning: #f59e0b;
+      --radius: 12px; --max-w: 1100px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; max-width: var(--max-w); margin: 0 auto; }
+    .logo { font-size: 1.3rem; font-weight: 800; color: var(--text); }
+    .logo span { color: var(--accent); }
+    .nav-links a { margin-left: 24px; color: var(--text2); font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--text); }
+
+    .hero { text-align: center; padding: 80px 24px 60px; max-width: 800px; margin: 0 auto; }
+    .hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 20px; background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 1.2rem; color: var(--text2); margin-bottom: 32px; line-height: 1.7; }
+    .hero-cta { display: flex; gap: 16px; justify-content: center; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 14px 32px; border-radius: var(--radius); font-size: 1.05rem; font-weight: 600; border: none; cursor: pointer; display: inline-block; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-secondary { background: transparent; color: var(--text); padding: 14px 32px; border-radius: var(--radius); font-size: 1.05rem; font-weight: 600; border: 1px solid var(--border); cursor: pointer; display: inline-block; }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .section { padding: 60px 24px; max-width: var(--max-w); margin: 0 auto; }
+    .section h2 { font-size: 2rem; text-align: center; margin-bottom: 40px; }
+
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+    .feature-card h3 { font-size: 1.15rem; margin-bottom: 10px; }
+    .feature-card p { color: var(--text2); font-size: 0.95rem; }
+    .feature-icon { font-size: 2rem; margin-bottom: 12px; }
+
+    .pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .price-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; text-align: center; }
+    .price-card.featured { border-color: var(--accent); box-shadow: 0 0 30px rgba(99,102,241,0.15); }
+    .price-card h3 { font-size: 1.2rem; margin-bottom: 8px; }
+    .price-card .price { font-size: 2.5rem; font-weight: 800; margin: 16px 0; }
+    .price-card .price span { font-size: 1rem; color: var(--text2); font-weight: 400; }
+    .price-card ul { list-style: none; text-align: left; margin: 20px 0; }
+    .price-card li { padding: 6px 0; color: var(--text2); font-size: 0.9rem; }
+    .price-card li::before { content: "✓ "; color: var(--success); font-weight: bold; }
+
+    .comparison { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .comparison th, .comparison td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    .comparison th { color: var(--text2); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+    .comparison .highlight { color: var(--accent); font-weight: 600; }
+
+    footer { text-align: center; padding: 40px 24px; color: var(--text2); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 60px; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2rem; }
+      .hero-cta { flex-direction: column; align-items: center; }
+      .pricing { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo"><span>🛡️</span> SEO Guardian</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/geo-check.html">GEO 体检</a>
+      <a href="/audit.html">Full Audit</a>
+      <a href="/optimize.html">Fix Code</a>
+      <a href="/competitors.html">Competitors</a>
+      <a href="/signup.html">Sign Up</a>
+      <a href="/dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>SEO + GEO. One Platform. Zero Guesswork.</h1>
+    <p>AI-powered SEO & GEO (Generative Engine Optimization) monitoring. We check 30+ SEO factors and 16 GEO signals daily — then generate copy-paste fix code so you never wait for a developer.</p>
+    <div class="hero-cta">
+      <a href="/geo-check.html" class="btn-primary">Free GEO Check →</a>
+      <a href="/signup.html" class="btn-secondary">Start Free Trial</a>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <h2>Why SEO Guardian?</h2>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>SEO + GEO Dual Engine</h3>
+        <p>30+ SEO factors and 16 GEO signals checked daily. Traditional search (Google) + AI search (ChatGPT, Claude, Perplexity) — one platform.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <h3>Fix Code Generator</h3>
+        <p>Not just diagnosis — we generate copy-paste ready Schema, llms.txt, robots.txt AI rules, OG tags. No developer needed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>SEO vs GEO Comparison</h3>
+        <p>See side-by-side SEO and GEO scores with trend charts. Know where you stand in both traditional and AI search.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI-Powered Diagnosis</h3>
+        <p>Not just "you're missing a meta description." We tell you <em>which page</em>, <em>why it matters</em>, and give you prioritized fix recommendations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Instant Alerts</h3>
+        <p>Get notified the moment we detect a critical issue — broken links, missing tags, score drops. Fix problems in hours, not weeks.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🆚</div>
+        <h3>Competitor Watch</h3>
+        <p>Track competitor sites. Get AI briefs on what they changed — new content, schema updates, structural changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>How It Works</h2>
+    <div class="features">
+      <div class="feature-card" style="text-align:center">
+        <div class="feature-icon">1️⃣</div>
+        <h3>Add Your Site</h3>
+        <p>Enter your URL. That's it. No crawling setup, no API keys, no configuration.</p>
+      </div>
+      <div class="feature-card" style="text-align:center">
+        <div class="feature-icon">2️⃣</div>
+        <h3>We Scan Daily</h3>
+        <p>Our system checks 30+ SEO factors every day and tracks trends over time.</p>
+      </div>
+      <div class="feature-card" style="text-align:center">
+        <div class="feature-icon">3️⃣</div>
+        <h3>AI Tells You What to Fix</h3>
+        <p>Get prioritized recommendations with copy-paste code. Focus on fixing, not analyzing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Built on Cloudflare</h2>
+    <table class="comparison">
+      <tr><th>Component</th><th>Purpose</th><th>Cost</th></tr>
+      <tr><td>Workers</td><td>API + scan engine</td><td class="highlight">Free (100K req/day)</td></tr>
+      <tr><td>Workers AI</td><td>AI diagnosis + reports</td><td class="highlight">Free tier available</td></tr>
+      <tr><td>D1</td><td>User data + scan history</td><td class="highlight">Free (5MB DB)</td></tr>
+      <tr><td>Queues</td><td>Async scan processing</td><td class="highlight">Free (100K msgs/mo)</td></tr>
+      <tr><td>Cron Triggers</td><td>Daily automated scans</td><td class="highlight">~$0.003/call</td></tr>
+    </table>
+  </section>
+
+  <section class="section" id="pricing">
+    <h2>Simple Pricing</h2>
+    <div class="pricing">
+      <div class="price-card">
+        <h3>Free</h3>
+        <div class="price">$0<span>/mo</span></div>
+        <ul>
+          <li>1 website monitored</li>
+          <li>Daily scans</li>
+          <li>Basic dashboard</li>
+          <li>7-day full feature trial</li>
+        </ul>
+        <a href="/signup.html" class="btn-primary" style="width:100%">Get Started</a>
+      </div>
+      <div class="price-card featured">
+        <h3>Starter</h3>
+        <div class="price">$9<span>/mo</span></div>
+        <ul>
+          <li>3 websites monitored</li>
+          <li>AI-powered diagnosis</li>
+          <li>Email alerts</li>
+          <li>Score trend charts</li>
+        </ul>
+        <a href="/signup.html" class="btn-primary" style="width:100%">Start Trial</a>
+      </div>
+      <div class="price-card">
+        <h3>Pro</h3>
+        <div class="price">$19<span>/mo</span></div>
+        <ul>
+          <li>10 websites monitored</li>
+          <li>1 competitor tracked</li>
+          <li>AI weekly reports</li>
+          <li>Fix code generation</li>
+        </ul>
+        <a href="/signup.html" class="btn-primary" style="width:100%">Start Trial</a>
+      </div>
+      <div class="price-card">
+        <h3>Agency</h3>
+        <div class="price">$49<span>/mo</span></div>
+        <ul>
+          <li>30 websites monitored</li>
+          <li>5 competitors tracked</li>
+          <li>White-label reports</li>
+          <li>API access</li>
+        </ul>
+        <a href="/signup.html" class="btn-primary" style="width:100%">Contact Us</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>SEO Guardian vs. The Rest</h2>
+    <table class="comparison">
+      <tr><th></th><th class="highlight">SEO Guardian</th><th>Ahrefs</th><th>Semrush</th></tr>
+      <tr><td>Price</td><td class="highlight">From $9/mo</td><td>$108/mo</td><td>$139/mo</td></tr>
+      <tr><td>GEO (AI Search) Audit</td><td class="highlight">✅ 16 signals</td><td>❌</td><td>❌</td></tr>
+      <tr><td>Fix Code Generation</td><td class="highlight">✅ Copy-paste</td><td>❌</td><td>❌</td></tr>
+      <tr><td>AI Diagnosis</td><td class="highlight">✅ Native</td><td>Basic</td><td>Basic</td></tr>
+      <tr><td>Setup Time</td><td class="highlight">30 seconds</td><td>Hours</td><td>Hours</td></tr>
+      <tr><td>Target</td><td class="highlight">Solo devs & SMBs</td><td>Agencies</td><td>Agencies</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <p>© 2026 SEO Guardian. Built on Cloudflare. Powered by AI.</p>
+    <p style="margin-top:8px"><a href="https://cf-seo.pages.dev">Free SEO Tools</a> · <a href="/signup.html">Sign Up</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing — SEO Guardian</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 2rem; text-align: center; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #94a3b8; margin-bottom: 40px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .plan-card { background: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155; position: relative; transition: transform 0.2s; }
+    .plan-card:hover { transform: translateY(-4px); }
+    .plan-card.featured { border-color: #6366f1; box-shadow: 0 0 30px #6366f133; }
+    .plan-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #6366f1; color: white; padding: 4px 16px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .plan-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .plan-desc { color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px; }
+    .plan-price { font-size: 2.5rem; font-weight: 800; margin-bottom: 4px; }
+    .plan-price span { font-size: 1rem; font-weight: 400; color: #94a3b8; }
+    .plan-period { color: #94a3b8; font-size: 0.85rem; margin-bottom: 24px; }
+    .plan-features { list-style: none; margin-bottom: 24px; }
+    .plan-features li { padding: 6px 0; font-size: 0.9rem; color: #cbd5e1; }
+    .plan-features li::before { content: "✓ "; color: #22c55e; font-weight: 700; }
+    .plan-features li.disabled { color: #475569; }
+    .plan-features li.disabled::before { content: "✗ "; color: #ef4444; }
+    .btn { display: block; width: 100%; padding: 12px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-outline { background: transparent; border: 2px solid #6366f1; color: #6366f1; }
+    .btn-outline:hover { background: #6366f1; color: white; }
+    .compare-table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+    .compare-table th, .compare-table td { padding: 12px 16px; text-align: center; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+    .compare-table th { color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+    .compare-table td:first-child { text-align: left; font-weight: 500; }
+    .check { color: #22c55e; } .cross { color: #475569; }
+    .faq-item { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 12px; border: 1px solid #334155; }
+    .faq-q { font-weight: 600; margin-bottom: 8px; color: #f1f5f9; }
+    .faq-a { color: #94a3b8; font-size: 0.9rem; line-height: 1.6; }
+    @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Simple, Transparent Pricing</h1>
+    <p class="subtitle">Start free. Upgrade when you're ready. No hidden fees.</p>
+
+    <div class="grid-3">
+      <!-- Free -->
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-desc">Try before you buy</div>
+        <div class="plan-price">$0<span>/mo</span></div>
+        <div class="plan-period">Forever free</div>
+        <ul class="plan-features">
+          <li>1 monitored site</li>
+          <li>Daily SEO scans (5 pages)</li>
+          <li>Basic GEO audit</li>
+          <li>7-day score history</li>
+          <li class="disabled">AI fix recommendations</li>
+          <li class="disabled">Competitor tracking</li>
+          <li class="disabled">Report export</li>
+          <li class="disabled">API access</li>
+        </ul>
+        <a href="/signup.html" class="btn btn-outline">Get Started Free</a>
+      </div>
+
+      <!-- Starter -->
+      <div class="plan-card featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-desc">For solo developers & small businesses</div>
+        <div class="plan-price">$9<span>/mo</span></div>
+        <div class="plan-period">Billed annually ($108/yr) or $12/mo monthly</div>
+        <ul class="plan-features">
+          <li>3 monitored sites</li>
+          <li>Daily SEO scans (20 pages)</li>
+          <li>Full GEO audit (16 signals)</li>
+          <li>90-day score history</li>
+          <li>AI fix recommendations</li>
+          <li>2 competitor sites</li>
+          <li>Schema code generator</li>
+          <li class="disabled">White-label reports</li>
+        </ul>
+        <a href="/signup.html" class="btn btn-primary">Start 7-Day Free Trial</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="plan-card">
+        <div class="plan-name">Pro</div>
+        <div class="plan-desc">For growing businesses & consultants</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-period">Billed annually ($348/yr) or $35/mo monthly</div>
+        <ul class="plan-features">
+          <li>10 monitored sites</li>
+          <li>Daily SEO scans (50 pages)</li>
+          <li>Full GEO audit + trend analysis</li>
+          <li>Unlimited score history</li>
+          <li>AI fix recommendations + code</li>
+          <li>5 competitor sites</li>
+          <li>PDF/JSON report export</li>
+          <li>Priority email support</li>
+        </ul>
+        <a href="/signup.html" class="btn btn-outline">Start 7-Day Free Trial</a>
+      </div>
+    </div>
+
+    <!-- Agency -->
+    <div class="plan-card" style="max-width:500px;margin:0 auto 40px;text-align:center;">
+      <div class="plan-name">Agency</div>
+      <div class="plan-desc">For agencies & large teams</div>
+      <div class="plan-price">$79<span>/mo</span></div>
+      <div class="plan-period">Billed annually ($948/yr)</div>
+      <ul class="plan-features" style="display:inline-block;text-align:left;">
+        <li>30 monitored sites</li>
+        <li>Daily full-site audits (50 pages)</li>
+        <li>15 competitor sites</li>
+        <li>White-label PDF reports</li>
+        <li>API access (10K requests/mo)</li>
+        <li>Dedicated account manager</li>
+        <li>Custom integrations</li>
+      </ul>
+      <br>
+      <a href="/signup.html" class="btn btn-outline" style="max-width:300px;margin:0 auto;">Contact Sales</a>
+    </div>
+
+    <!-- Comparison Table -->
+    <h2 style="text-align:center;margin-bottom:20px;">Feature Comparison</h2>
+    <table class="compare-table">
+      <thead>
+        <tr><th>Feature</th><th>Free</th><th>Starter</th><th>Pro</th><th>Agency</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Monitored Sites</td><td>1</td><td>3</td><td>10</td><td>30</td></tr>
+        <tr><td>Pages per Crawl</td><td>5</td><td>20</td><td>50</td><td>50</td></tr>
+        <tr><td>Crawl Depth</td><td>1</td><td>2</td><td>3</td><td>3</td></tr>
+        <tr><td>SEO Score History</td><td>7 days</td><td>90 days</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr><td>GEO Audit Signals</td><td>Basic</td><td>16 signals</td><td>16 signals</td><td>16 signals</td></tr>
+        <tr><td>AI Fix Recommendations</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Schema Code Generator</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Competitor Tracking</td><td class="cross">✗</td><td>2 sites</td><td>5 sites</td><td>15 sites</td></tr>
+        <tr><td>Content Analysis</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Security Headers Audit</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Sitemap Validation</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Robots.txt Analysis</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>PDF Report Export</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>JSON API Export</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>White-label Reports</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="check">✓</td></tr>
+        <tr><td>API Access</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td>10K/mo</td></tr>
+        <tr><td>Support</td><td>Community</td><td>Email</td><td>Priority</td><td>Dedicated</td></tr>
+      </tbody>
+    </table>
+
+    <!-- FAQ -->
+    <h2 style="text-align:center;margin:40px 0 20px;">Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <div class="faq-q">What is GEO (Generative Engine Optimization)?</div>
+      <div class="faq-a">GEO is the practice of optimizing your website for AI-powered search engines like ChatGPT, Claude, and Perplexity. Unlike traditional SEO which targets Google, GEO ensures your content is discoverable and citable by AI models. We check 16 GEO signals including llms.txt, structured data completeness, content depth, and AI crawler accessibility.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How does the free trial work?</div>
+      <div class="faq-a">All new accounts get a 7-day free trial with Starter plan features. No credit card required. If you don't upgrade within 7 days, your account automatically switches to the Free plan.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I cancel anytime?</div>
+      <div class="faq-a">Yes, cancel anytime from your dashboard. No cancellation fees. Your access continues until the end of the billing period.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How often are scans run?</div>
+      <div class="faq-a">Scans run daily at 9:00 AM UTC for all active sites. You can also trigger manual scans on demand from the dashboard.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Do you offer custom enterprise plans?</div>
+      <div class="faq-a">Yes! Contact us at sales@seoguardian.io for custom pricing, higher limits, dedicated infrastructure, and SLA guarantees.</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "cf-guardian",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-30",
+
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "routes": [
+    {
+      "pattern": "seo.eforge.xyz/*",
+      "zone_name": "eforge.xyz"
+    }
+  ],
+
+  "vars": {
+    "APP_ORIGIN": "https://seo.eforge.xyz",
+    "ENVIRONMENT": "production",
+    "TURSO_DB_URL": "libsql://seo-guardian-qwsky.aws-us-west-2.turso.io",
+    "TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3ODAyOTQ4NjgsImlkIjoiMDE5ZTgxZDctOGIwMS03MjExLTk5NDItZTY4YWZkN2RlY2FjIiwicmlkIjoiMzM4ZTUxMDMtYTM1My00MWNlLThiMDMtNjMyZDM4NjNmNjU5In0.kLxhT1Tq_gnglmu6w0a5hL8W6f-vwbqp-Yij2h4nPpe2hM8-3S9kqnYvWQ84VhwVFQfhqNtrDU_GvYVoryceCg"
+  }
+}
