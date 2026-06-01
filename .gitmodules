@@ -1,0 +1,27 @@
+[submodule "templates/cf-api"]
+	path = templates/cf-api
+	url = https://github.com/qwdingyu/cf-api.git
+[submodule "templates/cf-calculators"]
+	path = templates/cf-calculators
+	url = https://github.com/qwdingyu/cf-calculators.git
+[submodule "templates/cf-form"]
+	path = templates/cf-form
+	url = https://github.com/qwdingyu/cf-form.git
+[submodule "templates/cf-guardian"]
+	path = templates/cf-guardian
+	url = https://github.com/qwdingyu/cf-guardian.git
+[submodule "templates/cf-seo"]
+	path = templates/cf-seo
+	url = https://github.com/qwdingyu/cf-seo.git
+[submodule "templates/cf-seo-archive"]
+	path = templates/cf-seo-archive
+	url = https://github.com/qwdingyu/cf-seo-archive.git
+[submodule "templates/cf-static"]
+	path = templates/cf-static
+	url = https://github.com/qwdingyu/cf-static.git
+[submodule "templates/cf-tools"]
+	path = templates/cf-tools
+	url = https://github.com/qwdingyu/cf-tools.git
+[submodule "templates/cf-shop"]
+	path = templates/cf-shop
+	url = https://github.com/qwdingyu/cf-shop.git

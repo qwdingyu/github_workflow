@@ -1,9 +1,0 @@
-{
-  "slug": "introduction",
-  "title": "简介",
-  "description": "开发者工具平台简介。",
-  "keywords": ["文档", "简介"],
-  "category": "getting-started",
-  "order": 1,
-  "content": "<h2>概述</h2>\n<p>本平台提供免费、注重隐私的开发者工具，所有操作完全在您的浏览器中运行。</p>\n<h3>隐私优先</h3>\n<p>所有数据处理都在您的浏览器本地进行，不会向我们的服务器发送任何数据。</p>\n<h3>可用工具</h3>\n<p>我们提供不断增长的日常开发工具集合：</p>\n<ul>\n<li>JSON 格式化与验证工具</li>\n<li>Base64 编解码工具</li>\n<li>UUID 生成器</li>\n</ul>"
-}

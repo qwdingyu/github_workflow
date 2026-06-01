@@ -1,9 +1,0 @@
-{
-  "slug": "introduction",
-  "title": "Introduction",
-  "description": "Introduction to the DevTools platform.",
-  "keywords": ["documentation", "introduction"],
-  "category": "getting-started",
-  "order": 1,
-  "content": "<h2>Overview</h2>\n<p>This platform provides free, privacy-focused developer tools that run entirely in your browser.</p>\n<h3>Privacy First</h3>\n<p>All data processing happens locally in your browser. No data is ever sent to our servers.</p>\n<h3>Available Tools</h3>\n<p>We offer a growing collection of everyday developer tools:</p>\n<ul>\n<li>JSON Formatter & Validator</li>\n<li>Base64 Encoder/Decoder</li>\n<li>UUID Generator</li>\n</ul>"
-}

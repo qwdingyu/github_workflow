@@ -1,9 +1,0 @@
-[
-  {
-    "slug": "introduction",
-    "title": "Introduction",
-    "description": "Overview of the DevTools platform and how to use our free tools.",
-    "order": 1,
-    "content": "<h2>About DevTools</h2><p>DevTools is a free online developer tools platform. All tools run entirely in your browser — no data is ever sent to our servers.</p><h3>Key Features</h3><ul><li><strong>Free</strong> — All tools are completely free with no usage limits</li><li><strong>Privacy-First</strong> — All processing happens locally in your browser</li><li><strong>No Registration</strong> — Just open and use</li><li><strong>Cross-Platform</strong> — Works on all modern browsers and devices</li></ul><h3>Tool Categories</h3><ul><li><strong>Formatting</strong> — JSON formatter and code beautifier</li><li><strong>Encoding</strong> — Base64, URL, HTML encoder/decoder</li><li><strong>Hashing</strong> — MD5 and other hash algorithms</li><li><strong>Text Processing</strong> — Regex tester and text conversion</li><li><strong>Generators</strong> — UUID, timestamp converter, and more</li></ul>"
-  }
-]
