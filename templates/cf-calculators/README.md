@@ -1,93 +1,98 @@
-# cf-static — 纯静态站模板
+# cf-calculators — 中国在线计算器
 
-> 部署模式：**pages**（Cloudflare Pages，无限带宽，Free 套餐）
+> 部署模式：**pages**（Cloudflare Pages，Free 套餐）
 > 不依赖 `@eforge/cf-core`，纯静态站无需后端。
-> 详细文档：[产品模板使用指南](../docs/002_产品模板使用指南.md) | [踩坑记录](../docs/003_端到端部署踩坑记录.md) | [深度审计](../docs/004_五大模板深度审计与优化方案.md)
 
-## 适用场景
+## 定位
 
-- **SEO 工具站**：JSON Formatter、Base64 Decoder、UUID Generator 等
-- **文档站**：API 文档、产品文档、知识库
-- **博客/落地页**：产品落地页、邀请页、资料页
+**面向中国用户的政策相关计算器。** 内容与中国国内政策强相关。
+
+| 维度 | 说明 |
+|------|------|
+| 目标用户 | **中国用户**（国内职场人、财务人员） |
+| 内容类型 | 政策计算器（五险一金、个税、房贷、车贷） |
+| 语言 | **纯中文**（标题、描述、FAQ、UI 文案全部中文） |
+| 页面规模 | **5-20 个计算器**（手工编写） |
+| 开发方式 | Eleventy 模板 + 手工 JS 逻辑 |
+| 部署 | Cloudflare Pages（Free 套餐） |
+
+## ⚠️ 部署限制
+
+**国内用户无法直接访问 Cloudflare Pages。** 当前暂缓部署，需确定国内部署方案：
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 国内 CDN（阿里云 OSS + CDN） | 国内访问快 | 需要 ICP 备案 |
+| 国内服务器 | 完全可控 | 运维成本高 |
+| 继续使用 CF + 域名解析到国内 | 折中方案 | 稳定性不确定 |
+
+## 严禁混入的内容
+
+| 类型 | 示例 | 应放到 |
+|------|------|--------|
+| 通用开发工具 | JSON 格式化、Base64、UUID | `cf-static` |
+| 英文内容 | 任何英文 UI 文案 | 不允许，全部用中文 |
+| 程序化 SEO 内容 | "What is X" 信息页 | `cf-seo` |
+
+## 与 cf-static 的区别
+
+| 维度 | cf-static | cf-calculators |
+|------|-----------|----------------|
+| 目标用户 | 国际用户（全球开发者） | 中国用户（国内职场人） |
+| 语言 | 纯英文 | 纯中文 |
+| 内容 | 通用开发工具（JSON、Base64、MD5） | 国内政策计算器（五险一金、个税、房贷） |
+| 域名 | Cloudflare Pages 域名 | 需要国内域名（待部署） |
+| 可访问性 | 全球可访问 | 国内无法访问 CF，需国内部署方案 |
+| 变现 | Google AdSense | 国内广告平台（待确定） |
 
 ## 快速开始
 
 ```bash
-cp -r templates/cf-static your-seo-site
-cd your-seo-site
+cd templates/cf-calculators
 npm install
-vim src/seo-config.json        # 编辑 SEO 配置
-vim src/tools/*.json           # 添加工具定义
-npm run generate:seo           # 生成页面 + sitemap + robots.txt
-npm run dev                    # http://localhost:8787
-```
 
-一键部署：
+# 编辑配置
+vim src/_data/config.json     # 站点名称、URL、社交链接
+vim src/_data/tools.json      # 添加计算器定义（中文）
 
-```bash
-CLOUDFLARE_API_TOKEN="cfat_xxx" DEPLOY_MODE=pages bash .deploy/one-click.sh
+# 添加计算器
+# 1. 在 src/_data/tools.json 添加计算器元数据（type: "calculator"）
+# 2. 在 assets/js/ 创建对应的 JS 文件
+# 3. 在 src/_includes/ 创建 njk 模板（自定义表单 UI）
+
+# 开发
+npm run dev                   # http://localhost:8787
+
+# 构建
+npm run build                 # 输出到 _site/
 ```
 
 ## 项目结构
 
 ```
-cf-static/
-├── public/                   # 静态文件（部署到 Cloudflare Pages）
-│   ├── index.html            # 首页（工具列表）
-│   ├── robots.txt            # SEO 爬虫规则（允许 GPTBot/ClaudeBot）
-│   ├── sitemap.xml           # 站点地图（自动生成）
-│   ├── _headers              # Cloudflare 自定义响应头
-│   ├── css/style.css         # 全站样式（暗色主题）
-│   ├── js/                   # 工具 JS 文件
-│   │   ├── json-formatter.js
-│   │   ├── base64-decode.js
-│   │   └── uuid-generator.js
-│   └── tools/                # 工具页面（自动生成）
-│       ├── json-formatter.html
-│       ├── base64-decode.html
-│       └── uuid-generator.html
-├── src/                      # SEO 数据源
-│   ├── seo-config.json       # 全站 SEO 配置
-│   ├── tools/*.json          # 每个工具的元数据
-│   └── templates/tool.html   # 工具页面模板
-├── scripts/
-│   └── generate-seo-pages.mjs  # 程序化页面生成器（含 sitemap + robots）
-├── .deploy/                  # one-click.sh 部署脚本体系
-├── .deploy-mode              # "pages"
+cf-calculators/
+├── src/
+│   ├── _data/
+│   │   ├── config.json       # 站点配置（中文）
+│   │   └── tools.json        # 计算器元数据（中文，type: "calculator"）
+│   ├── _includes/
+│   │   ├── income-tax-calculator.njk    # 个税计算器表单
+│   │   └── social-insurance-calculator.njk  # 五险一金表单
+│   ├── _layouts/
+│   │   └── base.njk          # 基础模板
+│   ├── index.njk             # 首页
+│   ├── tools.njk             # 工具页面模板（支持 calculator 类型）
+│   └── ...
+├── assets/
+│   ├── js/
+│   │   ├── income-tax-calculator.js
+│   │   ├── social-insurance-calculator.js
+│   │   └── utils.js          # 财务工具通用函数库
+│   └── styles.css
+├── .eleventy.js
 ├── package.json
-└── .gitignore
+└── wrangler.toml
 ```
-
-## SEO/GEO 优化
-
-每个工具页面自动生成：
-- **Schema.org JSON-LD**（`SoftwareApplication` + `FAQPage`）
-- **Open Graph + Twitter Card** 标签
-- **FAQ 结构化数据**（AI 搜索引擎友好）
-- **canonical URL**（防重复内容）
-- **robots.txt**（允许 GPTBot、ClaudeBot、PerplexityBot 等 AI 爬虫）
-
-## 添加工具
-
-1. 创建 `src/tools/my-tool.json`：
-
-```json
-{
-  "slug": "my-tool",
-  "title": "My Awesome Tool",
-  "description": "Does something amazing",
-  "keywords": ["tool", "online", "free"],
-  "category": "general",
-  "faq": [
-    { "q": "What is this tool?", "a": "It does X." },
-    { "q": "Is it free?", "a": "Yes, completely free." }
-  ]
-}
-```
-
-2. 创建 `public/js/my-tool.js`（实现 `processTool()` / `copyOutput()` / `clearAll()` 三个函数）
-3. 运行 `npm run generate:seo` 生成页面
-4. 部署即可
 
 ## 环境变量
 
@@ -96,12 +101,3 @@ cf-static/
 | `CLOUDFLARE_API_TOKEN` | ✅ | Cloudflare API Token（部署用） |
 | `TURSO_URL` | ❌ | 纯静态站不需要数据库 |
 | `TURSO_TOKEN` | ❌ | 纯静态站不需要数据库 |
-
-## 技术栈
-
-| 组件 | 选型 | 说明 |
-|------|------|------|
-| 部署 | Cloudflare Pages | 无限带宽，Free 套餐 |
-| 页面生成 | Node.js 脚本 | 程序化 SEO 页面生成 |
-| 样式 | 原生 CSS | 暗色主题，响应式 |
-| 工具 JS | 原生 JavaScript | 浏览器端执行，无后端依赖 |

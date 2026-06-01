@@ -5,3 +5,4 @@ node_modules/
 .atomcode/
 repos/*/\.git
 repos/*/.gitignore
+templates/cf-seo-archive/topics.json
