@@ -1,0 +1,22 @@
+{
+  "name": "cf-seo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Industrial-grade programmatic SEO pipeline — Eleventy + Cloudflare Pages, 10,000+ pages",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-topics.mjs",
+    "build": "node node_modules/@11ty/eleventy/cmd.cjs",
+    "pipeline": "node scripts/pipeline.mjs",
+    "dev": "npx @11ty/eleventy --serve",
+    "preview": "npx serve _site",
+    "deploy": "wrangler pages deploy _site"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.80.0",
+    "serve": "^14.2.0"
+  }
+}

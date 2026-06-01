@@ -1,0 +1,54 @@
+---
+layout: base.njk
+title: About Us
+description: "Learn about {{ config.siteName }} — your comprehensive resource for expert-written SEO guides, comparisons, and tutorials."
+permalink: /about/
+eleventyComputed:
+  canonical: "{{ config.url }}/about/"
+---
+
+<section class="article-container">
+  <article>
+    <header class="article-header">
+      <h1>About Us</h1>
+    </header>
+
+    <div class="article-content">
+      <h2>What is {{ config.siteName }}?</h2>
+      <p>{{ config.siteName }} is a comprehensive knowledge hub covering {{ categories | length }} categories across technology, business, finance, health, education, and lifestyle. With over {{ seoTopics | length }} expert-written articles, we help you find the information you need — fast.</p>
+
+      <h2>Our Mission</h2>
+      <p>We believe high-quality, well-structured information should be freely accessible to everyone. Our articles are organized by topic and intent — guides, comparisons, tutorials, checklists, and FAQs — so you can quickly find exactly what you're looking for.</p>
+
+      <h2>What We Cover</h2>
+      <p>Our content spans {{ categories | length }} categories including:</p>
+      <ul>
+        <li><strong>Technology:</strong> Cloud computing, AI, web development, DevOps, cybersecurity, and more.</li>
+        <li><strong>Business & Marketing:</strong> Digital marketing, e-commerce, SaaS, growth hacking, and analytics.</li>
+        <li><strong>Finance:</strong> Personal finance, cryptocurrency, investing, real estate, and tax planning.</li>
+        <li><strong>Health & Wellness:</strong> Fitness, nutrition, mental health, sleep, and supplements.</li>
+        <li><strong>Education & Career:</strong> Online learning, remote work, leadership, and side hustles.</li>
+        <li><strong>Lifestyle & Travel:</strong> Travel tips, digital nomad life, cooking, and sustainable living.</li>
+      </ul>
+      <p>Browse all topics: <a href="/topics/page-0/">All Topics →</a></p>
+
+      <h2>Technology Stack</h2>
+      <p>Built with modern, performant technologies:</p>
+      <ul>
+        <li><strong>Static Site Generator:</strong> Eleventy (11ty), lightweight and efficient.</li>
+        <li><strong>Global Deployment:</strong> Cloudflare Pages with global CDN for fast access worldwide.</li>
+        <li><strong>Performance:</strong> Pure HTML/CSS, no JavaScript framework overhead, optimal Core Web Vitals.</li>
+        <li><strong>SEO:</strong> Full structured data (JSON-LD), semantic HTML, sitemap, and robots.txt.</li>
+      </ul>
+
+      <h2>Contact Us</h2>
+      <p>If you have questions, suggestions, or partnership inquiries, reach out to us at: <a href="mailto:hello@seo-hub.pages.dev">hello@seo-hub.pages.dev</a></p>
+
+      <h2>Disclaimer</h2>
+      <ul>
+        <li>Content on this site is for informational purposes only and does not constitute professional advice.</li>
+        <li>By using this website, you agree to our <a href="/terms/">Terms of Service</a> and <a href="/privacy/">Privacy Policy</a>.</li>
+      </ul>
+    </div>
+  </article>
+</section>

@@ -1,0 +1,129 @@
+---
+layout: tool.njk
+eleventyComputed:
+  title: "SERP Preview Tool — SEO Toolkit"
+  description: "Preview how your page looks in Google search results. Check title length, description truncation, and URL display in real time."
+  canonical: "/tools/serp-preview/"
+  tool:
+    slug: "serp-preview"
+    title: "SERP Preview Tool"
+    icon: "🔍"
+    description: "Preview how your page looks in Google search results in real time."
+  toolScript: "/assets/tools/serp-preview/script.js"
+---
+
+<section class="tool-area">
+  <div class="tool-container">
+    <div class="form-group">
+      <label for="sp-title">Page Title</label>
+      <input type="text" id="sp-title" placeholder="Your page title (max 60 chars)" oninput="updatePreview()">
+      <p class="form-hint"><span id="sp-title-count">0</span>/60 characters &mdash; <span id="sp-title-status" class="sp-ok">OK</span></p>
+    </div>
+    <div class="form-group">
+      <label for="sp-desc">Meta Description</label>
+      <textarea id="sp-desc" rows="3" placeholder="Your meta description (max 155 chars)" oninput="updatePreview()"></textarea>
+      <p class="form-hint"><span id="sp-desc-count">0</span>/155 characters &mdash; <span id="sp-desc-status" class="sp-ok">OK</span></p>
+    </div>
+    <div class="form-group">
+      <label for="sp-url">Page URL</label>
+      <input type="url" id="sp-url" value="https://example.com/your-page-url" oninput="updatePreview()">
+    </div>
+    <div class="form-group">
+      <label for="sp-date">Breadcrumb Date (optional)</label>
+      <input type="text" id="sp-date" placeholder="e.g. 2026-01-15" oninput="updatePreview()">
+    </div>
+  </div>
+
+  <div class="tool-output" id="sp-result">
+    <h3>Google Desktop Preview</h3>
+    <div id="sp-preview-desktop" class="serp-preview">
+      <div class="serp-breadcrumb" id="sp-breadcrumb"></div>
+      <div class="serp-title" id="sp-preview-title">Your Page Title Will Appear Here</div>
+      <div class="serp-url" id="sp-preview-url">example.com › your-page-url</div>
+      <div class="serp-desc" id="sp-preview-desc">Your meta description will appear here. Write something compelling to improve your click-through rate.</div>
+    </div>
+
+    <h3 style="margin-top:24px">Google Mobile Preview</h3>
+    <div id="sp-preview-mobile" class="serp-preview serp-preview--mobile">
+      <div class="serp-breadcrumb" id="sp-breadcrumb-mobile"></div>
+      <div class="serp-title" id="sp-preview-title-mobile">Your Page Title</div>
+      <div class="serp-url" id="sp-preview-url-mobile">example.com › your-page-url</div>
+      <div class="serp-desc" id="sp-preview-desc-mobile">Your meta description will appear here.</div>
+    </div>
+  </div>
+</section>
+
+<style>
+.serp-preview {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 28px;
+  font-family: Arial, sans-serif;
+}
+.serp-preview--mobile {
+  max-width: 375px;
+  padding: 16px 20px;
+}
+.serp-breadcrumb {
+  font-size: 12px;
+  color: #202124;
+  margin-bottom: 4px;
+}
+.serp-title {
+  font-size: 20px;
+  line-height: 1.3;
+  color: #1a0dab;
+  font-family: Arial, sans-serif;
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.serp-preview--mobile .serp-title {
+  font-size: 18px;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.serp-url {
+  font-size: 14px;
+  color: #202124;
+  margin-bottom: 6px;
+  font-family: Arial, sans-serif;
+}
+.serp-desc {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4d5156;
+  font-family: Arial, sans-serif;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sp-ok { color: var(--success); font-weight: 600; }
+.sp-warn { color: var(--warning); font-weight: 600; }
+.sp-error { color: var(--error); font-weight: 600; }
+</style>
+
+<script>
+function updatePreview() { window.updateSERP(); }
+</script>
+
+<section class="faq">
+  <h2>Frequently Asked Questions</h2>
+  <details>
+    <summary>How does Google truncate long titles?</summary>
+    <p>Google displays up to about 60 characters or 580 pixels of a title tag. If your title exceeds this, Google adds an ellipsis (...). The pixel width matters more than character count — wide characters like W and M take up more space than narrow ones like i and l.</p>
+  </details>
+  <details>
+    <summary>Does the meta description affect rankings?</summary>
+    <p>Meta descriptions are not a direct ranking factor. However, a well-written description improves click-through rate (CTR) from search results, which can indirectly boost rankings. Google may also rewrite your description if it finds a better match for the user's query.</p>
+  </details>
+  <details>
+    <summary>Why does Google sometimes change my title?</summary>
+    <p>Google may replace your title tag with a heading from your page, the link text from a referring page, or a combination of elements if it believes those better represent your content for a specific query.</p>
+  </details>
+</section>

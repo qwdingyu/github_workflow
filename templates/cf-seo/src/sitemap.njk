@@ -1,0 +1,34 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{{ config.url }}/</loc>
+    <lastmod>{{ buildDate }}</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  {% for tool in tools %}
+  <url>
+    <loc>{{ config.url }}/tools/{{ tool.slug }}/</loc>
+    <lastmod>{{ buildDate }}</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  {% endfor %}
+  <url>
+    <loc>{{ config.url }}/privacy/</loc>
+    <lastmod>{{ buildDate }}</lastmod>
+    <changefreq>yearly</changefreq>
+  </url>
+  <url>
+    <loc>{{ config.url }}/terms/</loc>
+    <lastmod>{{ buildDate }}</lastmod>
+    <changefreq>yearly</changefreq>
+  </url>
+  <url>
+    <loc>{{ config.url }}/about/</loc>
+    <lastmod>{{ buildDate }}</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+</urlset>

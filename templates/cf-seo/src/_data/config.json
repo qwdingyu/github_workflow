@@ -1,0 +1,20 @@
+{
+  "siteName": "SEO Toolkit",
+  "description": "Free, fast, privacy-friendly SEO tools for developers and site owners. Schema generator, meta tag builder, robots.txt editor, SERP preview, and more.",
+  "locale": "en-US",
+  "url": "https://seo-hub.pages.dev",
+  "ogImage": "/og-image.svg",
+  "author": "SEO Toolkit",
+  "ga4Id": "",
+  "social": {
+    "twitter": "",
+    "github": ""
+  },
+  "footerLinks": [
+    { "label": "Privacy Policy", "url": "/privacy/" },
+    { "label": "Terms of Service", "url": "/terms/" },
+    { "label": "About", "url": "/about/" },
+    { "label": "Sitemap", "url": "/sitemap.xml" }
+  ],
+  "themeColor": "#2563eb"
+}

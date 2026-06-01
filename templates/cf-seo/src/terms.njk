@@ -1,0 +1,55 @@
+---
+layout: base.njk
+title: Terms of Service
+description: "{{ config.siteName }} Terms of Service — Please read before using our website"
+permalink: /terms/
+eleventyComputed:
+  canonical: "{{ config.url }}/terms/"
+---
+
+<section class="article-container">
+  <article>
+    <header class="article-header">
+      <h1>Terms of Service</h1>
+      <p class="article-date">Last updated: {{ buildDate }}</p>
+    </header>
+
+    <div class="article-content">
+      <p>Welcome to {{ config.siteName }} ("the Site"). By using this Site, you agree to be bound by these Terms of Service.</p>
+
+      <h2>1. Service Description</h2>
+      <p>This Site provides a comprehensive collection of expert-written SEO guides, comparisons, tutorials, and educational articles across {{ categories | length }} categories including technology, business, finance, health, education, and lifestyle.</p>
+      <p>All content is delivered as static HTML pages via Cloudflare's global CDN for fast, reliable access worldwide.</p>
+
+      <h2>2. Usage Terms</h2>
+      <h3>2.1 Free Usage</h3>
+      <p>All content on this Site is currently free and requires no registration. We reserve the right to adjust pricing in the future and will provide advance notice of any changes.</p>
+
+      <h3>2.2 Acceptable Use</h3>
+      <p>You agree not to:</p>
+       <ul>
+         <li>Use this Site for any illegal, infringing, or harmful activities.</li>
+         <li>Automatically scrape, crawl, or abuse our website.</li>
+         <li>Interfere with or disrupt the normal operation of this Site.</li>
+         <li>Reproduce, distribute, or republish any content without prior written permission.</li>
+       </ul>
+
+      <h2>3. Intellectual Property</h2>
+      <p>All content on this Site, including text, graphics, logos, and software code, is the property of {{ config.siteName }} and is protected by copyright and intellectual property laws.</p>
+
+      <h2>4. Limitation of Liability</h2>
+       <ul>
+         <li>Content on this Site is provided "as is" without warranty of any kind.</li>
+         <li>We do not guarantee the accuracy, reliability, or completeness of any information.</li>
+         <li>We are not liable for any damages arising from the use of this Site or reliance on its content.</li>
+         <li>Content is for informational purposes only and does not constitute professional advice.</li>
+       </ul>
+
+      <h2>5. Changes to Terms</h2>
+      <p>We may update these Terms from time to time. Changes will be posted on this page with an updated date. Continued use of the Site constitutes acceptance of revised terms.</p>
+
+      <h2>6. Contact</h2>
+      <p>For questions about these Terms, contact us at: <a href="mailto:hello@seo-hub.pages.dev">hello@seo-hub.pages.dev</a></p>
+    </div>
+  </article>
+</section>

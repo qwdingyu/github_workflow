@@ -1,0 +1,58 @@
+---
+layout: tool.njk
+eleventyComputed:
+  title: "Robots.txt Generator — SEO Toolkit"
+  description: "Visually build a valid robots.txt file. Control crawler access, set crawl-delay, and specify sitemap location."
+  canonical: "/tools/robots-generator/"
+  tool:
+    slug: "robots-generator"
+    title: "Robots.txt Generator"
+    icon: "🤖"
+    description: "Visually build a valid robots.txt file. Control crawler access and specify sitemap location."
+  toolScript: "/assets/tools/robots-generator/script.js"
+---
+
+<section class="tool-area">
+  <div class="tool-container">
+    <div class="form-group">
+      <label for="rg-sitemap">Sitemap URL</label>
+      <input type="url" id="rg-sitemap" placeholder="https://example.com/sitemap.xml">
+    </div>
+
+    <div id="rg-rules">
+      <p class="form-hint">Add rules per user-agent. Each rule controls what a crawler can access.</p>
+    </div>
+
+    <button type="button" class="btn-secondary" onclick="window._rgAddRule()" style="margin-top:12px">+ Add User-Agent Rule</button>
+
+    <div class="tool-actions" style="margin-top:16px">
+      <button class="btn-primary" onclick="generateRobots()">Generate robots.txt</button>
+      <button class="btn-secondary" onclick="copyRobots()">Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <div class="tool-output" id="rg-result">
+    <h3>Generated robots.txt</h3>
+    <pre><code id="rg-output">Add rules above and click Generate...</code></pre>
+  </div>
+</section>
+
+<section class="faq">
+  <h2>Frequently Asked Questions</h2>
+  <details>
+    <summary>What is a robots.txt file?</summary>
+    <p>A robots.txt file sits at the root of your website (example.com/robots.txt) and tells search engine crawlers which pages they can and cannot access. It follows the Robots Exclusion Standard (REP-1).</p>
+  </details>
+  <details>
+    <summary>Should I block all crawlers or just specific ones?</summary>
+    <p>Most sites should allow all crawlers (<code>User-agent: *</code>) and only block specific paths like <code>/admin/</code> or <code>/tmp/</code>. Blocking all crawlers with <code>Disallow: /</code> will prevent your site from appearing in search results.</p>
+  </details>
+  <details>
+    <summary>Does robots.txt prevent content from being indexed?</summary>
+    <p>No! robots.txt only prevents crawling, not indexing. If other sites link to a disallowed page, Google may still index it based on the linking page's context. To prevent indexing, use <code>&lt;meta name="robots" content="noindex"&gt;</code> or HTTP headers instead.</p>
+  </details>
+  <details>
+    <summary>Where do I place the robots.txt file?</summary>
+    <p>At the root of your domain: <code>https://example.com/robots.txt</code>. It must be accessible at this exact path for crawlers to find it.</p>
+  </details>
+</section>

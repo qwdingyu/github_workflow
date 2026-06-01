@@ -1,0 +1,79 @@
+---
+layout: tool.njk
+eleventyComputed:
+  title: "Sitemap XML Generator — SEO Toolkit"
+  description: "Generate a valid XML sitemap from a list of URLs. Set priority, change frequency, and last modified dates."
+  canonical: "/tools/sitemap-generator/"
+  tool:
+    slug: "sitemap-generator"
+    title: "Sitemap XML Generator"
+    icon: "🗺"
+    description: "Generate a valid XML sitemap from a list of URLs."
+  toolScript: "/assets/tools/sitemap-generator/script.js"
+---
+
+<section class="tool-area">
+  <div class="tool-container">
+    <div class="form-group">
+      <label for="sm-urls">URLs (one per line) *</label>
+      <textarea id="sm-urls" rows="8" placeholder="https://example.com/&amp;#10;https://example.com/about&amp;#10;https://example.com/blog/post-1"></textarea>
+      <p class="form-hint">Enter one URL per line. Blank lines are ignored.</p>
+    </div>
+
+    <fieldset class="form-fieldset">
+      <legend>Default Settings (applied to all URLs)</legend>
+      <div class="form-group">
+        <label for="sm-changefreq">Change Frequency</label>
+        <select id="sm-changefreq">
+          <option value="daily">Daily</option>
+          <option value="hourly">Hourly</option>
+          <option value="weekly" selected>Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+          <option value="always">Always</option>
+          <option value="never">Never</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="sm-priority">Priority (0.0 - 1.0)</label>
+        <input type="number" id="sm-priority" min="0" max="1" step="0.1" value="0.5">
+      </div>
+      <div class="form-group">
+        <label for="sm-lastmod">Default Last Modified</label>
+        <input type="date" id="sm-lastmod">
+        <p class="form-hint">Leave empty to omit lastmod from all URLs.</p>
+      </div>
+    </fieldset>
+
+    <div class="tool-actions">
+      <button class="btn-primary" onclick="generateSitemap()">Generate Sitemap</button>
+      <button class="btn-secondary" onclick="copySitemap()">Copy to Clipboard</button>
+      <button class="btn-secondary" onclick="downloadSitemap()">Download XML</button>
+    </div>
+  </div>
+
+  <div class="tool-output" id="sm-result">
+    <h3>Generated XML Sitemap</h3>
+    <pre><code id="sm-output">Add URLs above and click Generate...</code></pre>
+  </div>
+</section>
+
+<section class="faq">
+  <h2>Frequently Asked Questions</h2>
+  <details>
+    <summary>What is an XML sitemap and why do I need one?</summary>
+    <p>An XML sitemap is a file that lists all the important pages on your website. It tells search engines which pages exist and how often they change, helping crawlers discover and index your content more efficiently.</p>
+  </details>
+  <details>
+    <summary>How do I submit a sitemap to Google?</summary>
+    <p>Upload your sitemap.xml to your site root (example.com/sitemap.xml), then submit it via <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Google Search Console</a> under the "Sitemaps" section. You can also reference it in your robots.txt file.</p>
+  </details>
+  <details>
+    <summary>Is there a limit to how many URLs a sitemap can contain?</summary>
+    <p>Yes. A single sitemap file can contain up to 50,000 URLs and must be compressed to under 50MB (gzip). For larger sites, create multiple sitemaps and a sitemap index file.</p>
+  </details>
+  <details>
+    <summary>Should I include every page in my sitemap?</summary>
+    <p>Only include canonical, indexable pages that provide unique value. Exclude pagination pages, filtered/sorted views, thank-you pages, and duplicate content. Focus on pages you want Google to find and rank.</p>
+  </details>
+</section>
