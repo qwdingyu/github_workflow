@@ -27,7 +27,7 @@ jobs:
 
       - name: 安装依赖
         run: |
-          pnpm approve-builds esbuild sharp workerd
+          pnpm config set ignore-scripts false
           pnpm install --frozen-lockfile
 
       - name: 运行架构验证

@@ -38,7 +38,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: |
-          pnpm approve-builds esbuild sharp workerd
+          pnpm config set ignore-scripts false
           pnpm install --frozen-lockfile
         working-directory: .
       - run: pnpm run type-check
@@ -72,7 +72,7 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install dependencies
         run: |
-          pnpm approve-builds esbuild sharp workerd
+          pnpm config set ignore-scripts false
           pnpm install --frozen-lockfile
         working-directory: .
       - run: pnpm run build
