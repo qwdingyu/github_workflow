@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      drizzle-zod:
+        specifier: 0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13))(zod@3.25.76)
 
   dtc:
     dependencies:
@@ -222,9 +226,6 @@ importers:
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)
-      drizzle-zod:
-        specifier: 0.7.1
-        version: 0.7.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13))(zod@3.25.76)
       hono:
         specifier: 4.12.23
         version: 4.12.23
@@ -235,6 +236,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 4.20260530.1
         version: 4.20260530.1
+      drizzle-zod:
+        specifier: 0.7.1
+        version: 0.7.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13))(zod@3.25.76)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -2218,6 +2222,12 @@ packages:
     peerDependencies:
       drizzle-orm: '>=0.36.0'
       zod: '>=3.0.0'
+
+  drizzle-zod@0.8.3:
+    resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
+    peerDependencies:
+      drizzle-orm: '>=0.36.0'
+      zod: ^3.25.0 || ^4.0.0
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -4861,6 +4871,11 @@ snapshots:
       '@types/better-sqlite3': 7.6.13
 
   drizzle-zod@0.7.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13))(zod@3.25.76):
+    dependencies:
+      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)
+      zod: 3.25.76
+
+  drizzle-zod@0.8.3(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13))(zod@3.25.76):
     dependencies:
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)
       zod: 3.25.76

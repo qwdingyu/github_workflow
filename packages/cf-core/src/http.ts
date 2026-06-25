@@ -86,9 +86,13 @@ export function getOrigin<E extends { Bindings: { APP_ORIGIN?: string } }>(c: Co
 
 /**
  * 安全读取 JSON body — 解析失败返回 undefined（避免非 JSON 请求体导致 400）
+ *
+ * 支持泛型，让调用方可以明确 JSON 形状，避免下游 zod safeParse 的 unknown 类型报错。
+ * 默认类型为 unknown，保持向后兼容。
  */
-export async function safeJsonBody(c: Context): Promise<unknown> {
-  return c.req.json().catch(() => undefined);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function safeJsonBody<T = unknown>(c: Context<any>): Promise<T> {
+  return c.req.json().catch(() => undefined) as Promise<T>;
 }
 
 /**

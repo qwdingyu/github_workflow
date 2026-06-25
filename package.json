@@ -18,5 +18,8 @@
   "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "drizzle-zod": "0.8.3"
   }
 }
