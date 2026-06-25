@@ -1,11 +1,10 @@
-# @eforge/cf-core — 自动化发布流水线
+# @eforge/cf-core — 自动化发布流水线（GitHub Packages 私有包）
 #
 # 自动触发：
-#   推送 tags 匹配 v* 时 → 运行测试 → 构建 → 发布到 npm
+#   推送 tags 匹配 v* 时 → 运行测试 → 构建 → 发布到 GitHub Packages
 #   推送 main 分支时 → 仅运行测试 + 检查
 #
-# 前提条件（在 GitHub repo Settings → Secrets and variables → Actions 中设置）：
-#   NPM_TOKEN: npm 自动化访问令牌（https://npmjs.com/settings/<org>/tokens）
+# 前提条件：无需额外配置，使用 GitHub Actions 内置的 GITHUB_TOKEN
 #
 # 使用方式：
 #   git tag v0.2.0
@@ -29,36 +28,47 @@ jobs:
         working-directory: packages/cf-core
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
-          cache-dependency-path: packages/cf-core/package-lock.json
-      - run: npm ci
-      - run: npm run type-check
-      - run: npm test
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - run: pnpm run type-check
+      - run: pnpm test
 
-  # ── npm 发布（仅 tag push 时执行） ──
+  # ── GitHub Packages 发布（仅 tag push 时执行） ──
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [check]
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: packages/cf-core
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: "https://registry.npmjs.org"
-          cache: "npm"
-          cache-dependency-path: packages/cf-core/package-lock.json
-      - run: npm ci
-      - run: npm run build
-      - run: npm publish
+          registry-url: "https://npm.pkg.github.com"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Configure pnpm for GitHub Packages
+        run: |
+          echo "@eforge:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - run: pnpm run build
+      - run: pnpm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ── GitHub Release（仅 tag push 时执行） ──
   release:

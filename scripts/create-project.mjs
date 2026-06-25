@@ -35,11 +35,15 @@ const EXCLUDE_FILES = new Set([
 
 // ── 模板清单 ─────────────────────────────────────────────────────────────────
 const TEMPLATES = {
-  "cf-shop":   { desc: "发卡商城（Workers + Turso）",      mode: "workers" },
-  "cf-api":    { desc: "API 中间层（Workers + Turso）",    mode: "workers" },
-  "cf-tools":  { desc: "在线工具箱（Workers + Turso）",    mode: "workers" },
-  "cf-form":   { desc: "动态表单系统（Workers + Turso）",  mode: "workers" },
-  "cf-static": { desc: "SEO 工具站（Pages 纯静态）",      mode: "pages" },
+  "cf-shop":        { desc: "发卡商城（Workers + Turso）",       mode: "workers" },
+  "cf-api":         { desc: "API 中间层（Workers + Turso）",     mode: "workers" },
+  "cf-tools":       { desc: "在线工具箱（Workers + Turso）",     mode: "workers" },
+  "cf-form":        { desc: "动态表单系统（Workers + Turso）",   mode: "workers" },
+  "cf-guardian":    { desc: "SEO 守卫 SaaS（Workers + Turso）",  mode: "workers" },
+  "cf-static":      { desc: "SEO 工具站（Pages 纯静态）",       mode: "pages" },
+  "cf-calculators": { desc: "计算器集合（Pages 纯静态）",       mode: "pages" },
+  "cf-seo":         { desc: "工业级 SEO 流水线（Pages 纯静态）", mode: "pages" },
+  "cf-seo-archive": { desc: "SEO 归档站（Pages 纯静态）",       mode: "pages" },
 };
 
 // ── 终端颜色 ─────────────────────────────────────────────────────────────────

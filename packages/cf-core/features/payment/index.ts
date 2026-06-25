@@ -26,6 +26,7 @@ export type {
 
 // ── 注册表 ──
 export { createProviderRegistry } from "./registry";
+export type { DbProviderConfig, DbProviderConfigMap } from "./registry";
 
 // ── 支付宝 ──
 export { AlipayProvider, alipayFactory, signRSA2, verifyRSA2 } from "./providers/alipay";

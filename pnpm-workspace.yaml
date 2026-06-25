@@ -4,3 +4,7 @@ packages:
   - "packages/*"
   - "templates/*"
   - "dtc"
+allowBuilds:
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  workerd: set this to true or false

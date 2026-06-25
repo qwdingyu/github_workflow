@@ -6,3 +6,6 @@ node_modules/
 repos/*/\.git
 repos/*/.gitignore
 templates/cf-seo-archive/topics.json
+**/.dev.vars
+.qwen/
+.pnpm-store/
