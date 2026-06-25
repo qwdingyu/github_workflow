@@ -37,9 +37,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
-        run: |
-          pnpm approve-builds
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --no-ignore-builds
         working-directory: .
       - run: pnpm run type-check
       - run: pnpm test
@@ -71,9 +69,7 @@ jobs:
           echo "@eforge:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install dependencies
-        run: |
-          pnpm approve-builds
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --no-ignore-builds
         working-directory: .
       - run: pnpm run build
       - run: pnpm publish
