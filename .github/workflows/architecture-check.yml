@@ -26,7 +26,9 @@ jobs:
           cache: "pnpm"
 
       - name: 安装依赖
-        run: pnpm install --frozen-lockfile --no-ignore-builds
+        run: |
+          pnpm approve-builds esbuild sharp workerd
+          pnpm install --frozen-lockfile
 
       - name: 运行架构验证
         run: node scripts/validate-architecture.mjs
