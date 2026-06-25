@@ -26,9 +26,7 @@ jobs:
           cache: "pnpm"
 
       - name: 安装依赖
-        run: |
-          pnpm config set ignore-scripts false
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --config.ignore-scripts=false
 
       - name: 运行架构验证
         run: node scripts/validate-architecture.mjs
