@@ -5,6 +5,7 @@ node_modules/
 .atomcode/
 repos/*/\.git
 repos/*/.gitignore
+freelancer-calc/
 templates/cf-seo-archive/topics.json
 **/.dev.vars
 .qwen/
