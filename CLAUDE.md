@@ -33,7 +33,7 @@ node scripts/validate-architecture.mjs
 
 ### 铁律 2：业务项目必须从 cf-core 导入公共表
 
-所有使用 `@eforge/cf-core` 的项目（`templates/*/`），其 `schema.ts` 必须包含：
+所有使用 `@usethink/cf-core` 的项目（`templates/*/`），其 `schema.ts` 必须包含：
 ```typescript
 export {
   systemConfig,
@@ -41,7 +41,7 @@ export {
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
-} from "@eforge/cf-core/db/schema";
+} from "@usethink/cf-core/db/schema";
 ```
 
 **严禁本地重复定义这 5 张表**。
@@ -93,3 +93,20 @@ export {
 1. 在 `src/db/schema.ts` 中添加：
 
 完整架构规则详见：`docs/ARCHITECTURE_ENFORCEMENT.md`
+
+---
+
+## 💳 支付生命周期速查（来自 docs/payment/005）
+
+| 模式 | 创建订单后 | 是否立即发卡 | 后续触发发卡的条件 |
+|------|-----------|-------------|------------------|
+| **余额支付** | `/pay/unified` 返回 | ✅ 是 | 无；创建订单后同步调用 `handleBalancePayment` → `markPaidAndIssue` |
+| **线上支付** | `/pay/unified` 返回支付信息 | ❌ 否 | 支付平台异步回调 `/pay/callback/:provider` 验签通过后调用 `markPaidAndIssue` |
+| **线下支付** | `/pay/unified` 返回收款信息 | ❌ 否 | 管理员后台点击 `/admin/orders/:id/mark-paid` 调用 `markPaidAndIssue` |
+| **/orders direct** | `/orders` 返回 | ✅ 是 | 创建订单时直接 `fulfillCardInventory` + 写 `issued` |
+| **/orders manual** | `/orders` 返回 | ❌ 否 | 管理员后台点击 `/admin/orders/:id/mark-paid` 调用 `markPaidAndIssue` |
+
+### 关键原则
+- 所有支付模式统一由 `markPaidAndIssue` 完成 `pending → paid → issued` 状态流转与卡密领取
+- 余额支付失败时自动退款并关闭订单，避免余额悬空
+- 非 card 模式（virtual/link/code/invite）不经过卡密库存锁定，避免误判库存不足
