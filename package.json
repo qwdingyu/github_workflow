@@ -5,12 +5,8 @@
   "description": "eForge Monorepo — Cloudflare Workers 工具链与模板",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build": "pnpm -w packages/cf-core run build",
-    "test": "pnpm -w packages/cf-core run test",
-    "lint": "pnpm -w packages/cf-core run lint 2>/dev/null || true",
-    "type-check": "pnpm -w packages/cf-core run type-check",
-    "publish": "pnpm -w packages/cf-core publish",
-    "clean": "pnpm -w packages/cf-core run clean 2>/dev/null || true",
+    "lint": "pnpm -w --recursive run lint 2>/dev/null || true",
+    "clean": "pnpm -w --recursive run clean 2>/dev/null || true",
     "validate:arch": "node scripts/validate-architecture.mjs",
     "validate:arch:fix": "node scripts/validate-architecture.mjs --fix",
     "hooks:init": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit"

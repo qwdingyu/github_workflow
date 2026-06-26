@@ -52,7 +52,7 @@
 │                    Cloudflare Workers                         │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐ │
-│  │  bootstrap()（@eforge/cf-core）                          │ │
+│  │  bootstrap()（@usethink/cf-core）                          │ │
 │  │  ├─ DB 初始化中间件                                      │ │
 │  │  ├─ 请求体限制 / 安全响应头 / 限流                       │ │
 │  │  └─ Turnstile 人机验证                                   │ │

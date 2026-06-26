@@ -16,7 +16,7 @@
     "smoke": "BASE_URL=http://localhost:8780 node scripts/smoke-readonly.mjs"
   },
   "dependencies": {
-    "@eforge/cf-core": "file:../packages/cf-core",
+    "@usethink/cf-core": "^0.3.4",
     "@libsql/client": "^0.14.0",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.22"

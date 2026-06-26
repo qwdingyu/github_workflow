@@ -14,7 +14,7 @@ export {
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
-} from "@eforge/cf-core/db/schema";
+} from "@usethink/cf-core/db/schema";
 
 // ═══════════════════════════════════════════════════════════════════
 // 1. dtc_codes — DTC 故障码主表（18,805 条）

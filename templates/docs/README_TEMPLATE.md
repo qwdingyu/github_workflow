@@ -1,7 +1,7 @@
 # {{TEMPLATE_NAME}} — {{TEMPLATE_DESCRIPTION}}
 
 > 部署模式：**{{DEPLOY_MODE}}**（{{DEPLOY_MODE_DESCRIPTION}}）
-> 集成 `@eforge/cf-core` 共享内核，复制后改配置即可上线
+> 集成 `@usethink/cf-core` 共享内核，复制后改配置即可上线
 
 ## 快速开始（30 分钟从模板到生产）
 
@@ -117,7 +117,7 @@ CLOUDFLARE_API_TOKEN="cfat_xxx" {{ONE_CLICK_EXTRA}}bash .deploy/one-click.sh
 | 框架 | Hono | 轻量高性能 Web 框架 |
 | 数据库 | {{DB_TYPE}} | {{DB_DESCRIPTION}} |
 | ORM | Drizzle ORM | 类型安全，零运行时开销 |
-| 共享内核 | @eforge/cf-core | 统一基础设施 |
+| 共享内核 | @usethink/cf-core | 统一基础设施 |
 | 前端 | {{FRONTEND_STACK}} | {{FRONTEND_DESCRIPTION}} |
 
 ## CI/CD

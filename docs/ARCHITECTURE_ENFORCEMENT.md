@@ -67,7 +67,7 @@ dtc 项目就是活生生的例子：用了 cf-core 的 bootstrap 但没导入 5
 
 ### 规则 2：业务项目必须导入 cf-core 公共表
 
-**所有使用 `@eforge/cf-core` 且需要数据库的项目**，其 `src/db/schema.ts` 必须包含：
+**所有使用 `@usethink/cf-core` 且需要数据库的项目**，其 `src/db/schema.ts` 必须包含：
 
 ```typescript
 export {
@@ -76,7 +76,7 @@ export {
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
-} from "@eforge/cf-core/db/schema";
+} from "@usethink/cf-core/db/schema";
 ```
 
 **禁止行为**：
@@ -115,7 +115,7 @@ node scripts/create-project.mjs my-new-shop --template cf-shop
 
 在 `templates/` 下新增模板时，如果有数据库需求，必须在 `src/db/schema.ts` 中包含：
 ```typescript
-export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from "@eforge/cf-core/db/schema";
+export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from "@usethink/cf-core/db/schema";
 ```
 
 ---
@@ -141,12 +141,12 @@ node scripts/validate-architecture.mjs
 ## 5. 修复已知偏离（dtc）
 
 dtc 项目当前状态：
-- ✅ 使用了 `@eforge/cf-core/bootstrap`
+- ✅ 使用了 `@usethink/cf-core/bootstrap`
 - ❌ 未导入 5 张公共表
 - 影响：无法使用审计日志、限流、幂等、系统配置、API Key
 
 修复步骤：
-1. 在 `dtc/src/db/schema.ts` 中添加 `export { ... } from "@eforge/cf-core/db/schema"`
+1. 在 `dtc/src/db/schema.ts` 中添加 `export { ... } from "@usethink/cf-core/db/schema"`
 2. 运行 `pnpm install && pnpm run type-check`
 3. 确认编译通过
 4. 提交修复

@@ -177,9 +177,9 @@ function checkProjectSchema(name, projectDir) {
     if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
       const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-      if (deps["@eforge/cf-core"]) {
+      if (deps["@usethink/cf-core"]) {
         // 用了 cf-core 但没有 schema.ts
-        warn(`${name} 使用了 @eforge/cf-core 但没有 src/db/schema.ts`);
+        warn(`${name} 使用了 @usethink/cf-core 但没有 src/db/schema.ts`);
       }
     }
     return;
@@ -204,7 +204,7 @@ function checkProjectSchema(name, projectDir) {
 
   if (!hasCoreImport && hasLocalTables) {
     fail(`${name}/src/db/schema.ts 定义了业务表但未从 cf-core 导入 5 张公共表`);
-    console.log(`    ${c.dim("必须添加: export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from \"@eforge/cf-core/db/schema\"")}`);
+    console.log(`    ${c.dim("必须添加: export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from \"@usethink/cf-core/db/schema\"")}`);
     console.log(`    ${c.dim("参考 templates/cf-shop/src/db/schema.ts 的写法")}`);
   } else if (hasCoreImport && hasLocalTables) {
     ok(`${name} schema 合规（导入公共表 + 定义了业务表）`);
@@ -293,7 +293,7 @@ function fixDtcSchema() {
   const content = readFileSync(schemaPath, "utf-8");
 
   // 检查是否已导入
-  if (content.includes("from \"@eforge/cf-core/db/schema\"")) {
+  if (content.includes("from \"@usethink/cf-core/db/schema\"")) {
     console.log(`\n${c.dim("ℹ️  dtc 已导入 cf-core 公共表，无需修复")}`);
     return;
   }
@@ -319,7 +319,7 @@ export {
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
-} from "@eforge/cf-core/db/schema";`;
+} from "@usethink/cf-core/db/schema";`;
 
   const newContent = content.replace(
     'import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";',

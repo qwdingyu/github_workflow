@@ -11,7 +11,7 @@
 ## 当前架构
 
 ```
-@eforge/cf-core/src/db/schema.ts   ← 5 张公共表
+@usethink/cf-core/src/db/schema.ts   ← 5 张公共表
 ├── systemConfig        (KV 配置)
 ├── adminAuditLogs      (审计日志)
 ├── rateLimitWindows    (限流窗口)
@@ -55,7 +55,7 @@ templates/cf-api/src/db/schema.ts    ← 5 张业务表 + re-export 5 张公共�
 
 ```
 Layer 0: drizzle-orm/sqlite-core    ← ORM 框架（第三方）
-Layer 1: @eforge/cf-core/db/schema  ← 公共基础设施表（5 张）
+Layer 1: @usethink/cf-core/db/schema  ← 公共基础设施表（5 张）
 Layer 2: templates/*/db/schema      ← 业务表（各项目独立）
 ```
 

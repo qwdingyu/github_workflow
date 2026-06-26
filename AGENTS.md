@@ -11,7 +11,7 @@
 |---|---|
 | 项目名称 | eForge Monorepo — Cloudflare Workers 工具链与模板 |
 | 项目类型 | **pnpm monorepo**（workspace 模式） |
-| 核心包 | `@eforge/cf-core` — 共享基础设施库（Hono + Drizzle + Turso） |
+| 核心包 | `@usethink/cf-core` — 共享基础设施库（Hono + Drizzle + Turso） |
 | 业务项目 | `templates/cf-shop`（电商）、`templates/dtc`（汽车故障码）、`templates/cf-static`（开发者工具站）、`templates/cf-form`（表单）、`templates/cf-api`（通用 API）、`templates/cf-tools`（工具集）、`templates/cf-calculators`（计算器） |
 | 语言 | **TypeScript**（全部项目） |
 | 框架 | **Hono**（Workers 项目）、**Eleventy**（静态站点） |
@@ -142,7 +142,7 @@
 
 ### 铁律 B：业务项目必须从 cf-core 导入公共表
 
-所有使用 `@eforge/cf-core` 的项目（`templates/*/`），其 `schema.ts` **必须**包含：
+所有使用 `@usethink/cf-core` 的项目（`templates/*/`），其 `schema.ts` **必须**包含：
 
 ```typescript
 import {
@@ -151,7 +151,7 @@ import {
   rateLimitWindows,
   idempotencyKeys,
   apiKeys,
-} from "@eforge/cf-core/db/schema";
+} from "@usethink/cf-core/db/schema";
 export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys };
 ```
 
@@ -363,7 +363,7 @@ Eleventy 构建 → 读取 _data/*.json → 渲染 njk 模板 → 输出静态 H
 
 ### 坑 4：pnpm workspace 依赖解析
 
-- 子项目引用 cf-core 用 `"@eforge/cf-core": "workspace:*"`
+- 子项目引用 cf-core 用 `"@usethink/cf-core": "workspace:*"`
 - 修改 cf-core 后需 `pnpm install` 重新链接
 - 不要在各子项目中单独 `npm install`
 

@@ -17,7 +17,7 @@ AGENTS.md
 docs/                     ← 文档（大量, 约 80+ 篇）
 dtc/                      ← 消费 cf-core 的项目（使用 wrangler deploy）
 eshop/                    ← 伪 submodule（git 树中有条目，无 .gitmodules，已损坏）
-packages/cf-core/         ← 唯一的 npm 包 @eforge/cf-core
+packages/cf-core/         ← 唯一的 npm 包 @usethink/cf-core
 scripts/                  ← 工具脚本（create-project.mjs, cloudflare 工具集）
 templates/                ← 项目模板（cf-api, cf-form, cf-shop, cf-static, cf-tools）
 ```
@@ -109,7 +109,7 @@ acctbox、vcode、vmail、xtools 等项目的 `node_modules/` 和 `dist/` 目录
 │   ├── scripts/
 │   ├── docs/                     ← 选择性精简
 │   ├── packages/
-│   │   └── cf-core/              ← npm publish @eforge/cf-core
+│   │   └── cf-core/              ← npm publish @usethink/cf-core
 │   ├── templates/                ← npm create 模板
 │   │   ├── cf-shop/
 │   │   ├── cf-static/
@@ -247,7 +247,7 @@ git push
          ↓
   触发: templates/cf-shop/   ← 从 monorepo 中读取
          ↓
-  自动: npm install @eforge/cf-core
+  自动: npm install @usethink/cf-core
          ↓
   获得: 完整 Shop 项目 + cf-core 依赖
 ```
@@ -264,7 +264,7 @@ flowchart LR
     end
 
     subgraph npm_Registry [npm Registry]
-        CorePkg["@eforge/cf-core"]
+        CorePkg["@usethink/cf-core"]
     end
 
     Pkg -->|npm publish| CorePkg

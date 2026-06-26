@@ -1,7 +1,7 @@
 /**
  * DTC 故障码查询服务 — Worker 入口
  *
- * 使用 @eforge/cf-core 的 bootstrap() 工厂函数。
+ * 使用 @usethink/cf-core 的 bootstrap() 工厂函数。
  * 所有基础设施（DB、安全头、错误处理、路由分流）由 bootstrap 自动注入。
  *
  * 路由结构：
@@ -16,7 +16,7 @@
  *   /api/health                   — 健康检查
  */
 
-import { bootstrap } from "@eforge/cf-core/bootstrap";
+import { bootstrap } from "@usethink/cf-core/bootstrap";
 import * as schema from "./db/schema";
 import { health } from "./routes/health";
 import { dtc } from "./routes/dtc";

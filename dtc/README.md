@@ -1,7 +1,7 @@
 # DTC Lookup — 汽车 DTC 故障码查询服务
 
 > 部署模式：**workers**（Cloudflare Workers + Static Assets）
-> 集成 `@eforge/cf-core` 共享内核，复制后改配置即可上线。
+> 集成 `@usethink/cf-core` 共享内核，复制后改配置即可上线。
 > 数据来源：Wal33D/dtc-database（MIT License）+ wzr1337/dtcmapping → 21,360 条 / 34 制造商
 
 基于 Cloudflare Workers + Turso + Drizzle ORM 的 OBD-II DTC 故障码查询服务。
@@ -102,5 +102,5 @@ BASE_URL=https://dtc.eforge.xyz node scripts/smoke-readonly.mjs
 | 框架 | Hono | 轻量高性能 |
 | 数据库 | Turso (libSQL) | SQLite 兼容，Free 9GB |
 | ORM | Drizzle ORM | 类型安全，防 SQL 注入 |
-| 共享内核 | @eforge/cf-core | 认证/安全/限流/缓存/日志 |
+| 共享内核 | @usethink/cf-core | 认证/安全/限流/缓存/日志 |
 | 静态页面 | Workers Assets | 自动生成 19,000+ SEO 页 |

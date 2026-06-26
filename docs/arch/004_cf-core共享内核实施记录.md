@@ -1,4 +1,4 @@
-# @eforge/cf-core 共享内核实施记录
+# @usethink/cf-core 共享内核实施记录
 
 > 日期：2026-05-29
 > 状态：Phase 1 完成（共享内核全部模块 + 测试通过）
@@ -103,7 +103,7 @@ return diff === 0;
 
 ```ts
 // 项目的 schema.ts
-import { systemConfig, adminAuditLogs, apiKeys } from "@eforge/cf-core/db/schema";
+import { systemConfig, adminAuditLogs, apiKeys } from "@usethink/cf-core/db/schema";
 // 项目自己的业务表
 export const products = sqliteTable("products", { ... });
 ```
@@ -161,7 +161,7 @@ export default bootstrap({
 
 ```
 templates/cf-{shop,api,tools}/
-├── package.json           # 依赖 @eforge/cf-core
+├── package.json           # 依赖 @usethink/cf-core
 ├── tsconfig.json          # paths alias → cf-core
 ├── wrangler.jsonc         # Workers 配置
 ├── README.md              # 中文使用说明
@@ -193,7 +193,7 @@ templates/cf-{shop,api,tools}/
 | 检查项 | cf-shop | cf-api | cf-tools |
 |--------|---------|--------|----------|
 | 使用 `bootstrap()` 工厂 | ✅ | ✅ | ✅ |
-| 导入 `@eforge/cf-core` | ✅ | ✅ | ✅ |
+| 导入 `@usethink/cf-core` | ✅ | ✅ | ✅ |
 | 扩展 `CoreBindings` | ✅ | ✅ | ✅ |
 | 导入公共 Schema | ✅ | ✅ | ✅ |
 | 完整 SQL 迁移 | ✅ | ✅ | ✅ |
@@ -284,31 +284,31 @@ interface RoutePlugin<TConfig> extends PluginBase {
 
 ```ts
 // 支付：选择渠道 + 创建支付
-import { createProviderRegistry } from "@eforge/cf-core/plugins/payment-core";
-import { alipayFactory } from "@eforge/cf-core/plugins/payment-alipay";
+import { createProviderRegistry } from "@usethink/cf-core/plugins/payment-core";
+import { alipayFactory } from "@usethink/cf-core/plugins/payment-alipay";
 
 const registry = createProviderRegistry(env, [alipayFactory]);
 const provider = registry.selectOnline();
 const result = await provider.createPayment({ orderNo, amountCents, currency, notifyUrl });
 
 // 邮件：发送模板邮件
-import { EmailService } from "@eforge/cf-core/plugins/email-resend";
+import { EmailService } from "@usethink/cf-core/plugins/email-resend";
 const email = new EmailService({ apiKey: env.RESEND_API_KEY });
 await email.sendWithTemplate("buyer@email.com", template, { orderNo, cardData });
 
 // Webhook：通知下游系统
-import { WebhookService } from "@eforge/cf-core/plugins/webhook";
+import { WebhookService } from "@usethink/cf-core/plugins/webhook";
 const hook = new WebhookService({ urls: "https://hooks.example.com/a", secret: "key" });
 await hook.notify("order.paid", { orderId, amount });
 
 // 智能路由：Thompson Sampling 选渠道
-import { ThompsonRouter } from "@eforge/cf-core/plugins/thompson-router";
+import { ThompsonRouter } from "@usethink/cf-core/plugins/thompson-router";
 const router = new ThompsonRouter();
 const decision = router.select(candidates);
 router.recordSuccess(candidates, decision.channelId);
 
 // 防刷检测：记录访问 + 检测异常
-import { AntiAbuseService } from "@eforge/cf-core/plugins/anti-abuse";
+import { AntiAbuseService } from "@usethink/cf-core/plugins/anti-abuse";
 const abuse = new AntiAbuseService({ maxRequestsPerIp: 30 });
 const events = abuse.record(resourceId, ipHash);
 ```

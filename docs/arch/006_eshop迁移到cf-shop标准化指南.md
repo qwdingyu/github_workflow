@@ -22,42 +22,42 @@
 
 | 导出路径 | 模块 | 功能 |
 |---------|------|------|
-| `@eforge/cf-core` | 主入口 | Hono 类型、通用类型 |
-| `@eforge/cf-core/db` | 数据库 | `createDb(client)` — Drizzle ORM 工厂 |
-| `@eforge/cf-core/db/schema` | Schema | 5 张公共表（systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys） |
-| `@eforge/cf-core/db/expressions` | SQL 表达式 | `dateTimeNow`, `timeAgo`, `jsonExtract` 等 |
-| `@eforge/cf-core/http` | HTTP 工具 | `ok()`, `fail()`, `failRateLimit()`, `getOrigin()`, `safeJsonBody()` |
-| `@eforge/cf-core/security` | 安全工具 | `sha256()`, `constantTimeEqual()`, `getIpHash()`, `getBearerToken()`, `verifyTurnstile()`, `buildSecurityHeaders()` |
-| `@eforge/cf-core/rate-limit` | 限流 | `MemoryRateLimiter`, `KvRateLimiter`, `DbRateLimiter` 三种后端 |
-| `@eforge/cf-core/cache` | Cache API | `createCache(namespace)` 工厂函数 |
-| `@eforge/cf-core/idempotency` | 幂等性 | `checkIdempotency()`, `saveIdempotentResponse()` |
-| `@eforge/cf-core/audit` | 审计日志 | `writeAdminAudit()` |
-| `@eforge/cf-core/config` | 系统配置 | `SystemConfig` 类（带内存缓存的 KV） |
-| `@eforge/cf-core/bootstrap` | App 启动 | `createApp()` — 完整路由+中间件+静态文件+安全头 |
-| `@eforge/cf-core/middleware/admin-auth` | 管理认证 | `adminAuthMiddleware()` |
-| `@eforge/cf-core/auth/jwt` | JWT | `createJwtSigner()`, `createJwtVerifier()` |
-| `@eforge/cf-core/crypto` | 加密 | AES-256-GCM 加密/解密 |
-| `@eforge/cf-core/logger` | 日志 | `createLogger()` |
-| `@eforge/cf-core/error` | 错误 | `AppError`, `NotFoundError` 等 |
-| `@eforge/cf-core/types` | 类型 | `RateLimitResult`, `TurnstileResult` 等 |
+| `@usethink/cf-core` | 主入口 | Hono 类型、通用类型 |
+| `@usethink/cf-core/db` | 数据库 | `createDb(client)` — Drizzle ORM 工厂 |
+| `@usethink/cf-core/db/schema` | Schema | 5 张公共表（systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys） |
+| `@usethink/cf-core/db/expressions` | SQL 表达式 | `dateTimeNow`, `timeAgo`, `jsonExtract` 等 |
+| `@usethink/cf-core/http` | HTTP 工具 | `ok()`, `fail()`, `failRateLimit()`, `getOrigin()`, `safeJsonBody()` |
+| `@usethink/cf-core/security` | 安全工具 | `sha256()`, `constantTimeEqual()`, `getIpHash()`, `getBearerToken()`, `verifyTurnstile()`, `buildSecurityHeaders()` |
+| `@usethink/cf-core/rate-limit` | 限流 | `MemoryRateLimiter`, `KvRateLimiter`, `DbRateLimiter` 三种后端 |
+| `@usethink/cf-core/cache` | Cache API | `createCache(namespace)` 工厂函数 |
+| `@usethink/cf-core/idempotency` | 幂等性 | `checkIdempotency()`, `saveIdempotentResponse()` |
+| `@usethink/cf-core/audit` | 审计日志 | `writeAdminAudit()` |
+| `@usethink/cf-core/config` | 系统配置 | `SystemConfig` 类（带内存缓存的 KV） |
+| `@usethink/cf-core/bootstrap` | App 启动 | `createApp()` — 完整路由+中间件+静态文件+安全头 |
+| `@usethink/cf-core/middleware/admin-auth` | 管理认证 | `adminAuthMiddleware()` |
+| `@usethink/cf-core/auth/jwt` | JWT | `createJwtSigner()`, `createJwtVerifier()` |
+| `@usethink/cf-core/crypto` | 加密 | AES-256-GCM 加密/解密 |
+| `@usethink/cf-core/logger` | 日志 | `createLogger()` |
+| `@usethink/cf-core/error` | 错误 | `AppError`, `NotFoundError` 等 |
+| `@usethink/cf-core/types` | 类型 | `RateLimitResult`, `TurnstileResult` 等 |
 
 ### 2.2 eshop 各模块 vs cf-core 对比
 
 | eshop 本地模块 | cf-core 对应模块 | 能否直接替换 | 原因 |
 |---------------|-----------------|-------------|------|
-| `lib/http.ts` | `@eforge/cf-core/http` | ❌ 不能 | eshop 版含 `getDb(c)` 和 `safeJsonBody(c)` 绑定 `AppEnv`/`DbType`；cf-core 版用泛型 `Context<any>` |
-| `lib/security.ts` | `@eforge/cf-core/security` | ❌ 不能 | eshop 版 `requireAdmin` 依赖本地 `fail()` 和 `AppEnv`；cf-core 版是中间件函数 |
-| `lib/rate-limit.ts` | `@eforge/cf-core/rate-limit` | ❌ 不能 | eshop 版直接操作 schema + 本地 `getDb`/`getIpHash` + 业务日志 `writeRequestLog`；cf-core 版是三种后端类 |
-| `lib/cache.ts` | `@eforge/cf-core/cache` | ⚠️ 可替换但收益小 | API 不同：eshop 函数式 (`cacheGet`/`cachePut`) vs cf-core 工厂模式 (`createCache(ns)`)；需改所有调用方 |
-| `lib/idempotency.ts` | `@eforge/cf-core/idempotency` | ❌ 不能 | cf-core 版直接 import schema 表，与项目本地 schema 耦合 |
+| `lib/http.ts` | `@usethink/cf-core/http` | ❌ 不能 | eshop 版含 `getDb(c)` 和 `safeJsonBody(c)` 绑定 `AppEnv`/`DbType`；cf-core 版用泛型 `Context<any>` |
+| `lib/security.ts` | `@usethink/cf-core/security` | ❌ 不能 | eshop 版 `requireAdmin` 依赖本地 `fail()` 和 `AppEnv`；cf-core 版是中间件函数 |
+| `lib/rate-limit.ts` | `@usethink/cf-core/rate-limit` | ❌ 不能 | eshop 版直接操作 schema + 本地 `getDb`/`getIpHash` + 业务日志 `writeRequestLog`；cf-core 版是三种后端类 |
+| `lib/cache.ts` | `@usethink/cf-core/cache` | ⚠️ 可替换但收益小 | API 不同：eshop 函数式 (`cacheGet`/`cachePut`) vs cf-core 工厂模式 (`createCache(ns)`)；需改所有调用方 |
+| `lib/idempotency.ts` | `@usethink/cf-core/idempotency` | ❌ 不能 | cf-core 版直接 import schema 表，与项目本地 schema 耦合 |
 | `lib/token.ts` | — | N/A | 业务专属（订单号/Token 生成），cf-core 无对应 |
 | `lib/alipay-sign.ts` | — | N/A | 业务专属（支付宝签名），cf-core 无对应 |
-| `db/database.ts` | `@eforge/cf-core/db` | ✅ 可替换 | 但 eshop 版含 `initDatabase` 完整初始化逻辑（含错误处理），替换需重写 |
+| `db/database.ts` | `@usethink/cf-core/db` | ✅ 可替换 | 但 eshop 版含 `initDatabase` 完整初始化逻辑（含错误处理），替换需重写 |
 | `db/client.ts` | — | N/A | 项目专属类型定义 |
-| `db/expressions.ts` | `@eforge/cf-core/db/expressions` | ✅ 可替换 | 但 eshop 版含业务表达式（`jsonExtractText`），需合并 |
-| `db/schema.ts` | `@eforge/cf-core/db/schema` | ✅ 部分替换 | 4 张公共表从 cf-core 导入，业务表保留本地 |
-| `services/audit-service.ts` | `@eforge/cf-core/audit` | ❌ 不能 | eshop 版含业务逻辑（`writeAudit` 带 `getIpHash`/`getDb`），cf-core 版是纯函数 |
-| `index.ts` | `@eforge/cf-core/bootstrap` | ❌ 不能 | eshop 版含业务路由注册 + 前端路由逻辑，cf-core `createApp` 是通用框架 |
+| `db/expressions.ts` | `@usethink/cf-core/db/expressions` | ✅ 可替换 | 但 eshop 版含业务表达式（`jsonExtractText`），需合并 |
+| `db/schema.ts` | `@usethink/cf-core/db/schema` | ✅ 部分替换 | 4 张公共表从 cf-core 导入，业务表保留本地 |
+| `services/audit-service.ts` | `@usethink/cf-core/audit` | ❌ 不能 | eshop 版含业务逻辑（`writeAudit` 带 `getIpHash`/`getDb`），cf-core 版是纯函数 |
+| `index.ts` | `@usethink/cf-core/bootstrap` | ❌ 不能 | eshop 版含业务路由注册 + 前端路由逻辑，cf-core `createApp` 是通用框架 |
 
 ### 2.3 核心结论
 
@@ -96,7 +96,7 @@ cp <source>/src/db/schema.ts templates/<project-name>/src/db/schema.ts
 #    - 在文件顶部添加：
 #      export {
 #        systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys
-#      } from "@eforge/cf-core/db/schema";
+#      } from "@usethink/cf-core/db/schema";
 ```
 
 **验证**：`npx tsc --noEmit` 编译通过
@@ -267,12 +267,12 @@ validate-architecture:     ✅ 全部通过
 
 | 使用项 | 状态 |
 |--------|------|
-| `@eforge/cf-core/db/schema`（4 张公共表） | ✅ 已使用 |
-| `@eforge/cf-core/http` | ❌ 未使用（本地绑定 AppEnv） |
-| `@eforge/cf-core/security` | ❌ 未使用（本地绑定 AppEnv） |
-| `@eforge/cf-core/rate-limit` | ❌ 未使用（本地直接操作 schema） |
-| `@eforge/cf-core/cache` | ❌ 未使用（API 不同） |
-| `@eforge/cf-core/bootstrap` | ❌ 未使用（业务路由复杂） |
+| `@usethink/cf-core/db/schema`（4 张公共表） | ✅ 已使用 |
+| `@usethink/cf-core/http` | ❌ 未使用（本地绑定 AppEnv） |
+| `@usethink/cf-core/security` | ❌ 未使用（本地绑定 AppEnv） |
+| `@usethink/cf-core/rate-limit` | ❌ 未使用（本地直接操作 schema） |
+| `@usethink/cf-core/cache` | ❌ 未使用（API 不同） |
+| `@usethink/cf-core/bootstrap` | ❌ 未使用（业务路由复杂） |
 
 **这是正确的**：迁移项目保留本地 lib，cf-core 仅提供 schema 公共表。
 

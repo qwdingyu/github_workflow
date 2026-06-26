@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import type { AppEnv } from "../bindings";
 import type { Db } from "../services/dtc-service";
-import { ok } from "@eforge/cf-core/http";
+import { ok } from "@usethink/cf-core/http";
 import { listManufacturers } from "../services/dtc-service";
 
 function getDb(c: Context<AppEnv>): Db {

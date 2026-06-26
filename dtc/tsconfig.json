@@ -12,10 +12,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "paths": {
-      "@eforge/cf-core": ["../packages/cf-core/src/index.ts"],
-      "@eforge/cf-core/*": ["../packages/cf-core/src/*"]
-    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", ".wrangler"]

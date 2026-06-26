@@ -27,7 +27,7 @@ cf-core 只包含**基础设施**，不含任何业务逻辑：
 
 ### 业务项目职责
 业务项目从 cf-core 导入公共表，添加自己的业务表：
-- `export { systemConfig, ... } from "@eforge/cf-core/db/schema"`
+- `export { systemConfig, ... } from "@usethink/cf-core/db/schema"`
 - 业务表（如 products, orders, users, tools, dtcCodes）只定义在本项目中
 
 ### 安装依赖
