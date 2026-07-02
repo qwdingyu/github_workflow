@@ -95,7 +95,8 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 
 **根因**：
 - 这是一个**已部署的独立产品**，不是模板也不是共享包
-- 它应该要么独立成仓库，要么放到 `templates/` 下作为产品实例
+- 更准确的归属不是直接塞进 `templates/`，而是先区分它是“线上产品”还是“可复用脚手架模板”
+- 如果它是线上独立产品，应迁入 `products/freelancer-calc/` 或独立仓库；如果未来要给其他项目复用，才应进入 `templates/cf-freelancer/`
 
 **行业对标**：
 - 独立产品应有独立仓库（GitHub 的最佳实践）
@@ -145,30 +146,30 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 ### 3.1 freelancer-calc/ 定位
 
 **当前角色**：独立部署的静态站点产品
-**正确角色**：应该是 `templates/` 下的一个产品实例，或独立仓库
+**正确角色**：线上独立产品，优先进入 `products/` 或独立仓库；只有当它被改造成脚手架模板时才进入 `templates/`
 **建议**：
-- 方案 A：迁入 `templates/cf-calculators/` 作为其一个工具页面（如果是同类产品）
+- 方案 A：迁入 `products/freelancer-calc/`，明确它是线上产品实例
 - 方案 B：独立成仓库 `freelancer-calc`，从 monorepo 中移除
-- 方案 C：保留在根目录，但重命名为 `products/freelancer-calc/`，明确其产品属性
+- 方案 C：如未来要复用为脚手架，再迁入 `templates/cf-freelancer/`
 
 ### 3.2 packages/ 定位
 
-**当前角色**：混合了领域代码和潜在共享内核
-**正确角色**：应明确领域库的发布策略，而非简单地"只能放基础设施"
+**当前角色**：根 workspace 中不再承载 mach-*，但仍可能承载未来共享库
+**正确角色**：存放有独立版本化价值的库，可以是基础设施，也可以是领域库
 **建议**：
-- **先决策 mach-* 的发布策略**：是否有独立版本化、独立测试、多产品复用的价值？
-  - 有 → 保留在 `packages/`，发布到 npm，各模板改用 npm 已发布版本
-  - 无 → 迁入 `templates/cf-calculators/lib/` 作为内部实现
+- `mach-*` 发布策略已完成：合并为 `@usethink/mach-calculators`，迁出到 `/Users/dingyuwang/0-X/2-node/mach-calculators`
+- 下一步不是继续讨论去留，而是让 `templates/cf-calculators` 消费 npm 已发布版本，逐步替换浏览器端复制逻辑
 - `packages/` 的门槛不是"必须基础设施"，而是**至少有 2 个消费者或明确的独立发布价值**
 - 未来如重建 cf-core 之类的共享内核，应放在 `packages/` 下独立目录，不冲突
 
 ### 3.3 templates/ 定位
 
 **当前角色**：git submodules 集合 + pnpm workspace 成员
-**正确角色**：产品模板/实例集合，每个独立运营
+**正确角色**：当前实际是产品实例集合 + 少量模板能力，命名上与“模板”概念有偏差
 **建议**：
 - **保留 `pnpm-workspace.yaml` 中的 `templates/*`**，确保 `pnpm install` 一次装完所有依赖的开发者体验
 - 但应建立依赖版本统一策略：通过 `pnpm overrides` 或定期 `pnpm -r update` 对齐关键依赖版本（drizzle-orm、hono 等）
+- 新增 `products/` 概念用于已上线产品，避免把所有独立站点都继续归类为模板
 - git submodule 保持独立仓库和 CI/CD，明确职责划分：
   - workspace = 开发阶段的一键依赖管理
   - submodule = 部署阶段的独立发布单元
@@ -185,10 +186,11 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 
 | 目录 | 操作 | 说明 |
 |------|------|------|
-| `freelancer-calc/` | 迁入 `templates/cf-freelancer/` | 作为新模板，结构与 cf-static 对齐 |
+| `freelancer-calc/` | 优先迁入 `products/freelancer-calc/` 或独立仓库 | 作为线上产品实例治理；只有模板化后才进 templates |
 | `packages/mach-*` | 已迁出并合并为 `@usethink/mach-calculators` | 后续让 `cf-calculators` 消费 npm 已发布版本 |
 | `templates/.deploy/` | 保留物理副本，共享逻辑迁移到 GHA reusable workflows | symlink 跨 submodule 边界不可行 |
 | `pnpm-workspace.yaml` | 保留 `templates/*` + 统一依赖版本策略 | 保留一键 install 的 DX，用 overrides 对齐关键依赖 |
+| `package-lock.json` | 建立例外清单和治理规则 | 根 workspace 内默认禁止；独立 npm 产品/包必须说明原因 |
 
 **优点**：
 - 改动最小，风险最低
@@ -291,22 +293,24 @@ github_workflow/
 
 ### Phase 1：止血（1-2 天）
 
-1. **明确 freelancer-calc 归属**：迁入 `templates/cf-freelancer/` 或独立仓库
-2. **完成 mach-calculators 消费闭环**：`@usethink/mach-calculators` 已独立发布，下一步把 `templates/cf-calculators` 的复制逻辑切换为 npm 依赖
-3. **统一关键依赖版本**：在根 `package.json` 中增加 `pnpm.overrides` 对齐 drizzle-orm、hono 等核心依赖的版本号
-4. **清理僵尸项目**：评估 cf-seo-archive 等无维护项目是否需要删除或归档
+1. **明确 freelancer-calc 归属**：优先迁入 `products/freelancer-calc/` 或独立仓库；如果要复用为脚手架，再迁入 `templates/cf-freelancer/`
+2. **完成 mach-calculators 消费闭环**：`@usethink/mach-calculators` 已独立发布到 npm，下一步把 `templates/cf-calculators` 的复制逻辑切换为 npm 依赖
+3. **治理 package-lock.json**：根 workspace 内默认禁止，当前需处理 `freelancer-calc/package-lock.json` 与 `templates/cf-shop/package-lock.json` 的例外或迁移原因
+4. **统一关键依赖版本**：在根 `package.json` 中增加 `pnpm.overrides` 对齐 drizzle-orm、hono 等核心依赖的版本号
+5. **清理僵尸项目**：评估 cf-seo-archive 等无维护项目是否需要删除或归档
 
 ### Phase 2：规范（1 周）
 
-1. **建立部署脚本共享策略**：将核心部署逻辑提取为 GitHub Actions reusable workflows，各模板的 `.deploy/` 保留环境配置
-2. **建立 templates/ 开发规范**：新模板必须通过脚手架创建，禁止从零开始
-3. **清理重复文档**：合并 templates/docs/ 和根 docs/ 中的重复内容
+1. **建立产品 vs 模板分类规范**：明确哪些目录是已上线产品，哪些目录是可复用模板
+2. **建立部署脚本共享策略**：将核心部署逻辑提取为 GitHub Actions reusable workflows，各模板/产品的 `.deploy/` 保留环境配置
+3. **建立 templates/ 开发规范**：新模板必须通过脚手架创建，禁止从零开始
+4. **清理重复文档**：合并 templates/docs/ 和根 docs/ 中的重复内容
 
 ### Phase 3：优化（2-4 周）
 
-1. **评估 cf-shop 独立化**：如果 cf-shop 是成熟产品，考虑独立仓库
-2. **建立产品 vs 模板分类**：明确哪些是产品、哪些是模板
-3. **建立依赖版本季度审查机制**：每季度运行 `pnpm -r update`，检查并对齐关键依赖版本
+1. **评估 cf-shop 产品化归类**：如果 cf-shop 是成熟产品，应保持当前子仓库状态；未来确需移动时只能迁入 `products/cf-shop/` 或独立仓库，而不是迁入新的 template 目录
+2. **建立依赖版本季度审查机制**：每季度运行 `pnpm -r update`，检查并对齐关键依赖版本
+3. **推进 reusable workflows**：减少各 submodule 中复制部署脚本的长期维护成本
 
 ---
 
@@ -316,7 +320,7 @@ github_workflow/
 
 ### 7.1 高风险操作
 
-- **移动 cf-shop**：它有 20 份审查文档、17 个脚本、独立的 frontend/，移动成本高
+- **移动 cf-shop**：它有 20 份审查文档、17 个脚本、独立的 frontend/，移动成本高；当前子仓库状态先保持，未来确需移动时目标只能是 `products/cf-shop/`
 - **删除 submodule**：会丢失 Git 历史关联，需要确保所有修改已 push
 
 ### 7.2 依赖关系陷阱
@@ -341,15 +345,17 @@ github_workflow/
 
 ### 8.2  immediate 行动（本周）
 
-1. **决策 freelancer-calc 归属**：产品 or 模板？
+1. **决策 freelancer-calc 归属**：产品 or 模板？若是线上产品，优先 `products/freelancer-calc/`
 2. **完成 mach-calculators 集成闭环**：从复制逻辑切换到 `@usethink/mach-calculators` npm 依赖
-3. **统一关键依赖版本**：通过 `pnpm.overrides` 对齐核心依赖版本
+3. **治理 package-lock.json**：处理根 workspace 内 npm lockfile 例外
+4. **统一关键依赖版本**：通过 `pnpm.overrides` 对齐核心依赖版本
 
 ### 8.3 长期目标
 
 建立一个**职责清晰但不牺牲开发体验**的架构：
 - `packages/` = 有独立版本化价值的共享库（可以是基础设施，也可以是领域库）；跨仓库消费优先发布为独立 npm 包
-- `templates/` = 独立部署的产品集合，保留 submodule 独立性，通过 workspace 享受一键安装的 DX
+- `products/` = 已上线、按产品生命周期独立维护的站点或应用
+- `templates/` = 可复用的项目模板；历史上已承载产品实例，需逐步分类
 - 部署共享通过 **GitHub Actions reusable workflows** 实现，而非文件系统层面的共享
 
 ---
@@ -365,6 +371,8 @@ github_workflow/
 | `pnpm-workspace.yaml` | workspace 声明 | 包容 templates/* 但缺少依赖版本统一策略 |
 | `package.json` | 根 package | 有 `drizzle-zod` 依赖，但无明确用途 |
 | `.gitmodules` | submodule 配置 | 9 个 submodule 管理复杂 |
+| `freelancer-calc/package-lock.json` | npm lockfile | 根 workspace 外孤儿产品，需迁入 products 或独立仓库后保留 |
+| `templates/cf-shop/package-lock.json` | npm lockfile | submodule 内部例外，需确认是否由 frontend/npm 子项目产生并记录原因 |
 | `docs/ARCHITECTURE_ENFORCEMENT.md` | 架构规则 | 针对已删除的 cf-core，需更新 |
 | `docs/README.md` | 文档索引 | 引用不存在的路径（eshop/xtools/vcode） |
 

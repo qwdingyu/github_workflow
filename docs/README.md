@@ -1,6 +1,6 @@
 # 项目文档总索引
 
-> 最后更新：2026-05-29
+> 最后更新：2026-07-02
 > 文档编号体系：三位数，百位代表分类
 
 ---
@@ -47,6 +47,9 @@
 
 | 编号 | 标题 | 核心内容 |
 |------|------|---------|
+| 100 | freelancer-calc / packages / templates 目录重组方案 | 当前约束下的推荐实践、products/templates 边界、mach 包迁出后续 |
+| 101 | mach 计算器独立 npm 发布包 | `@usethink/mach-calculators` 合并迁出、发布与验证记录 |
+| 102 | 目录重组剩余工作清单 | cf-calculators 消费 npm 包、freelancer 归属、lockfile 治理 todolist |
 | 200 | CF Form Kit 微型框架落地方案 | 表单收集类项目的框架设计 |
 | 201 | cf-core 共享内核实施记录 | Phase 1-4 完整实施过程（81 测试通过） |
 
