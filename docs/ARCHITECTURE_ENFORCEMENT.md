@@ -49,7 +49,9 @@ dtc 项目就是活生生的例子：用了 cf-core 的 bootstrap 但没导入 5
 
 ### 规则 1：cf-core 基础设施隔离
 
-**文件**：`packages/cf-core/src/db/schema.ts`
+**npm 包导出**：`@usethink/cf-core/db/schema`
+
+`cf-core` 已经迁移为 npm 包，不再要求本仓库存在 `packages/cf-core/src/db/schema.ts`。架构验证脚本会从已安装的 `@usethink/cf-core` 包中读取 `src/db/schema.ts` 或 `dist/src/db/schema.js`。
 
 **允许的表（且仅允许这 5 张）**：
 | 表名 | 用途 | 所属项目 |
@@ -127,7 +129,7 @@ export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKey
 node scripts/validate-architecture.mjs
 
 # 预期输出：
-# ✅ cf-core schema 检查通过
+# ✅ @usethink/cf-core schema 契约检查通过
 # ✅ cf-shop schema 检查通过
 # ✅ cf-tools schema 检查通过
 # ✅ cf-api schema 检查通过
@@ -140,10 +142,9 @@ node scripts/validate-architecture.mjs
 
 ## 5. 修复已知偏离（dtc）
 
-dtc 项目当前状态：
-- ✅ 使用了 `@usethink/cf-core/bootstrap`
-- ❌ 未导入 5 张公共表
-- 影响：无法使用审计日志、限流、幂等、系统配置、API Key
+dtc 项目历史状态：
+- 曾经使用了 `@usethink/cf-core/bootstrap` 但未导入 5 张公共表。
+- 当前验证脚本会自动检查这类偏离。
 
 修复步骤：
 1. 在 `dtc/src/db/schema.ts` 中添加 `export { ... } from "@usethink/cf-core/db/schema"`
@@ -158,7 +159,7 @@ dtc 项目当前状态：
 | 场景 | 谁审核 | 审核内容 |
 |------|--------|---------|
 | 新增业务表 | AI 自动检查 | 是否放对了项目 |
-| 修改 cf-core schema | 人工 | 是否混入业务字段 |
+| 修改/升级 @usethink/cf-core schema 契约 | 人工 | npm 包是否仍只导出 5 张基础设施表 |
 | 新增模板 | 人工 | schema.ts 是否符合规范 |
 | PR 提交 | CI 自动 + 人工 | 架构验证脚本通过 |
 

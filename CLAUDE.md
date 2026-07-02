@@ -19,7 +19,7 @@ node scripts/validate-architecture.mjs
 
 ### 铁律 1：cf-core 不得包含任何业务代码
 
-`packages/cf-core/src/db/schema.ts` 只允许 5 张**基础设施表**：
+`@usethink/cf-core/db/schema` 是 npm 包导出的公共 schema 契约，只允许 5 张**基础设施表**：
 - `systemConfig` — 系统配置
 - `adminAuditLogs` — 管理员审计日志
 - `rateLimitWindows` — 限流计数窗口
@@ -68,7 +68,7 @@ export {
 
 每次提交前 AI 必须自动验证：
 1. [ ] 运行 `node scripts/validate-architecture.mjs` — 架构规则检查
-2. [ ] 检查 `cf-core/schema.ts` 是否混入业务表
+2. [ ] 检查已安装的 `@usethink/cf-core/db/schema` 是否只导出 5 张基础设施表
 3. [ ] 检查所有 `templates/*/schema.ts` 是否从 cf-core 导入了公共表
 4. [ ] 检查是否存在 `package-lock.json`（npm/yarn 违规标志）
 5. [ ] `pnpm-lock.yaml` 必须与 `package.json` 同步
@@ -82,7 +82,7 @@ export {
 | `pnpm install` | 安装依赖 |
 | `node scripts/validate-architecture.mjs` | 架构验证 |
 | `node scripts/create-project.mjs <name> --template <tpl>` | 创建新产品 |
-| `pnpm -w packages/cf-core run build` | 构建 cf-core |
+| `pnpm update @usethink/cf-core -r` | 更新各项目使用的 cf-core npm 包 |
 | `cd dtc && node scripts/smoke-readonly.mjs` | 验证 dtc 只读接口 |
 
 ---

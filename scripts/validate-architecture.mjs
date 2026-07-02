@@ -14,11 +14,11 @@
  */
 
 import { existsSync, readFileSync, readdirSync } from "fs";
-import { join } from "path";
+import { createRequire } from "module";
+import { dirname, join } from "path";
 
 // ── 配置 ─────────────────────────────────────────────────────────────────────
 const ROOT = join(import.meta.dirname, "..");
-const CORE_SCHEMA = join(ROOT, "packages", "cf-core", "src", "db", "schema.ts");
 const TEMPLATES_DIR = join(ROOT, "templates");
 const ADDITIONAL_PROJECTS = ["dtc"]; // monorepo 中非模板但使用 cf-core 的项目
 
@@ -68,77 +68,80 @@ function warn(msg) { warnings++; console.log(`  ${c.y("⚠️")} ${msg}`); }
 
 // ── 检查 1：cf-core schema 是否混入业务表 ────────────────────────────────────
 
+function findCfCorePackageDir() {
+  const candidateProjectDirs = [
+    ...readdirSync(TEMPLATES_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => join(TEMPLATES_DIR, d.name)),
+    ...ADDITIONAL_PROJECTS.map((project) => join(ROOT, project)),
+  ].filter((dir) => existsSync(join(dir, "package.json")));
+
+  for (const projectDir of candidateProjectDirs) {
+    const projectRequire = createRequire(join(projectDir, "package.json"));
+    try {
+      const pkgPath = projectRequire.resolve("@usethink/cf-core/package.json");
+      return dirname(pkgPath);
+    } catch {
+      // 项目未安装或当前包版本未导出 package.json 时继续尝试 fallback。
+    }
+
+    const nodeModulesPackage = join(projectDir, "node_modules", "@usethink", "cf-core");
+    if (existsSync(join(nodeModulesPackage, "package.json"))) {
+      return nodeModulesPackage;
+    }
+  }
+
+  const pnpmStorePackages = join(ROOT, "node_modules", ".pnpm");
+  if (existsSync(pnpmStorePackages)) {
+    const entry = readdirSync(pnpmStorePackages).find((name) => name.startsWith("@usethink+cf-core@"));
+    if (entry) {
+      const packageDir = join(pnpmStorePackages, entry, "node_modules", "@usethink", "cf-core");
+      if (existsSync(join(packageDir, "package.json"))) return packageDir;
+    }
+  }
+
+  return undefined;
+}
+
 function checkCoreSchema() {
-  if (!existsSync(CORE_SCHEMA)) {
-    fail("cf-core schema.ts 不存在");
+  const packageDir = findCfCorePackageDir();
+  if (!packageDir) {
+    fail("未找到已安装的 @usethink/cf-core 包；请先运行 pnpm install");
     return;
   }
 
-  const content = readFileSync(CORE_SCHEMA, "utf-8");
+  const schemaCandidates = [
+    join(packageDir, "src", "db", "schema.ts"),
+    join(packageDir, "dist", "src", "db", "schema.js"),
+    join(packageDir, "dist", "src", "db", "schema.d.ts"),
+  ];
+  const schemaPath = schemaCandidates.find((candidate) => existsSync(candidate));
+  if (!schemaPath) {
+    fail(`@usethink/cf-core 缺少 db/schema 发布产物: ${packageDir}`);
+    return;
+  }
 
-  // 检查是否使用了 sqliteTable（定义新表）
-  const tableMatches = content.matchAll(
-    /export const (\w+) = sqliteTable\(/g
-  );
-  const definedTables = [...tableMatches].map((m) => m[1]);
+  const content = readFileSync(schemaPath, "utf-8");
 
-  // 检查是否有不该有的业务表
-  const violations = definedTables.filter(
-    (t) => !ALLOWED_CORE_TABLES.has(t)
-  );
+  // 检查是否定义了 sqliteTable 公共表。源码和 dist 产物格式不同，因此同时支持两类模式。
+  const sourceTableMatches = content.matchAll(/export const (\w+) = sqliteTable\(/g);
+  const distTableMatches = content.matchAll(/export const (\w+) = .*sqliteTable\(/g);
+  const definedTables = [...new Set([...sourceTableMatches, ...distTableMatches].map((m) => m[1]))];
 
+  const violations = definedTables.filter((t) => !ALLOWED_CORE_TABLES.has(t));
   if (violations.length > 0) {
-    fail(`cf-core 包含不允许的业务表: ${violations.join(", ")}`);
+    fail(`@usethink/cf-core 包含不允许的业务表: ${violations.join(", ")}`);
     console.log(`    ${c.dim("cf-core 只允许 5 张基础设施表: systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys")}`);
     console.log(`    ${c.dim("业务表（products, orders, users 等）应该放在业务项目中。")}`);
   }
 
-  // 检查 5 张公共表是否存在
-  const missingCoreTables = REQUIRED_COMMON_TABLES.filter(
-    (t) => !definedTables.includes(t)
-  );
-
+  const missingCoreTables = REQUIRED_COMMON_TABLES.filter((t) => !definedTables.includes(t));
   if (missingCoreTables.length > 0) {
-    fail(`cf-core 缺少公共表定义: ${missingCoreTables.join(", ")}`);
+    fail(`@usethink/cf-core 缺少公共表定义: ${missingCoreTables.join(", ")}`);
   }
 
   if (violations.length === 0 && missingCoreTables.length === 0) {
-    // 检查我们预期的表都在
-    ok(`cf-core schema 合规（${definedTables.length} 张表，均为基础设施表）`);
-  }
-
-  // 检查业务代码是否混入 cf-core
-  checkBusinessCodeInCore();
-}
-
-function checkBusinessCodeInCore() {
-  const coreSrcDir = join(ROOT, "packages", "cf-core", "src");
-  const entries = readdirSync(coreSrcDir, { withFileTypes: true });
-
-  const businessPatterns = [
-    "/products", "/orders", "/cards", "/coupons",
-    "/payments", "/users", "/tools",
-  ];
-
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const dirName = entry.name;
-    if (dirName === "db") continue; // db 目录我们已经在上面检查了
-    if (dirName === "utils") continue;
-    if (dirName === "types") continue;
-
-    // 检查业务目录
-    const routeDir = join(coreSrcDir, dirName);
-    const routeFiles = readdirSync(routeDir);
-    for (const file of routeFiles) {
-      const filePath = join(routeDir, file);
-      const content = readFileSync(filePath, "utf-8");
-      for (const pattern of businessPatterns) {
-        if (content.includes(pattern)) {
-          warn(`cf-core 的 ${dirName}/${file} 可能包含业务引用: "${pattern}"`);
-        }
-      }
-    }
+    ok(`@usethink/cf-core schema 合规（${definedTables.length} 张表，来源: ${schemaPath.replace(ROOT + "/", "")}）`);
   }
 }
 
@@ -339,7 +342,7 @@ function main() {
   console.log(`\n${c.b("🔍 eForge 架构合规性验证")}`);
   console.log(`${c.dim("=".repeat(48))}\n`);
 
-  console.log(`${c.b("检查 1/5: cf-core 基础设施隔离")} ${c.dim("（不应包含任何业务代码）")}`);
+  console.log(`${c.b("检查 1/5: cf-core npm 包 schema 契约")} ${c.dim("（不应包含任何业务表）")}`);
   checkCoreSchema();
 
   console.log(`\n${c.b("检查 2/5: 业务项目 schema 合规性")} ${c.dim("（必须从 cf-core 导入公共表）")}`);

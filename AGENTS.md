@@ -122,11 +122,11 @@
 
 ### 铁律 A：cf-core 不得包含任何业务代码
 
-`packages/cf-core/` 的职责边界：
+`@usethink/cf-core` npm 包的职责边界：
 
 **src/** — 纯基础设施工具（HTTP、缓存、限流、幂等、审计、日志、加密、配置、错误处理）
 **features/** — 可复用业务特性模块（payment、email、webhook、anti-abuse、telegram-miniapp 等）
-**src/db/schema.ts** — 只允许 5 张基础设施表：
+**@usethink/cf-core/db/schema** — 只允许导出 5 张基础设施表：
 
 - `systemConfig` — 系统配置
 - `adminAuditLogs` — 管理员审计日志
@@ -161,13 +161,13 @@ export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKey
 
 - `templates/cf-shop/` ❌ 不能 import `templates/dtc/`
 - `templates/dtc/` ❌ 不能 import `templates/cf-static/`
-- 所有共享代码必须上提到 `packages/cf-core/`
+- 所有跨项目共享代码必须上提到独立 npm 包（如 `@usethink/cf-core` 或其他 `@usethink/*` 包），不要恢复本地 `packages/cf-core` 源码依赖
 
 ### 铁律 D：目录结构不可随意变更
 
 ```
-packages/cf-core/src/          # 基础设施工具
-packages/cf-core/features/     # 可复用业务特性
+@usethink/cf-core/src/        # 基础设施工具（npm 包源码仓库维护）
+@usethink/cf-core/features/   # 可复用业务特性（npm 包源码仓库维护）
 templates/<project>/src/       # 业务项目源码
   ├── index.ts                 # Worker 入口（Hono app）
   ├── bindings.ts              # Cloudflare Bindings 类型定义
@@ -192,7 +192,7 @@ templates/<project>/tests/     # 测试文件
 
 ### 铁律 F：cf-core 变更必须 bump 版本号
 
-- 修改 `packages/cf-core/package.json` 的 `version`
+- 修改 `@usethink/cf-core` 源码仓库的 `package.json` 版本并发布 npm 包
 - 向下兼容的修复 → patch（0.2.0 → 0.2.1）
 - 新增导出功能 → minor（0.2.0 → 0.3.0）
 - 破坏性变更 → major（1.0.0 → 2.0.0）
@@ -363,7 +363,7 @@ Eleventy 构建 → 读取 _data/*.json → 渲染 njk 模板 → 输出静态 H
 
 ### 坑 4：pnpm workspace 依赖解析
 
-- 子项目引用 cf-core 用 `"@usethink/cf-core": "workspace:*"`
+- 子项目引用 cf-core 用 npm 版本号，例如 `"@usethink/cf-core": "^0.3.4"`
 - 修改 cf-core 后需 `pnpm install` 重新链接
 - 不要在各子项目中单独 `npm install`
 
@@ -385,7 +385,7 @@ Eleventy 构建 → 读取 _data/*.json → 渲染 njk 模板 → 输出静态 H
 | `docs/970_支付体系全局整合方案.md` | 支付体系整合方案 |
 | `docs/950_域名策略_...` | 域名与部署策略 |
 | `docs/960_变现路径_...` | 变现与商业化路径 |
-| `packages/cf-core/README.md` | cf-core 使用说明 |
+| `@usethink/cf-core` npm 包 README | cf-core 使用说明 |
 | `templates/cf-shop/scripts/DEPLOY-GUIDE.md` | cf-shop 部署指南 |
 
 ---
