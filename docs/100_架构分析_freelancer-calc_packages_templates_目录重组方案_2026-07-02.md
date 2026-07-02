@@ -3,7 +3,7 @@
 > 日期：2026-07-02
 > 角色：架构师 + 产品经理 + 项目总监 + 行业顾问
 > 分析范围：`freelancer-calc/`、`packages/`、`templates/`
-> 状态：纯分析，零代码变更
+> 状态：架构决策记录，已结合 `@usethink/mach-calculators` 独立 npm 包落地结果修订
 
 ---
 
@@ -16,9 +16,7 @@
 ```
 github_workflow/
 ├── freelancer-calc/       ← 独立产品（npm 管理，非 pnpm）
-├── packages/              ← pnpm workspace 共享包
-│   ├── mach-calculators/  ← 数控报价计算器系统
-│   └── mach-formulas/     ← 数控加工公式库
+├── packages/              ← pnpm workspace 共享包（mach-* 已迁出）
 ├── templates/             ← 9 个 git submodule + 共享部署脚本
 │   ├── cf-api/            ← submodule
 │   ├── cf-calculators/    ← submodule
@@ -103,24 +101,23 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 - 独立产品应有独立仓库（GitHub 的最佳实践）
 - 如果暂不独立，至少应放在明确的产品目录下，而非跟 monorepo 配置混在一起
 
-### 矛盾 3：packages/ 里放的是领域代码，不是共享内核
+### 矛盾 3：packages/ 里的 mach-* 领域包曾处于半成品状态
 
 **问题**：
-- `mach-formulas` 和 `mach-calculators` 是**数控加工领域**的公式库
-- 当前只被 `templates/cf-calculators` 引用（通过 `workspace:*` 协议依赖）
-- 但 `cf-calculators` 是独立 submodule，跨仓库引用 workspace 协议依赖**在构建/发布时存在复杂度**
-- `packages/` 的历史设计意图是放所有模板共用的共享内核（如已删除的 `cf-core`），现在放的是单模板依赖的领域代码
+- `mach-formulas` 和 `mach-calculators` 是**数控加工领域**的公式库。
+- 早期文档误判为 `templates/cf-calculators` 已通过 `workspace:*` 直接引用；实际检查发现 `templates/cf-calculators/package.json` 并没有稳定依赖 `@eforge/mach-*`，前端还存在复制/适配公式逻辑的痕迹。
+- 真正问题不是“领域代码不能放 packages/”，而是 **mach-* 的产品化、复用路线、浏览器集成方式没有闭环**。
+- 目前已按独立 npm 包路线处理：`mach-formulas` 与 `mach-calculators` 合并为 `/Users/dingyuwang/0-X/2-node/mach-calculators`，发布名为 `@usethink/mach-calculators`。
 
 **根因**：
-- 真正的问题不是"领域代码不该放 packages/"，而是 **domain libraries 的发布策略和生命周期未定义**：
-  - 如果 mach-* 有独立版本化、独立测试、多产品复用的价值 → 就应该留在 packages/ 并发布到 npm
-  - 如果 mach-* 只是 cf-calculators 的纯内部实现细节 → 迁入 cf-calculators 内部更合理
-- 当前 workspace 协议（`workspace:*`）跨 submodule 边界引用时，更新/发布流程不清晰
+- `mach-*` 代码量不大，上下游边界紧密，拆成两个 npm 包会制造额外版本同步成本。
+- 合并成单包后，公式、schema、adapter 在一个版本号下发布，适合被 `cf-calculators` 或其它产品按 npm 依赖消费。
+- 当前仍需补的闭环是：让 `templates/cf-calculators` 从复制逻辑切换为消费 `@usethink/mach-calculators` 的已发布版本。
 
 **行业对标**：
-- **领域库放在 packages/ 是 monorepo 的常见模式**（Nx 官方示例中有大量 domain-specific libraries 放在 libs/ 下）
-- 决定去留的核心判断标准是**复用潜力 + 独立版本化价值**，而非"是否基础设施"
-- 关键约束：如果跨 submodule 边界引用，应改用 npm 已发布版本而非 `workspace:*`
+- **领域库放在 packages/ 是 monorepo 的常见模式**（Turborepo/Nx 均支持 apps/libs 或 apps/packages 的分层）。
+- 决定去留的核心判断标准是**复用潜力 + 独立版本化价值 + 集成方式是否闭环**，而非“是否基础设施”。
+- 关键约束：如果跨 submodule 边界引用，应改用 npm 已发布版本而非 `workspace:*`。
 
 ### 矛盾 4：部署脚本三重冗余
 
@@ -184,12 +181,12 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 
 ### 方案 A：最小改动（推荐）
 
-**核心思想**：保持现有结构，但明确边界和职责
+**核心思想**：保持现有结构，但明确边界和职责。这不是绝对“最佳实践”，而是当前约束下的推荐实践。
 
 | 目录 | 操作 | 说明 |
 |------|------|------|
 | `freelancer-calc/` | 迁入 `templates/cf-freelancer/` | 作为新模板，结构与 cf-static 对齐 |
-| `packages/mach-*` | 先决策发布策略 | 有独立价值 → 保留 + 发布 npm / 无 → 迁入 cf-calculators/lib/ |
+| `packages/mach-*` | 已迁出并合并为 `@usethink/mach-calculators` | 后续让 `cf-calculators` 消费 npm 已发布版本 |
 | `templates/.deploy/` | 保留物理副本，共享逻辑迁移到 GHA reusable workflows | symlink 跨 submodule 边界不可行 |
 | `pnpm-workspace.yaml` | 保留 `templates/*` + 统一依赖版本策略 | 保留一键 install 的 DX，用 overrides 对齐关键依赖 |
 
@@ -204,7 +201,7 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 
 ### 方案 B：激进重构
 
-**核心思想**：彻底按 monorepo 最佳实践重构
+**核心思想**：彻底按单一 monorepo 模式重构
 
 | 目录 | 操作 | 说明 |
 |------|------|------|
@@ -214,7 +211,7 @@ templates/cf-shop         → https://github.com/qwdingyu/cf-shop.git
 | `pnpm-workspace.yaml` | 精简为真正的共享包 | 只含 cf-core 等 |
 
 **优点**：
-- 结构最清晰，符合 monorepo 最佳实践
+- 结构最清晰，符合单一 monorepo 的常见实践
 - 依赖管理最干净
 
 **缺点**：
@@ -261,9 +258,9 @@ github_workflow/
 
 | 实践 | 当前状态 | 符合度 |
 |------|----------|--------|
-| packages/ 职责清晰 | ⚠️ mach-* 的发布策略未定义（不是"错"，是"未决策"） | 中 |
-| 每个 package 独立版本 | ⚠️ mach-* 有版本，但引用方是 submodule，跨仓库引用需 npm publish | 中 |
-| workspace 协议依赖 | ✅ `@eforge/mach-calculators（独立 npm 包）` 在开发阶段正常工作 | 高 |
+| packages/ 职责清晰 | ✅ mach-* 已从根 workspace 迁出并合并为独立 npm 包 | 高 |
+| 每个 package 独立版本 | ✅ `@usethink/mach-calculators` 独立版本化与发布 | 高 |
+| workspace 协议依赖 | ⚠️ 跨 submodule 依赖应改用 npm 已发布版本，而非 `workspace:*` | 中 |
 | 统一构建/测试流程 | ⚠️ 各模板独立 CI，无统一 orchestration（对独立产品来说这是合理选择） | 中 |
 
 > **注**：Turborepo/Nx 模式假定所有项目在同一仓库统一构建——本项目是"独立产品集合"模式，两者目标不同，不应直接套用同一套评估标准。
@@ -295,7 +292,7 @@ github_workflow/
 ### Phase 1：止血（1-2 天）
 
 1. **明确 freelancer-calc 归属**：迁入 `templates/cf-freelancer/` 或独立仓库
-2. **决策 packages/mach-* 发布策略**：定义是否独立版本化并发布 npm，而非匆忙迁移
+2. **完成 mach-calculators 消费闭环**：`@usethink/mach-calculators` 已独立发布，下一步把 `templates/cf-calculators` 的复制逻辑切换为 npm 依赖
 3. **统一关键依赖版本**：在根 `package.json` 中增加 `pnpm.overrides` 对齐 drizzle-orm、hono 等核心依赖的版本号
 4. **清理僵尸项目**：评估 cf-seo-archive 等无维护项目是否需要删除或归档
 
@@ -324,8 +321,8 @@ github_workflow/
 
 ### 7.2 依赖关系陷阱
 
-- `mach-calculators` 依赖 `@eforge/mach-calculators（独立 npm 包）`
-- 如果迁出 monorepo，需要改为 npm 依赖或 git 依赖
+- `@usethink/mach-calculators` 已迁出 monorepo，并作为独立 npm 包维护。
+- `templates/cf-calculators` 后续应依赖 npm 已发布版本，避免继续复制公式逻辑或使用 `workspace:*` 跨 submodule 引用。
 
 ### 7.3 部署脚本兼容性
 
@@ -345,13 +342,13 @@ github_workflow/
 ### 8.2  immediate 行动（本周）
 
 1. **决策 freelancer-calc 归属**：产品 or 模板？
-2. **决策 packages/mach-* 的生命周期**：独立发布 or 内部实现？
+2. **完成 mach-calculators 集成闭环**：从复制逻辑切换到 `@usethink/mach-calculators` npm 依赖
 3. **统一关键依赖版本**：通过 `pnpm.overrides` 对齐核心依赖版本
 
 ### 8.3 长期目标
 
 建立一个**职责清晰但不牺牲开发体验**的架构：
-- `packages/` = 有独立版本化价值的共享库（可以是基础设施，也可以是领域库）
+- `packages/` = 有独立版本化价值的共享库（可以是基础设施，也可以是领域库）；跨仓库消费优先发布为独立 npm 包
 - `templates/` = 独立部署的产品集合，保留 submodule 独立性，通过 workspace 享受一键安装的 DX
 - 部署共享通过 **GitHub Actions reusable workflows** 实现，而非文件系统层面的共享
 
@@ -384,8 +381,8 @@ github_workflow/
 - `/Users/dingyuwang/0-X/github_workflow/pnpm-workspace.yaml`
 - `/Users/dingyuwang/0-X/github_workflow/.gitmodules`
 - `/Users/dingyuwang/0-X/github_workflow/freelancer-calc/package.json`
-- `/Users/dingyuwang/0-X/github_workflow//Users/dingyuwang/0-X/2-node/mach-calculators/package.json`
-- `/Users/dingyuwang/0-X/github_workflow//Users/dingyuwang/0-X/2-node/mach-calculators/package.json`
+- `/Users/dingyuwang/0-X/2-node/mach-calculators/package.json`
+- `/Users/dingyuwang/0-X/2-node/mach-calculators/docs/001_合并说明.md`
 - 各 templates/*/package.json
 - `docs/ARCHITECTURE_ENFORCEMENT.md`
 - `docs/README.md`
