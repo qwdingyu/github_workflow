@@ -1,0 +1,24 @@
+# 依赖与构建
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+
+# 环境与密钥
+.env
+.env.local
+.env.*.local
+
+# 本地数据库
+data/
+*.db
+*.db-*
+
+# 临时与系统
+.tmp-inspect/
+.DS_Store
+coverage/
+*.log
+
+# TypeScript
+*.tsbuildinfo

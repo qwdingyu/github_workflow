@@ -22,6 +22,13 @@ const ROOT = join(import.meta.dirname, "..");
 const TEMPLATES_DIR = join(ROOT, "templates");
 const ADDITIONAL_PROJECTS = ["dtc"]; // monorepo 中非模板但使用 cf-core 的项目
 
+/**
+ * 不强制导入 cf-core 五张公共表的项目。
+ * cf-auth：独立 Better Auth / OAuth IdP，仅含身份与 OAuth 表，不承载业务租户数据，
+ * 也不得与业务库共表；强行 import cf-core 会破坏「业务不直连 auth DB」边界。
+ */
+const SCHEMA_CF_CORE_EXEMPT = new Set(["cf-auth"]);
+
 // cf-core 允许的 5 张公共表
 const ALLOWED_CORE_TABLES = new Set([
   "systemConfig",
@@ -185,6 +192,11 @@ function checkProjectSchema(name, projectDir) {
         warn(`${name} 使用了 @usethink/cf-core 但没有 src/db/schema.ts`);
       }
     }
+    return;
+  }
+
+  if (SCHEMA_CF_CORE_EXEMPT.has(name)) {
+    ok(`${name} schema 豁免 cf-core 公共表导入（独立身份服务，见 SCHEMA_CF_CORE_EXEMPT）`);
     return;
   }
 

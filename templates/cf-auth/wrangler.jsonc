@@ -1,0 +1,35 @@
+{
+  // cf-auth：统一认证服务（OAuth/OIDC Provider）
+  // 生产域名 auth.eforge.xyz；本地优先 npm run dev:local（libSQL file）
+  "name": "cf-auth",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-24",
+
+  // 自定义域名：部署前确认 DNS 已在 Cloudflare；未就绪前可注释 routes
+  "routes": [
+    { "pattern": "auth.eforge.xyz", "custom_domain": true }
+  ],
+
+  // D1 空库已存在（docs/004）。生产默认是否切 D1 须 M4 实测后决定。
+  // 当前代码主路径为 libSQL（file / Turso），与 lottery 050 一致。
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cf-auth",
+      "database_id": "f8aa7a07-84b3-4f2b-9200-16c64c5e9f1a"
+    }
+  ],
+
+  "vars": {
+    "APP_ORIGIN": "https://auth.eforge.xyz"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+
+  // 必需 secrets（wrangler secret put，勿写入本文件）：
+  // BETTER_AUTH_SECRET
+  // DATABASE_URL / TURSO_URL + TURSO_TOKEN（若不用 D1）
+  // GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET（M5）
+}
