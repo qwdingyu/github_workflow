@@ -16,10 +16,10 @@
     "smoke": "BASE_URL=http://localhost:8780 node scripts/smoke-readonly.mjs"
   },
   "dependencies": {
-    "@usethink/cf-core": "^0.3.4",
     "@libsql/client": "^0.14.0",
+    "@usethink/cf-core": "^0.4.16",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.22"
+    "hono": "^4.13.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260524.1",
