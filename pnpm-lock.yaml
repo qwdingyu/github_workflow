@@ -46,8 +46,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.3.4
-        version: 0.3.4(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.4.16
+        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -55,8 +55,8 @@ importers:
         specifier: ^0.7.0
         version: 0.7.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4))(zod@3.25.76)
       hono:
-        specifier: ^4.12.22
-        version: 4.12.23
+        specifier: ^4.13.0
+        version: 4.13.0
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -140,19 +140,19 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.8.0
-        version: 0.8.0(hono@4.12.23)(zod@3.25.76)
+        version: 0.8.0(hono@4.13.0)(zod@3.25.76)
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.3.4
-        version: 0.3.4(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.4.16
+        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       hono:
-        specifier: ^4.12.22
-        version: 4.12.23
+        specifier: ^4.13.0
+        version: 4.13.0
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -171,19 +171,19 @@ importers:
     dependencies:
       '@hono/zod-validator':
         specifier: ^0.4.0
-        version: 0.4.3(hono@4.12.23)(zod@3.25.76)
+        version: 0.4.3(hono@4.13.0)(zod@3.25.76)
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.3.4
-        version: 0.3.4(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.4.16
+        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
-        specifier: ^0.39.0
-        version: 0.39.3(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.45.2
+        version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       hono:
-        specifier: ^4.0.0
-        version: 4.12.23
+        specifier: ^4.13.0
+        version: 4.13.0
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -2361,9 +2361,6 @@ packages:
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
-  '@usethink/cf-core@0.3.4':
-    resolution: {integrity: sha512-b6khZPTCOLUPQepZY9UTUE8nBMtsGRdMj8vQ1D+A5whamVpz3ugspVs/KfDwqOh8CpuXGdMpZwTr/QpVPDC84A==}
-
   '@usethink/cf-core@0.4.16':
     resolution: {integrity: sha512-EuO7q+be5kUeiABzxuvWGVCDEQKGjZHmfKkbOIkpKCyfjly+L8vKkkxLg0lv5nzbPNezKSOjKoppdJEHalkODg==}
     hasBin: true
@@ -2887,92 +2884,6 @@ packages:
     resolution: {integrity: sha512-7OZcmQUrdGI+DUNNsKBn1aW8qSoKuTH7d0mYgSP8bAzdFzKoovxEFnoGQp2dVs82EOJeYycqRtciopszwUf8bw==}
     hasBin: true
 
-  drizzle-orm@0.39.3:
-    resolution: {integrity: sha512-EZ8ZpYvDIvKU9C56JYLOmUskazhad+uXZCTCRN4OnRMsL+xAJ05dv1eCpAG5xzhsm1hqiuC5kAZUCS924u2DTw==}
-    peerDependencies:
-      '@aws-sdk/client-rds-data': '>=3'
-      '@cloudflare/workers-types': '>=4'
-      '@electric-sql/pglite': '>=0.2.0'
-      '@libsql/client': '>=0.10.0'
-      '@libsql/client-wasm': '>=0.10.0'
-      '@neondatabase/serverless': '>=0.10.0'
-      '@op-engineering/op-sqlite': '>=2'
-      '@opentelemetry/api': ^1.4.1
-      '@planetscale/database': '>=1'
-      '@prisma/client': '*'
-      '@tidbcloud/serverless': '*'
-      '@types/better-sqlite3': '*'
-      '@types/pg': '*'
-      '@types/sql.js': '*'
-      '@vercel/postgres': '>=0.8.0'
-      '@xata.io/client': '*'
-      better-sqlite3: '>=7'
-      bun-types: '*'
-      expo-sqlite: '>=14.0.0'
-      knex: '*'
-      kysely: '*'
-      mysql2: '>=2'
-      pg: '>=8'
-      postgres: '>=3'
-      prisma: '*'
-      sql.js: '>=1'
-      sqlite3: '>=5'
-    peerDependenciesMeta:
-      '@aws-sdk/client-rds-data':
-        optional: true
-      '@cloudflare/workers-types':
-        optional: true
-      '@electric-sql/pglite':
-        optional: true
-      '@libsql/client':
-        optional: true
-      '@libsql/client-wasm':
-        optional: true
-      '@neondatabase/serverless':
-        optional: true
-      '@op-engineering/op-sqlite':
-        optional: true
-      '@opentelemetry/api':
-        optional: true
-      '@planetscale/database':
-        optional: true
-      '@prisma/client':
-        optional: true
-      '@tidbcloud/serverless':
-        optional: true
-      '@types/better-sqlite3':
-        optional: true
-      '@types/pg':
-        optional: true
-      '@types/sql.js':
-        optional: true
-      '@vercel/postgres':
-        optional: true
-      '@xata.io/client':
-        optional: true
-      better-sqlite3:
-        optional: true
-      bun-types:
-        optional: true
-      expo-sqlite:
-        optional: true
-      knex:
-        optional: true
-      kysely:
-        optional: true
-      mysql2:
-        optional: true
-      pg:
-        optional: true
-      postgres:
-        optional: true
-      prisma:
-        optional: true
-      sql.js:
-        optional: true
-      sqlite3:
-        optional: true
-
   drizzle-orm@0.45.2:
     resolution: {integrity: sha512-kY0BSaTNYWnoDMVoyY8uxmyHjpJW1geOmBMdSSicKo9CIIWkSxMIj2rkeSR51b8KAPB7m+qysjuHme5nKP+E5Q==}
     peerDependencies:
@@ -3352,10 +3263,6 @@ packages:
   hasown@2.0.4:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
-
-  hono@4.12.23:
-    resolution: {integrity: sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA==}
-    engines: {node: '>=16.9.0'}
 
   hono@4.12.28:
     resolution: {integrity: sha512-YwUvVpSF7m1yOblFPrU3Hbo8XhPheBoiyfGuII6z19LnOr6JpDnyyp7LFNrfV56wS8tpvtBFGRISHN02pDdLOA==}
@@ -5267,14 +5174,14 @@ snapshots:
     dependencies:
       hono: 4.13.0
 
-  '@hono/zod-validator@0.4.3(hono@4.12.23)(zod@3.25.76)':
+  '@hono/zod-validator@0.4.3(hono@4.13.0)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.23
+      hono: 4.13.0
       zod: 3.25.76
 
-  '@hono/zod-validator@0.8.0(hono@4.12.23)(zod@3.25.76)':
+  '@hono/zod-validator@0.8.0(hono@4.13.0)(zod@3.25.76)':
     dependencies:
-      hono: 4.12.23
+      hono: 4.13.0
       zod: 3.25.76
 
   '@img/colour@1.1.0': {}
@@ -5854,45 +5761,6 @@ snapshots:
     dependencies:
       '@types/node': 20.19.43
 
-  '@usethink/cf-core@0.3.4(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
-    dependencies:
-      '@libsql/client': 0.14.0
-      drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
-      drizzle-zod: 0.7.1(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4))(zod@3.25.76)
-      hono: 4.13.0
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - '@aws-sdk/client-rds-data'
-      - '@cloudflare/workers-types'
-      - '@electric-sql/pglite'
-      - '@libsql/client-wasm'
-      - '@neondatabase/serverless'
-      - '@op-engineering/op-sqlite'
-      - '@opentelemetry/api'
-      - '@planetscale/database'
-      - '@prisma/client'
-      - '@tidbcloud/serverless'
-      - '@types/better-sqlite3'
-      - '@types/pg'
-      - '@types/sql.js'
-      - '@upstash/redis'
-      - '@vercel/postgres'
-      - '@xata.io/client'
-      - better-sqlite3
-      - bufferutil
-      - bun-types
-      - expo-sqlite
-      - gel
-      - knex
-      - kysely
-      - mysql2
-      - pg
-      - postgres
-      - prisma
-      - sql.js
-      - sqlite3
-      - utf-8-validate
-
   '@usethink/cf-core@0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
     dependencies:
       '@libsql/client': 0.14.0
@@ -6466,13 +6334,6 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.9
 
-  drizzle-orm@0.39.3(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4):
-    optionalDependencies:
-      '@cloudflare/workers-types': 4.20260530.1
-      '@libsql/client': 0.14.0
-      '@types/better-sqlite3': 7.6.13
-      kysely: 0.29.4
-
   drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260530.1
@@ -6886,8 +6747,6 @@ snapshots:
   hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
-
-  hono@4.12.23: {}
 
   hono@4.12.28: {}
 
