@@ -57,10 +57,13 @@ describe("Better Auth 核心", () => {
     expect(Number(rows.rows[0]?.total)).toBe(1);
   });
 
-  it("Google provider 可生成授权 URL（非真实回调）", async () => {
-    const { app } = await createTestApp({ enableOAuthProvider: false, google: true });
+  it("Google / GitHub provider 可生成授权 URL（非真实回调）", async () => {
+    const { app } = await createTestApp({
+      enableOAuthProvider: false,
+      social: ["google", "github"],
+    });
 
-    const social = await app.request(
+    const google = await app.request(
       "/api/auth/sign-in/social",
       jsonPost({
         provider: "google",
@@ -68,11 +71,39 @@ describe("Better Auth 核心", () => {
         disableRedirect: true,
       }),
     );
-    expect(social.status).toBe(200);
-    const body = (await social.json()) as { url: string; redirect: boolean };
-    expect(body.redirect).toBe(false);
-    expect(body.url).toContain("https://accounts.google.com/o/oauth2");
-    expect(body.url).toContain("client_id=google-client-id-for-smoke-test");
-    expect(body.url).toContain("callback%2Fgoogle");
+    expect(google.status).toBe(200);
+    const gBody = (await google.json()) as { url: string; redirect: boolean };
+    expect(gBody.redirect).toBe(false);
+    expect(gBody.url).toContain("https://accounts.google.com/o/oauth2");
+    expect(gBody.url).toContain("client_id=google-client-id-for-smoke-test");
+    expect(gBody.url).toContain("callback%2Fgoogle");
+
+    const github = await app.request(
+      "/api/auth/sign-in/social",
+      jsonPost({
+        provider: "github",
+        callbackURL: "http://localhost:8788/",
+        disableRedirect: true,
+      }),
+    );
+    expect(github.status).toBe(200);
+    const ghBody = (await github.json()) as { url: string };
+    expect(ghBody.url).toMatch(/github\.com/);
+    expect(ghBody.url).toContain("client_id=github-client-id-for-smoke-test");
+  });
+
+  it("auth-meta 只暴露已配置的社交登录", async () => {
+    const { app } = await createTestApp({
+      enableOAuthProvider: false,
+      social: ["github"],
+    });
+    const res = await app.request("/api/auth-meta/social");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      providers: Array<{ id: string }>;
+      emailPassword: boolean;
+    };
+    expect(body.providers.map((p) => p.id)).toEqual(["github"]);
+    expect(body.emailPassword).toBe(true);
   });
 });

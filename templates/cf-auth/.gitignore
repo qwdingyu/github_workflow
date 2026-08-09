@@ -1,6 +1,9 @@
 # 依赖与构建
 node_modules/
+frontend/node_modules/
 dist/
+# Admin SPA 构建产物（npm run build:frontend）；部署前本地生成
+public/
 .wrangler/
 .dev.vars
 
@@ -22,3 +25,4 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+*.tar.gz

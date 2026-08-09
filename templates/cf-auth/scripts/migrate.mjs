@@ -9,7 +9,8 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-// 动态 import TS 迁移逻辑需 tsx；此处内联 SQL 与 src/db/migrate.ts 保持同步
+// 内联 SQL 与 src/db/migrate.ts 保持同步（docs/029 信任域表）
+// 注意：Worker 启动走 applyAuthMigrations（src/db/migrate.ts），本文件仅作手动/Node 初始化用
 const STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS "user" (
     id TEXT PRIMARY KEY NOT NULL,
@@ -145,6 +146,86 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS oauthConsent_clientId_idx ON "oauthConsent" (clientId)`,
   `CREATE INDEX IF NOT EXISTS oauthConsent_userId_idx ON "oauthConsent" (userId)`,
+  // 平台运维（docs/013 M7；对齐 src/db/migrate.ts）
+  `CREATE TABLE IF NOT EXISTS "admin_audit_log" (
+    id TEXT PRIMARY KEY NOT NULL,
+    actor_user_id TEXT,
+    actor_email TEXT,
+    action TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    meta TEXT,
+    ip TEXT,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS admin_audit_log_created_at_idx ON "admin_audit_log" (created_at)`,
+  `CREATE INDEX IF NOT EXISTS admin_audit_log_action_idx ON "admin_audit_log" (action)`,
+  `CREATE TABLE IF NOT EXISTS "rate_limit_log" (
+    id TEXT PRIMARY KEY NOT NULL,
+    key TEXT NOT NULL,
+    action TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS rate_limit_log_key_created_idx ON "rate_limit_log" (key, created_at)`,
+  `CREATE TABLE IF NOT EXISTS "auth_blocklist" (
+    id TEXT PRIMARY KEY NOT NULL,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    reason TEXT,
+    created_by_user_id TEXT,
+    created_by_email TEXT,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS auth_blocklist_type_value_uniq ON "auth_blocklist" (type, value)`,
+  `CREATE INDEX IF NOT EXISTS auth_blocklist_type_value_idx ON "auth_blocklist" (type, value)`,
+  `CREATE INDEX IF NOT EXISTS auth_blocklist_created_at_idx ON "auth_blocklist" (created_at)`,
+  `CREATE TABLE IF NOT EXISTS "social_provider_config" (
+    provider_id TEXT PRIMARY KEY NOT NULL,
+    enabled INTEGER NOT NULL,
+    sort_order INTEGER NOT NULL,
+    display_label TEXT,
+    updated_at INTEGER NOT NULL,
+    updated_by_email TEXT
+  )`,
+  `CREATE INDEX IF NOT EXISTS social_provider_config_sort_idx ON "social_provider_config" (sort_order)`,
+  `CREATE TABLE IF NOT EXISTS "trusted_origin" (
+    id TEXT PRIMARY KEY NOT NULL,
+    origin TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    enabled INTEGER NOT NULL,
+    created_by_email TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS trusted_origin_purpose_origin_uniq ON "trusted_origin" (purpose, origin)`,
+  `CREATE INDEX IF NOT EXISTS trusted_origin_enabled_idx ON "trusted_origin" (enabled)`,
+  `CREATE TABLE IF NOT EXISTS "email_config" (
+    id TEXT PRIMARY KEY NOT NULL,
+    provider TEXT NOT NULL,
+    name TEXT,
+    priority INTEGER NOT NULL,
+    enabled INTEGER NOT NULL,
+    host TEXT,
+    port INTEGER,
+    username TEXT,
+    tls_mode TEXT NOT NULL DEFAULT 'starttls',
+    encrypted_secret TEXT NOT NULL,
+    created_by_email TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS email_config_priority_idx ON "email_config" (priority)`,
+  `CREATE TABLE IF NOT EXISTS "email_log" (
+    id TEXT PRIMARY KEY NOT NULL,
+    to_addr TEXT NOT NULL,
+    subject TEXT,
+    status TEXT NOT NULL,
+    provider TEXT,
+    error TEXT,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS email_log_status_idx ON "email_log" (status)`,
 ];
 
 const url = process.env.DATABASE_URL || process.env.TURSO_URL || "file:./data/local.db";

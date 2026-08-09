@@ -18,8 +18,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -46,8 +46,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -86,8 +86,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       better-auth:
         specifier: 1.6.25
         version: 1.6.25(@cloudflare/workers-types@5.20260726.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260726.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4))(vitest@4.1.7)
@@ -145,8 +145,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -176,8 +176,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -202,13 +202,13 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.12
-        version: 2.1.0(hono@4.12.28)
+        version: 2.1.0(hono@4.13.0)
       '@libsql/client':
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       better-auth:
         specifier: ^1.6.25
         version: 1.6.25(@cloudflare/workers-types@5.20260726.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260726.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4))(vitest@4.1.7)
@@ -219,8 +219,8 @@ importers:
         specifier: 0.45.2
         version: 0.45.2(@cloudflare/workers-types@5.20260726.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       hono:
-        specifier: ^4.12.22
-        version: 4.12.28
+        specifier: ^4.13.0
+        version: 4.13.0
       tsx:
         specifier: ^4.23.5
         version: 4.23.9
@@ -272,8 +272,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -328,8 +328,8 @@ importers:
         specifier: ^0.14.0
         version: 0.14.0
       '@usethink/cf-core':
-        specifier: ^0.4.16
-        version: 0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
+        specifier: ^0.5.2
+        version: 0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -2355,14 +2355,17 @@ packages:
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
 
+  '@types/node@26.2.0':
+    resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
+
   '@types/validator@13.15.10':
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
-  '@usethink/cf-core@0.4.16':
-    resolution: {integrity: sha512-EuO7q+be5kUeiABzxuvWGVCDEQKGjZHmfKkbOIkpKCyfjly+L8vKkkxLg0lv5nzbPNezKSOjKoppdJEHalkODg==}
+  '@usethink/cf-core@0.5.2':
+    resolution: {integrity: sha512-zZ+CLcmYD+1fGbPbd4gH8osu9ZqxDojuIvZc1n8bRg0Dt14c9QPMOrMBeG2Mg9Ib5emPV/LLdgnGehD7xX+bDQ==}
     hasBin: true
     peerDependencies:
       nodemailer: ^6.9.0
@@ -3426,6 +3429,9 @@ packages:
   js-base64@3.8.0:
     resolution: {integrity: sha512-65kvbemyZhj+ExQt1PEFyBEjL5vAHysu1lJdW1AwhhChkO8ZBPizYk/m9GVrpbS2Je1hF+UYZ+6KywqtZV8mHw==}
 
+  js-base64@3.9.2:
+    resolution: {integrity: sha512-6zayE8QlUdiweYI6cETD/XBSqFcoCUlufn/29PJR99r82x1yDnIprRca0YvAYpAW+ez0GuQkVBC6xG5QkD7OjA==}
+
   js-string-escape@1.0.1:
     resolution: {integrity: sha512-Smw4xcfIQ5LVjAOuJCvN/zIodzA/BBSsluuoSykP+lUvScIi4U6RJLfwHet5cxFnCswUjISV8oAXaqaJDY3chg==}
     engines: {node: '>= 0.8'}
@@ -4081,6 +4087,9 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
   undici@5.29.0:
     resolution: {integrity: sha512-raqeBD6NQK4SkWhQzeYKd1KmIG6dllBOTt55Rmkt4HtI9mwdWtJljnrXjAFUBLTSN67HWrOIZ3EPF4kjUw80Bg==}
@@ -5527,7 +5536,7 @@ snapshots:
     dependencies:
       '@libsql/core': 0.17.4
       '@libsql/hrana-client': 0.10.0
-      js-base64: 3.8.0
+      js-base64: 3.9.2
       libsql: 0.5.29
       promise-limit: 2.7.0
     transitivePeerDependencies:
@@ -5541,7 +5550,7 @@ snapshots:
 
   '@libsql/core@0.17.4':
     dependencies:
-      js-base64: 3.8.0
+      js-base64: 3.9.2
     optional: true
 
   '@libsql/darwin-arm64@0.4.7':
@@ -5559,7 +5568,7 @@ snapshots:
   '@libsql/hrana-client@0.10.0':
     dependencies:
       '@libsql/isomorphic-ws': 0.1.5
-      js-base64: 3.8.0
+      js-base64: 3.9.2
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -5733,7 +5742,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.2.0
     optional: true
 
   '@types/chai@5.2.3':
@@ -5755,13 +5764,18 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/node@26.2.0':
+    dependencies:
+      undici-types: 8.3.0
+    optional: true
+
   '@types/validator@13.15.10': {}
 
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 20.19.43
 
-  '@usethink/cf-core@0.4.16(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
+  '@usethink/cf-core@0.5.2(@cloudflare/workers-types@4.20260530.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
     dependencies:
       '@libsql/client': 0.14.0
       drizzle-orm: 0.45.2(@cloudflare/workers-types@4.20260530.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -5800,7 +5814,7 @@ snapshots:
       - sqlite3
       - utf-8-validate
 
-  '@usethink/cf-core@0.4.16(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
+  '@usethink/cf-core@0.5.2(@cloudflare/workers-types@5.20260726.1)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)':
     dependencies:
       '@libsql/client': 0.14.0
       drizzle-orm: 0.45.2(@cloudflare/workers-types@5.20260726.1)(@libsql/client@0.14.0)(@types/better-sqlite3@7.6.13)(kysely@0.29.4)
@@ -6913,6 +6927,9 @@ snapshots:
 
   js-base64@3.8.0: {}
 
+  js-base64@3.9.2:
+    optional: true
+
   js-string-escape@1.0.1: {}
 
   js-tokens@10.0.0: {}
@@ -7653,6 +7670,9 @@ snapshots:
   ufo@1.6.4: {}
 
   undici-types@6.21.0: {}
+
+  undici-types@8.3.0:
+    optional: true
 
   undici@5.29.0:
     dependencies:

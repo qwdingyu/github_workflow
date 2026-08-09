@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
-    "@usethink/cf-core": "^0.4.16",
+    "@usethink/cf-core": "^0.5.2",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.0"
   },

@@ -9,10 +9,22 @@ let cached: { key: string; resources: AppResources; app: Awaited<ReturnType<type
   null;
 
 function cacheKey(env: Bindings): string {
+  // 含社交开关与「是否配置了密钥」指纹，secret 轮换/增源后需重建 betterAuth
+  const socialFingerprint = [
+    env.ENABLED_SOCIAL_PROVIDERS || "",
+    env.EMAIL_PASSWORD_ENABLED || "",
+    env.GOOGLE_CLIENT_ID ? "g" : "",
+    env.GITHUB_CLIENT_ID ? "h" : "",
+    env.MICROSOFT_CLIENT_ID ? "m" : "",
+    env.APPLE_CLIENT_ID ? "a" : "",
+    env.DISCORD_CLIENT_ID ? "d" : "",
+    env.GITLAB_CLIENT_ID ? "l" : "",
+  ].join("");
   return [
     env.BETTER_AUTH_URL || env.APP_ORIGIN || "",
     env.DATABASE_URL || env.TURSO_URL || "d1-or-default",
     env.BETTER_AUTH_SECRET?.slice(0, 8) || "",
+    socialFingerprint,
   ].join("|");
 }
 
@@ -31,6 +43,19 @@ export default {
   async fetch(request: Request, env: Bindings, ctx: ExecutionContext): Promise<Response> {
     const { app } = await getApp(env);
     return app.fetch(request, env, ctx);
+  },
+  /**
+   * 可选：在 Cloudflare 控制台为 Worker 绑定 Cron 后清理 rate_limit_log。
+   * 未绑定时无影响；启动路径 createApp 也会偶发清理。
+   */
+  async scheduled(
+    _controller: ScheduledController,
+    env: Bindings,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
+    const { resources } = await getApp(env);
+    const { cleanExpiredRateLimits } = await import("./lib/rate-limit");
+    await cleanExpiredRateLimits(resources.db, 3_600_000);
   },
 } satisfies ExportedHandler<Bindings>;
 

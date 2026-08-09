@@ -1,0 +1,35 @@
+[Unit]
+Description=cf-auth Hono Node Server (Better Auth IdP)
+After=network.target
+Documentation=https://github.com/qwdingyu/cf-auth
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/cf-auth
+EnvironmentFile=/opt/cf-auth/.env
+# 生产只监听本机，由 nginx 反代；可在 .env 覆盖 HOST/PORT
+Environment=HOST=127.0.0.1
+Environment=PORT=8788
+Environment=NODE_ENV=production
+# 与 cf-lottery 相同：tsx 直接跑 TypeScript，免单独编译步骤
+ExecStart=/opt/cf-auth/node_modules/.bin/tsx /opt/cf-auth/src/server.ts
+Restart=always
+RestartSec=5
+# 优雅停止：给进程处理中请求一点时间
+TimeoutStopSec=20
+
+# 安全加固
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+# file: SQLite 与可能的缓存目录
+ReadWritePaths=/opt/cf-auth/data /opt/cf-auth/node_modules/.cache
+
+# 资源上限（可按机器调整）
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

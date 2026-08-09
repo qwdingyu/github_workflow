@@ -1,35 +1,61 @@
 {
   // cf-auth：统一认证服务（OAuth/OIDC Provider）
-  // 生产域名 auth.eforge.xyz；本地优先 npm run dev:local（libSQL file）
+  // 生产：auth.eforge.xyz + Turso cf-auth-db（非 Free D1）
   "name": "cf-auth",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-24",
+  // better-auth / 部分依赖可能触达 Node API；与常见 Workers+Auth 实践一致
+  "workers_dev": true,
+  "compatibility_flags": ["nodejs_compat"],
 
-  // 自定义域名：部署前确认 DNS 已在 Cloudflare；未就绪前可注释 routes
   "routes": [
     { "pattern": "auth.eforge.xyz", "custom_domain": true }
   ],
 
-  // D1 空库已存在（docs/004）。生产默认是否切 D1 须 M4 实测后决定。
-  // 当前代码主路径为 libSQL（file / Turso），与 lottery 050 一致。
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "cf-auth",
-      "database_id": "f8aa7a07-84b3-4f2b-9200-16c64c5e9f1a"
-    }
-  ],
+  // 生产库走 secrets：DATABASE_URL / TURSO_URL + TURSO_TOKEN（Turso）
+  // D1 空库 cf-auth 保留在账号内作实验，不绑定本 Worker，避免误用 Free 配额
 
   "vars": {
-    "APP_ORIGIN": "https://auth.eforge.xyz"
+    "APP_ORIGIN": "https://auth.eforge.xyz",
+    "BETTER_AUTH_URL": "https://auth.eforge.xyz",
+    "ENABLED_SOCIAL_PROVIDERS": "google,github",
+    "EMAIL_PASSWORD_ENABLED": "true",
+    "TRUSTED_ORIGINS": "https://auth.eforge.xyz,https://lucky.eforge.xyz,https://shop.eforge.xyz,http://localhost:8788,http://localhost:8787",
+    // skip_consent 允许的 redirect hostname（逗号分隔）；未设时代码默认含 localhost + eforge 域
+    "FIRST_PARTY_REDIRECT_HOSTS": "localhost,127.0.0.1,auth.eforge.xyz,lucky.eforge.xyz,shop.eforge.xyz"
+  },
+
+  // ADMIN_EMAILS / ADMIN_USER_IDS / ADMIN_API_KEY：用 wrangler secret 或临时 vars，勿把真实邮箱写进公开 fork
+  // ADMIN_TRUSTED_ORIGINS（可选）：Admin 写请求 CSRF 信任域，默认仅同源；管理入口不在本站时才配置，与 TRUSTED_ORIGINS 解耦
+
+  // Admin SPA（frontend vite → public/）；协议与 API 优先进 Worker
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "single-page-application",
+    // 协议页与 API 必须进 Worker；Admin SPA 走 ASSETS（/admin、/assets）
+    "run_worker_first": [
+      "/api/*",
+      "/sign-in",
+      "/sign-in/*",
+      "/consent",
+      "/consent/*",
+      "/.well-known/*",
+      // 裸 /admin 无尾斜杠时 Assets SPA 可能 404；进 Worker 回退 index.html
+      "/admin",
+      "/"
+    ]
   },
 
   "observability": {
     "enabled": true
   }
 
-  // 必需 secrets（wrangler secret put，勿写入本文件）：
+  // secrets（wrangler secret put，勿写入本文件）：
   // BETTER_AUTH_SECRET
-  // DATABASE_URL / TURSO_URL + TURSO_TOKEN（若不用 D1）
-  // GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET（M5）
+  // DATABASE_URL / TURSO_URL / TURSO_TOKEN
+  // GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+  // GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET
+  // ADMIN_EMAILS / ADMIN_API_KEY（可选）
 }
