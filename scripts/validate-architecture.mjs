@@ -45,7 +45,7 @@ const SCHEMA_CF_CORE_EXEMPT = new Set(["cf-auth"]);
  *   - 且该表无真实跨项目契约：cf-shop / cf-tools / cf-form / cf-guardian / dtc 的
  *     apiKeys 均只出现在各自 schema.ts（零查询，cf-guardian 更直接 stub 为 {} as never）。
  *   - 防雷靠 hamster 侧守卫测试（禁止 import cf-core 任何触碰 apiKeys 的助手，
- *     如 createApiKeyAuth）：见 templates/hamster/test/architecture-guard.test.ts。
+ *     如 createApiKeyAuth）：见 templates/hamster/src/db/architecture-guard.test.ts。
  */
 const SCHEMA_TABLE_EXEMPT = {
   hamster: ["apiKeys"],
