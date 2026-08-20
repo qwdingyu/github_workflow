@@ -29,6 +29,28 @@ const ADDITIONAL_PROJECTS = ["dtc"]; // monorepo 中非模板但使用 cf-core �
  */
 const SCHEMA_CF_CORE_EXEMPT = new Set(["cf-auth"]);
 
+/**
+ * 按「项目 × 单表」的窄豁免：项目仍必须导入其余公共表，只对列出的表放行。
+ * 比 SCHEMA_CF_CORE_EXEMPT 的整项目豁免安全——将来 cf-core 新增第 6 张公共表时，
+ * 被豁免项目照样会被检出缺失。
+ *
+ * hamster.apiKeys：hamster 的 api_keys 是**业务表**，不是 cf-core 那张基础设施表。
+ *   - 豪猪协议要求明文对外 ID `api_id`（unique，作为 API 入参）、外加
+ *     `prefix` / `status` / `webhook_url`，且被 api_key_projects 白名单引用；
+ *   - cf-core 的 api_keys 是配额型 Key（key_hash / tier / enabled / monthly_quota /
+ *     monthly_usage / expires_at），两者仅共享 id / name / user_id / 时间列，
+ *     连哈希列名都不同（hamster: api_key_hash，cf-core: key_hash）；
+ *   - 把 api_id/webhook_url 等业务字段推进 cf-core 会违反铁律 1；反向迁移则会打断
+ *     豪猪协议入参、middleware/auth.ts 的哈希列校验、webhook 推送与已上线数据。
+ *   - 且该表无真实跨项目契约：cf-shop / cf-tools / cf-form / cf-guardian / dtc 的
+ *     apiKeys 均只出现在各自 schema.ts（零查询，cf-guardian 更直接 stub 为 {} as never）。
+ *   - 防雷靠 hamster 侧守卫测试（禁止 import cf-core 任何触碰 apiKeys 的助手，
+ *     如 createApiKeyAuth）：见 templates/hamster/test/architecture-guard.test.ts。
+ */
+const SCHEMA_TABLE_EXEMPT = {
+  hamster: ["apiKeys"],
+};
+
 // cf-core 允许的 5 张公共表
 const ALLOWED_CORE_TABLES = new Set([
   "systemConfig",
@@ -202,8 +224,12 @@ function checkProjectSchema(name, projectDir) {
 
   const content = readFileSync(schemaPath, "utf-8");
 
+  // 窄豁免：该项目允许本地自持的公共表（见 SCHEMA_TABLE_EXEMPT），其余仍强制导入
+  const exemptTables = new Set(SCHEMA_TABLE_EXEMPT[name] || []);
+  const requiredTables = REQUIRED_COMMON_TABLES.filter((t) => !exemptTables.has(t));
+
   // 检查是否从 cf-core 导入公共表
-  const hasCoreImport = REQUIRED_COMMON_TABLES.every((table) => {
+  const hasCoreImport = requiredTables.every((table) => {
     const pattern = `export { ${table}`;
     const pattern2 = `  ${table},`;
     const pattern3 = `,\n  ${table}`;
@@ -216,13 +242,16 @@ function checkProjectSchema(name, projectDir) {
 
   // 检查是否用了 sqliteTable（定义了业务表）
   const hasLocalTables = content.includes("sqliteTable(");
+  const exemptNote = exemptTables.size > 0
+    ? `，${[...exemptTables].join("/")} 窄豁免（见 SCHEMA_TABLE_EXEMPT）`
+    : "";
 
   if (!hasCoreImport && hasLocalTables) {
-    fail(`${name}/src/db/schema.ts 定义了业务表但未从 cf-core 导入 5 张公共表`);
-    console.log(`    ${c.dim("必须添加: export { systemConfig, adminAuditLogs, rateLimitWindows, idempotencyKeys, apiKeys } from \"@usethink/cf-core/db/schema\"")}`);
+    fail(`${name}/src/db/schema.ts 定义了业务表但未从 cf-core 导入公共表`);
+    console.log(`    ${c.dim(`必须添加: export { ${requiredTables.join(", ")} } from "@usethink/cf-core/db/schema"`)}`);
     console.log(`    ${c.dim("参考 templates/cf-shop/src/db/schema.ts 的写法")}`);
   } else if (hasCoreImport && hasLocalTables) {
-    ok(`${name} schema 合规（导入公共表 + 定义了业务表）`);
+    ok(`${name} schema 合规（导入公共表 + 定义了业务表${exemptNote}）`);
   } else if (hasCoreImport && !hasLocalTables) {
     warn(`${name} 从 cf-core 导入了公共表但未定义业务表（可能是纯配置项目）`);
   } else if (!hasCoreImport && !hasLocalTables) {
