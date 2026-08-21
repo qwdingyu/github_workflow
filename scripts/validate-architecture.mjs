@@ -49,6 +49,9 @@ const SCHEMA_CF_CORE_EXEMPT = new Set(["cf-auth"]);
  */
 const SCHEMA_TABLE_EXEMPT = {
   hamster: ["apiKeys"],
+  // cf-lottery：idempotencyKeys 不需要（用字段级幂等，不是表级）；
+  // apiKeys 不能替换（本地是租户级外部回传密钥，与 cf-core 平台级开发者密钥用途不同）。
+  "cf-lottery": ["idempotencyKeys", "apiKeys"],
 };
 
 // cf-core 允许的 5 张公共表
